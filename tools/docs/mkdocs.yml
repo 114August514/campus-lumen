@@ -16,6 +16,11 @@ nav:
       - 需求基线与分析契约: product/requirements.md
       - 选导师任务与信息结构: product/advisor-task-design.md
       - UI 组件与视觉规范: product/ui-system.md
+      - 前端预设计（评审稿）:
+          - 评审入口: product/frontend-pre-design/index.md
+          - Kimi 一页结论: product/frontend-pre-design/summary.md
+          - Kimi 独立设计原稿: product/frontend-pre-design/design-draft.md
+          - Kimi 研究记录: product/frontend-pre-design/research-notes.md
       - 隐私: product/privacy.md
       - 里程碑: product/milestones.md
   - 架构:

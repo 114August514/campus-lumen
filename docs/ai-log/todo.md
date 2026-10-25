@@ -1,6 +1,6 @@
 # AI Log Todo
 
-Last updated: 2026-10-12
+Last updated: 2026-10-25
 
 This file records meaningful pending work for AI agents and collaborators.
 Keep entries short, dated, and actionable.
@@ -19,6 +19,13 @@ Keep entries short, dated, and actionable.
 ```
 
 ## Pending
+
+### 2026-10-25 - Peer review Kimi frontend product pre-design
+
+- Source: User requests a peer-review PR for the independently authored design.
+- Milestone: P2.
+- Status: Proposed design archived at docs/product/frontend-pre-design/; index.md separates coordinator review prompts/caveats from unchanged Kimi text. No new UI/contract rules adopted.
+- Acceptance: Review requirement coverage, IA/flows and experience-derived backend capabilities; resolve navigation count/comparison placement and preparation-entry inconsistencies before promoting accepted decisions into maintained product docs.
 
 ### 2026-10-12 - Continue after verified comparison follow-up
 
