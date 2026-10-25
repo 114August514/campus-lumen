@@ -1,6 +1,6 @@
 # AI Log Done
 
-Last updated: 2026-10-16
+Last updated: 2026-10-25
 
 This file records completed agent-visible work. Keep entries factual and link
 them to commits, files, and verification commands where possible.
@@ -18,6 +18,13 @@ them to commits, files, and verification commands where possible.
 ```
 
 ## Completed
+
+### 2026-10-25 - Archive Kimi original frontend pre-design for peer review
+
+- Result: User-authorized documentation-only review package under docs/product/frontend-pre-design/: Kimi design-draft.md, summary.md and research-notes.md preserved except required freshness lines; coordinator-authored index.md supplies reading order, review questions and separate known inconsistencies. Frontend target is derived from final requirements independently of backend implementation readiness.
+- Authorship/evidence: Kimi k3-256k/high wrote all three originals in a fresh session without post-draft coordinator design feedback. Actual new external research read DeepTutor README, not a runtime trial; other comparisons reuse existing requirement materials. No private topic records or runtime/auth logs published.
+- Verification: Original text round-trip/hash comparison and exact-base strict MkDocs 1.6.1 build; only the four review pages, MkDocs navigation and these two AI Log entries differ from main. No runtime source, dependency, API or application behavior change; no browser or application CI acceptance claimed.
+- Follow-up: Pending peer review remains in todo.md. Preserve original design while discussing navigation consistency, concrete preparation entry and separation of accepted needs from IA choices; merge does not auto-adopt proposal decisions.
 
 ### 2026-10-16 - Integrate authentic internship batch and multi-perspective comparison engine
 
