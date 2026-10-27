@@ -19,11 +19,12 @@ them to commits, files, and verification commands where possible.
 
 ## Completed
 
-### 2026-10-27 - Prepare high-priority demo branch for GitHub delivery
+### 2026-10-27 - Publish high-priority demo branch to GitHub
 
 - Source: User requested pushing the completed work to GitHub.
-- Scope: Commit the scoped demo implementation, its two new comparison files, tests, generated OpenAPI and related docs on `codex/demo-high-priority`; exclude unrelated `.claude/`, old `tools/discovery-trial/` output and ignored work artifacts. No PR or main merge requested.
-- Verification: Rechecked working/staged scope and `git diff --check`; prior runtime, browser and build evidence is recorded below. Publication completion is verified against the remote branch ref after pushing; this entry records delivery preparation, not remote CI success.
+- Result: Committed the 28 scoped files as `968f6911e2b3a30f340afea136184d98d661d698` and pushed [codex/demo-high-priority](https://github.com/114August514/campus-lumen/tree/codex/demo-high-priority). Unrelated `.claude/`, old `tools/discovery-trial/` output and ignored work artifacts remain excluded. No PR or main merge requested.
+- Verification: Rechecked the exact staged scope and `git diff --check`; fresh `git ls-remote` matched local HEAD at `968f691` after push. Prior runtime/browser/build evidence is below; no remote CI success is claimed.
+- Local repair: Initial Git LFS pre-push failed with `gitobj/pack: bad pack header`. Verified four `._*` files in `.git/objects/pack` have AppleDouble magic and moved only those metadata sidecars to `.git/codex-appledouble-backup-1793095480`, preserving real pack/index files. Normal push then succeeded; Git pack diagnostics disappeared.
 
 ### 2026-10-27 - Integrate high-priority demo fixes
 
