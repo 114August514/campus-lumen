@@ -19,6 +19,14 @@ them to commits, files, and verification commands where possible.
 
 ## Completed
 
+### 2026-10-27 - Repair mistaken public associations without losing private records
+
+- Source: User asked to continue the remaining demo work after the high-priority branch; recommended first item from the gap review.
+- Result: Maintainers record splits in `apps/web/src/data/association-corrections.json` (strictly validated, public fields only). Public advisor/internship lists are rebuilt so every source of the merged object goes to exactly one split object; split objects show the correction reason/date. On startup, saved topic records are re-pointed only when their own saved source URLs identify one split object; otherwise (several objects, no match, or target already in the topic) they become "关联待确认" and the user chooses. Reasons, questions and saved sources are never read for the decision, copied or rewritten; pending records are excluded from comparison; repair is idempotent.
+- Changed: `apps/web/src/lib/association-repair.ts` (new), `exploration-store.ts` (optional `association` note, `repairAssociations`, `resolveAssociation`), `advisors.ts`, `comparison-candidates.ts`, `app/App.tsx` (startup repair run once even under StrictMode, notices and choice UI), empty `association-corrections.json`, `tests/association-repair.test.ts`; task design §8.8.
+- Verification: `bun test tests/*.test.ts tests/*.test.tsx` 82 pass (7 new); typecheck, Biome, `lint:styles` and build pass. Browser (local origin 5177) with a temporary synthetic split of `tianqi-chen` and two synthetic topics: FAQ-only record auto-relinked, two-page record pending then resolved by choice, reasons unchanged, startup notice shown, detail shows the correction; found and fixed a StrictMode double-initialisation that hid the notice. Correction file restored to empty and synthetic browser data cleared afterwards.
+- Follow-up: Route-level splits need structured routes. Optional preparation/knowledgeable-participant entries and the full §7 walkthrough remain.
+
 ### 2026-10-27 - Publish high-priority demo branch to GitHub
 
 - Source: User requested pushing the completed work to GitHub.

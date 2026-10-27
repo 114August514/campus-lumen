@@ -34,11 +34,32 @@ export interface CandidateSnapshot {
   metadata?: Record<string, string>;
 }
 
+/** Identity fields of a public object, without its sources. */
+export interface CandidateIdentity {
+  candidateId: string;
+  name: string;
+  institution: string;
+  research: string;
+}
+
+/**
+ * Set when a public split affected this record. `previous` keeps the identity the
+ * user originally saved; `pending` means the user still has to choose the object.
+ */
+export interface AssociationNote {
+  correctionId: string;
+  status: "relinked" | "pending" | "chosen";
+  previous: Omit<CandidateIdentity, "research">;
+  options: Omit<CandidateIdentity, "research">[];
+  updatedAt: string;
+}
+
 export interface TopicCandidate {
   candidate: CandidateSnapshot;
   reason: string;
   questions: string[];
   savedAt: string;
+  association?: AssociationNote;
 }
 
 /** Public opportunity fields copied at save time, so a topic survives data changes. */
@@ -188,6 +209,29 @@ function isCandidate(value: unknown): value is CandidateSnapshot {
   );
 }
 
+function isIdentity(value: unknown): value is Omit<CandidateIdentity, "research"> {
+  return (
+    isObject(value) &&
+    isNonemptyText(value.candidateId) &&
+    isNonemptyText(value.name) &&
+    isNonemptyText(value.institution)
+  );
+}
+
+function isAssociation(value: unknown): value is AssociationNote {
+  return (
+    isObject(value) &&
+    isNonemptyText(value.correctionId) &&
+    (value.status === "relinked" ||
+      value.status === "pending" ||
+      value.status === "chosen") &&
+    isIdentity(value.previous) &&
+    Array.isArray(value.options) &&
+    value.options.every(isIdentity) &&
+    isDate(value.updatedAt)
+  );
+}
+
 function isTopicCandidate(value: unknown): value is TopicCandidate {
   return (
     isObject(value) &&
@@ -195,8 +239,17 @@ function isTopicCandidate(value: unknown): value is TopicCandidate {
     isText(value.reason) &&
     Array.isArray(value.questions) &&
     value.questions.every(isText) &&
-    isDate(value.savedAt)
+    isDate(value.savedAt) &&
+    (value.association === undefined || isAssociation(value.association))
   );
+}
+
+function plainIdentity(item: CandidateIdentity | Omit<CandidateIdentity, "research">) {
+  return {
+    candidateId: item.candidateId,
+    name: item.name,
+    institution: item.institution,
+  };
 }
 
 function isOpportunity(value: unknown): value is OpportunitySnapshot {
@@ -530,6 +583,126 @@ export function createExplorationStore(
         topic.opportunities = (topic.opportunities ?? []).filter(
           (entry) => entry.opportunity.opportunityId !== opportunityId,
         );
+      });
+    },
+    /**
+     * Apply planned association repairs in one write. A relink changes only the
+     * record's identity; its saved sources, reason and questions stay as they were.
+     */
+    repairAssociations(
+      repairs: (
+        | {
+            kind: "relink";
+            topicId: string;
+            fromCandidateId: string;
+            correctionId: string;
+            target: CandidateIdentity;
+          }
+        | {
+            kind: "pending";
+            topicId: string;
+            fromCandidateId: string;
+            correctionId: string;
+            options: CandidateIdentity[];
+          }
+      )[],
+    ): number {
+      if (repairs.length === 0) return 0;
+      const data = read();
+      const now = new Date().toISOString();
+      let applied = 0;
+      for (const repair of repairs) {
+        const topic = data.topics.find((item) => item.id === repair.topicId);
+        const record = topic?.candidates.find(
+          (item) => item.candidate.candidateId === repair.fromCandidateId,
+        );
+        if (!topic || !record) continue;
+        const previous = plainIdentity(record.candidate);
+        if (repair.kind === "relink") {
+          if (
+            topic.candidates.some(
+              (item) =>
+                item !== record &&
+                item.candidate.candidateId === repair.target.candidateId,
+            )
+          ) {
+            continue;
+          }
+          record.candidate = {
+            ...record.candidate,
+            candidateId: repair.target.candidateId,
+            name: repair.target.name,
+            institution: repair.target.institution,
+            research: repair.target.research,
+          };
+          record.association = {
+            correctionId: repair.correctionId,
+            status: "relinked",
+            previous,
+            options: [plainIdentity(repair.target)],
+            updatedAt: now,
+          };
+        } else {
+          record.association = {
+            correctionId: repair.correctionId,
+            status: "pending",
+            previous,
+            options: repair.options.map(plainIdentity),
+            updatedAt: now,
+          };
+        }
+        topic.updatedAt = now;
+        applied += 1;
+      }
+      if (applied > 0) write(data);
+      return applied;
+    },
+    /** The user picks which split object a pending record refers to. */
+    resolveAssociation(
+      topicId: string,
+      candidateId: string,
+      target: CandidateIdentity,
+    ) {
+      return mutateTopic(topicId, (topic) => {
+        const record = topic.candidates.find(
+          (item) => item.candidate.candidateId === candidateId,
+        );
+        if (!record?.association || record.association.status !== "pending") {
+          throw new ExplorationStoreError("not_found", "这条记录没有待确认的关联。");
+        }
+        if (
+          !record.association.options.some(
+            (item) => item.candidateId === target.candidateId,
+          )
+        ) {
+          throw new ExplorationStoreError(
+            "validation_failed",
+            "只能从拆分后的对象中选择。",
+          );
+        }
+        if (
+          topic.candidates.some(
+            (item) =>
+              item !== record && item.candidate.candidateId === target.candidateId,
+          )
+        ) {
+          throw new ExplorationStoreError(
+            "validation_failed",
+            "这个主题已有该对象的记录；两条记录的理由不会自动合并，可先移除其中一条再选择。",
+          );
+        }
+        record.candidate = {
+          ...record.candidate,
+          candidateId: target.candidateId,
+          name: target.name,
+          institution: target.institution,
+          research: target.research,
+        };
+        record.association = {
+          ...record.association,
+          status: "chosen",
+          updatedAt: new Date().toISOString(),
+        };
       });
     },
     deleteTopic(id: string) {

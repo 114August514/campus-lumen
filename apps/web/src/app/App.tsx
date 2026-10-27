@@ -39,12 +39,15 @@ import {
   advisors,
   allBatches,
   allOpportunities,
+  associationCorrections,
   collectedBatches,
   sourceDate,
 } from "../lib/advisors";
+import { planAssociationRepairs } from "../lib/association-repair";
 import { comparisonCandidatesForTopic } from "../lib/comparison-candidates";
 import { getFollowupQuery, getSupplementalSources } from "../lib/comparison-followup";
 import {
+  type AssociationNote,
   type CandidateSnapshot,
   type ExplorationTopic,
   type TopicOpportunity,
@@ -60,18 +63,38 @@ import {
 function loadExplorations() {
   try {
     const store = createExplorationStore(window.localStorage);
-    return { store, topics: store.listTopics(), error: "" };
+    // Apply recorded public splits to saved records before showing them.
+    const repaired = store.repairAssociations(
+      planAssociationRepairs(store.listTopics(), associationCorrections),
+    );
+    return {
+      store,
+      topics: store.listTopics(),
+      error: "",
+      notice: repaired
+        ? `公开资料有更正，${repaired}条主题记录的关联已调整或待你确认，详见“我的探索”。私人理由和待问未改动。`
+        : "",
+    };
   } catch (error) {
     return {
       store: null,
       topics: [] as ExplorationTopic[],
+      notice: "",
       error: `本地保存不可用：${error instanceof Error ? error.message : "无法读取浏览器资料"}。仍可以浏览和查找。`,
     };
   }
 }
 
+// Loading also writes association repairs, so it must run once per page load even
+// when StrictMode calls state initializers twice.
+let startup: ReturnType<typeof loadExplorations> | undefined;
+function loadExplorationsOnce() {
+  startup ??= loadExplorations();
+  return startup;
+}
+
 export function App() {
-  const [initial] = useState(loadExplorations);
+  const [initial] = useState(loadExplorationsOnce);
   const [topics, setTopics] = useState(initial.topics);
   const [topicId, setTopicId] = useState(initial.topics[0]?.id ?? "");
   const [view, setView] = useState<
@@ -89,7 +112,7 @@ export function App() {
   const [selectedAdvisor, setSelectedAdvisor] = useState("tianqi-chen");
   const [topicName, setTopicName] = useState("");
   const [error, setError] = useState(initial.error);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initial.notice);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [candidateScenario, setCandidateScenario] = useState<
     "all" | "advisor" | "internship"
@@ -640,6 +663,28 @@ export function App() {
                     <SavedCandidate
                       key={`${activeTopic.id}-${record.candidate.candidateId}`}
                       record={record}
+                      onResolve={(choice) =>
+                        mutate(() => {
+                          const target = allOpportunities.find(
+                            (item) => item.candidateId === choice.candidateId,
+                          );
+                          initial.store?.resolveAssociation(
+                            activeTopic.id,
+                            record.candidate.candidateId,
+                            {
+                              ...choice,
+                              research: target?.research ?? record.candidate.research,
+                            },
+                          );
+                          clearComparisonDrafts(
+                            activeTopic.id,
+                            record.candidate.candidateId,
+                          );
+                          setMessage(
+                            `已把这条记录关联到“${choice.name}（${choice.institution}）”。理由和待问未改动。`,
+                          );
+                        })
+                      }
                       onCompare={() => {
                         const candidate = availableCandidates.find(
                           (item) => item.candidateId === record.candidate.candidateId,
@@ -772,6 +817,13 @@ function AdvisorDetail({
           {advisor.type === "internship" ? "实习岗位" : "导师"}
         </Label>
       </Stack>
+      {advisor.correctionNote && (
+        <Text as="p" size="small">
+          资料更正（{sourceDate(advisor.correctionNote.decidedAt)}）：
+          {advisor.correctionNote.reason}
+          。此对象由原先误合并的记录拆分而来，来源已按页面重新归属。
+        </Text>
+      )}
       <Text as="p">
         <Text weight="semibold">
           {advisor.type === "internship" ? "岗位方向与课题：" : "研究问题："}
@@ -828,19 +880,79 @@ function AdvisorDetail({
   );
 }
 
+function AssociationNotice({
+  note,
+  current,
+  onResolve,
+}: {
+  note: AssociationNote;
+  current: { name: string; institution: string };
+  onResolve: (choice: AssociationNote["options"][number]) => void;
+}) {
+  const [choice, setChoice] = useState("");
+  const before = `${note.previous.name}（${note.previous.institution}）`;
+  if (note.status !== "pending") {
+    return (
+      <Banner
+        variant="info"
+        layout="compact"
+        title="公开资料已更正"
+        description={
+          note.status === "relinked"
+            ? `原“${before}”是误合并的记录，已拆分为不同对象。根据这条记录保存的来源，它现在指向“${current.name}（${current.institution}）”。你的理由和待问没有改动。`
+            : `原“${before}”已拆分；已按你的选择指向“${current.name}（${current.institution}）”。你的理由和待问没有改动。`
+        }
+      />
+    );
+  }
+  const selected = note.options.find((item) => item.candidateId === choice);
+  return (
+    <Stack gap="condensed">
+      <Banner
+        variant="warning"
+        title="关联待确认"
+        description={`原“${before}”是误合并的记录，已拆分为${note.options.length}个不同对象。这条记录保存的来源无法确定指向哪一个，请你选择。理由和待问只跟随这条记录，不会复制给其他对象。`}
+      />
+      <Stack
+        direction={{ narrow: "vertical", regular: "horizontal" }}
+        gap="condensed"
+        align="end"
+      >
+        <FormControl>
+          <FormControl.Label>这条记录指的是</FormControl.Label>
+          <Select value={choice} onChange={(event) => setChoice(event.target.value)}>
+            <Select.Option value="">暂不确定</Select.Option>
+            {note.options.map((item) => (
+              <Select.Option key={item.candidateId} value={item.candidateId}>
+                {item.name}（{item.institution}）
+              </Select.Option>
+            ))}
+          </Select>
+        </FormControl>
+        <Button disabled={!selected} onClick={() => selected && onResolve(selected)}>
+          确认关联
+        </Button>
+      </Stack>
+    </Stack>
+  );
+}
+
 function SavedCandidate({
   record,
   onCompare,
   onUpdate,
   onRemove,
+  onResolve,
 }: {
   record: ExplorationTopic["candidates"][number];
   onCompare: () => void;
   onUpdate: (reason: string, questions: string[]) => void;
   onRemove: () => void;
+  onResolve: (choice: AssociationNote["options"][number]) => void;
 }) {
   const [reason, setReason] = useState(record.reason);
   const [question, setQuestion] = useState(record.questions.join("\n"));
+  const pending = record.association?.status === "pending";
   return (
     <Stack as="section" gap="normal">
       <Stack direction="horizontal" gap="condensed" align="center">
@@ -851,6 +963,13 @@ function SavedCandidate({
           {record.candidate.type === "internship" ? "实习岗位" : "导师"}
         </Label>
       </Stack>
+      {record.association && (
+        <AssociationNotice
+          note={record.association}
+          current={record.candidate}
+          onResolve={onResolve}
+        />
+      )}
       <Text as="p">{record.candidate.research}</Text>
       {record.candidate.sources.map((source, index) => (
         <SourceView
@@ -878,7 +997,9 @@ function SavedCandidate({
         />
       </FormControl>
       <Stack direction="horizontal" wrap="wrap">
-        <Button onClick={onCompare}>加入比较并查看</Button>
+        <Button onClick={onCompare} disabled={pending}>
+          加入比较并查看
+        </Button>
         <Button
           onClick={() =>
             onUpdate(
