@@ -7,7 +7,9 @@ export function comparisonCandidatesForTopic(
   topic?: ExplorationTopic,
 ): Advisor[] {
   const candidates = new Map(publicCandidates.map((item) => [item.candidateId, item]));
-  for (const { candidate } of topic?.candidates ?? []) {
+  for (const { candidate, association } of topic?.candidates ?? []) {
+    // A record whose object is still being confirmed after a split is not compared.
+    if (association?.status === "pending") continue;
     if (candidates.has(candidate.candidateId)) continue;
     candidates.set(candidate.candidateId, savedCandidateForComparison(candidate));
   }
