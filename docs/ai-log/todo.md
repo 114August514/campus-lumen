@@ -1,6 +1,6 @@
 # AI Log Todo
 
-Last updated: 2026-10-22
+Last updated: 2026-10-27
 
 This file records meaningful pending work for AI agents and collaborators.
 Keep entries short, dated, and actionable.
@@ -19,6 +19,14 @@ Keep entries short, dated, and actionable.
 ```
 
 ## Pending
+
+### 2026-10-27 - Follow up after high-priority demo integration
+
+- Source: User-authorized implementation of the October 26 audit priorities; completed facts are in done.md.
+- Status: `codex/demo-high-priority` includes remote `a374ab0` plus the verified discovery-to-comparison and data corrections. User authorized GitHub branch publication on 2026-10-27; remote main integration remains separate.
+- Remaining: Mistaken-association repair preserving private records/original references; optional preparation/knowledgeable-participant/resource connections; then complete task-design §7/G5 walkthrough. No new broad research, maintenance or account gate. External model integration remains optional and must obey selected-input/send-state boundaries if adopted.
+- Content: Old internship leads keep original timestamps/summaries but their unsupported conditions are explicitly unresolved. Obtain exact job-specific sources before restoring duration/location/mentoring/conversion claims; a different historical MSRA Shanghai job must remain a separate object.
+- Integration: Review this branch before main integration; older pending entries below are historical task sequencing, not evidence these high-priority features remain unimplemented. Publication verification compares the remote branch ref with local HEAD.
 
 ### 2026-10-22 - Continue after topic editing and bounded discovery
 

@@ -1,3 +1,5 @@
+import { internships } from "./advisors";
+
 // Opportunities, resources and rules across types, reused from the P1 research notes
 // (docs/constraints/opportunity-needs-map.md, mentor-source-reference.md,
 // tools/prototypes/opportunity-content.md). Facts are only what those notes record.
@@ -422,62 +424,26 @@ export const opportunities: Opportunity[] = [
       checkedAt: "2026-09-24",
     },
   },
-  {
-    id: "sh-ai-lab-eval-intern",
-    name: "上海人工智能实验室：开源大模型评测体系与工具链实习生",
-    types: ["internship", "research"],
-    timing: "standing",
-    period: "2026 年批次（招满即止）",
-    summary:
-      "参与 OpenCompass 核心模块研发，针对大语言模型开展评测套件与安全攻防工具链开发。",
-    conditions:
-      "要求计算机或相关专业在读；熟悉 Python/PyTorch；每周现场出勤至少 4 天，连续实习不少于 4 个月。",
-    support:
-      "高算力集群支持、资助与资深研究员联合指导；异地住宿与补贴需与 HR 进一步沟通。",
-    caveat: "实习招募不保证当届转正名额；需提前确认学校与导师的知情同意与报备。",
-    entry: {
-      label: "官方招聘说明",
-      url: "https://www.shlab.org.cn/careers/intern",
-      checkedAt: "2026-10-16",
-    },
-  },
-  {
-    id: "msra-systems-intern",
-    name: "微软亚洲研究院（MSRA）：异构系统与 AI 系统实习生",
-    types: ["internship", "research"],
-    timing: "standing",
-    period: "2026 年批次（招满即止）",
-    summary: "从事大规模分布式深度学习系统、通信拓扑优化与集群显存调度算法研发。",
-    conditions:
-      "掌握 C++/Python 及主流分布式框架；每周至少 4 天现场，实习期不少于 3 个月；需经导师书面同意。",
-    support:
-      "明日之星联合培养模式、资深系统研究员一对一指导、顶会论文发表支持与校招绿色通道。",
-    caveat: "需经导师书面同意并遵守全日制实习规定；具体入职日期需协调。",
-    entry: {
-      label: "MSRA 招聘主页",
-      url: "https://www.microsoft.com/en-us/research/lab/microsoft-research-asia/careers/",
-      checkedAt: "2026-10-16",
-    },
-  },
-  {
-    id: "bytedance-ai-lab-intern",
-    name: "字节跳动 AI Lab：大模型研究型实习生",
-    types: ["internship", "research"],
-    timing: "standing",
-    period: "2026 年批次（招满即止）",
-    summary:
-      "开展多模态生成、强化学习对齐与推理加速等前沿课题研究，推动技术在真实业务场景落地。",
-    conditions:
-      "硕士及以上在读（优秀本科生可放宽）；有顶会发表或高水平开源经历者优先；实习至少 3 个月。",
-    support:
-      "工业界海量计算资源与真实业务数据、团队 Mentor 指导、具有竞争力的实习津贴与转正机会。",
-    caveat: "岗位录取与名额竞争激烈，转正通道受当年度统招 HC 动态调配影响。",
-    entry: {
-      label: "字节跳动校园招聘",
-      url: "https://job.bytedance.com/campus/position",
-      checkedAt: "2026-10-16",
-    },
-  },
+  ...internships.map(
+    (candidate): Opportunity => ({
+      id:
+        candidate.candidateId === "bytedance-ai-systems-intern"
+          ? "bytedance-ai-lab-intern"
+          : candidate.candidateId,
+      name: `${candidate.institution}：${candidate.name}（待核线索）`,
+      types: ["internship", "research"],
+      timing: "unknown",
+      period: "2026-10-16旧批次；2026-10-26复核，当前状态待核",
+      summary: candidate.research,
+      conditions: candidate.participation,
+      caveat: candidate.unknowns,
+      entry: {
+        label: "原批次来源入口（需定位具体职位）",
+        url: candidate.sources[0].url,
+        checkedAt: "2026-10-26",
+      },
+    }),
+  ),
 ];
 
 export function findOpportunity(id: string): Opportunity | undefined {

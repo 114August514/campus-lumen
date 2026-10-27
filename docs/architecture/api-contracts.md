@@ -1,6 +1,6 @@
 # API Contracts
 
-Last updated: 2026-10-22
+Last updated: 2026-10-27
 
 Campus Lumen uses `contracts/openapi.json` as the committed API contract
 snapshot. The Rust API crate is the source of this contract.
@@ -54,8 +54,10 @@ regenerate the contract and review the diff before committing.
 
 `POST /api/v1/discoveries` is public (`security: []`). Its JSON body contains
 only `query`, a nonempty public query of at most 200 characters. It accepts
-either keywords or a single public HTTP(S) academic URL, subject to the same
-source restrictions as search results. There is no separate URL field and no
+either keywords or a single public HTTP(S) academic/supported recruitment URL, subject to the same
+host-and-path restrictions as search results. Exact opportunity destinations are
+listed in [Security](../operations/security.md#public-discovery-boundary); redirects,
+private-address checks and run bounds apply to every new host as well. There is no separate URL field and no
 browser-private reasons/preferences in the request.
 
 ```json

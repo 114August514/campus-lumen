@@ -1,6 +1,6 @@
 # Development
 
-Last updated: 2026-10-22
+Last updated: 2026-10-27
 
 ## Requirements
 
@@ -34,7 +34,7 @@ local while testing; the current two-request concurrency limit is not public
 service rate limiting.
 
 Try the public query `机器学习`. The API first attempts DuckDuckGo search and
-actual academic HTML reading. If the index is unavailable, it reads and matches
+actual academic or supported recruitment/project HTML reading. If the index is unavailable, it reads and matches
 the explicitly named Stanford AI and CMU ML directories. The page shows that
 limited scope and any failures; an empty match is not proof that no advisors
 exist. Search text is sent to DuckDuckGo; private topic notes are not. See
@@ -42,7 +42,7 @@ exist. Search text is sent to DuckDuckGo; private topic notes are not. See
 
 For candidate-specific follow-up when search is unavailable, select an already
 collected academic page in the follow-up view, then choose “读取原站正文”. You can
-also enter a public academic URL directly in the same query field. The API reads
+also enter a public academic or supported recruitment/project URL directly in the same query field. The API reads
 one allowed page, identifies `provider: direct_url`, and keeps its actual body,
 capture time and unknowns. It does not send that URL to the search engine.
 Only pages already collected with `web_read` appear in the candidate shortcut;
@@ -171,6 +171,29 @@ The current webpage's search button still calls the public HTML discovery API;
 it does not invoke Xiaohongshu. A browser collector adapter remains a next step if
 the repeated workflow warrants it. Tool comparisons and the executed trial are
 in [reuse research §9](../constraints/open-source-reuse-reference.md#9-skill).
+
+### 2026-10-27 discovery-to-comparison integration
+
+All saved candidate identities in the active topic can enter comparison, including
+manually confirmed new external objects. The selector combines public candidates
+with that topic only; private reasons/questions are read separately, never used
+as public query input. Removing an item from comparison does not delete its saved
+record. Switching topic resolves external candidate IDs again against that topic.
+
+For new objects, comparison shows retained body excerpts with source/time and
+labels user-entered descriptions as unverified. It does not synthesize eligibility
+or silently replace the curated Jiang/Song interpretations. Later source captures
+remain distinct evidence; explicitly saved snapshots and private notes survive
+reload. The generic internship comparison and opportunity entry now reuse the
+same corrected candidate fields, avoiding separate conflicting conditions.
+
+The October 16 internship batch keeps its original capture date and summaries,
+but the October 26 audit marks unsupported job-specific details as unresolved.
+The old MSRA three/six-month conflict is not resolved by borrowing another job's
+terms: the newly read [Shanghai system-group notice](https://www.microsoft.com/en-us/research/opportunity/research-intern-for-system-group-shanghai/?lang=zh-cn)
+is dated 2024-09-24 and cannot establish the identity or current conditions of
+the old distributed-training lead. Generic recruitment pages are entry points,
+not proof of current openings or job-specific mentoring/conversion promises.
 
 ## API Client
 

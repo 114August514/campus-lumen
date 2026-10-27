@@ -1,6 +1,6 @@
 # Privacy And Data Boundaries
 
-Last updated: 2026-10-22
+Last updated: 2026-10-27
 
 The current advisor-guide demo serves personal exploration, with public
 external discovery and saving in the current browser. It has no account,
@@ -25,7 +25,7 @@ inventory and audit/deletion assumptions are not the current product policy.
 
 - The discovery request contains only the query the user submits. Private
   reasons, saved questions and preferences are not automatically attached.
-- The query field is for public interest terms or public academic page URLs,
+- The query field is for public interest terms, public academic URLs or supported recruitment/project URLs,
   not private identity, contact information or authenticated links. Direct URL
   requests skip DuckDuckGo; keyword requests retain the existing search path.
   The service needs no third-party credentials.
@@ -79,7 +79,7 @@ deletion.
 
 ### Third Parties
 
-DuckDuckGo receives the submitted public query with academic-domain filters.
+DuckDuckGo receives the submitted public query with the academic and explicitly supported recruitment/project host filters.
 The backend fetches eligible pages, whose sites receive normal page requests;
 they do not receive the browser's saved reasons or questions. Only when local
 DNS returns synthetic `198.18.0.0/15` addresses does the backend send the

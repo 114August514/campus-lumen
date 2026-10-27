@@ -1,6 +1,6 @@
 # Quality Gates
 
-Last updated: 2026-10-04
+Last updated: 2026-10-27
 
 M0.1 turns the repository skeleton into a checked engineering loop.
 
@@ -28,6 +28,12 @@ managed by uv through `tools/docs/pyproject.toml` and `tools/docs/uv.lock`.
 
 Shared multi-step workflows live in `scripts/`. The scripts mirror CI jobs and
 can be run through `bun run ci:*` shortcuts from the repository root.
+
+AppleDouble `._*` files are operating-system metadata, not source or tests.
+Biome ignores that exact filename pattern. The Web and API-client test scripts
+enumerate their flat, non-hidden `tests/*.test.ts` (and Web `*.test.tsx`) files so
+metadata regenerated on an external disk cannot be parsed as a test. New nested
+test suites must extend these entry globs; do not exclude actual failing tests.
 
 Keep `.github/workflows/ci.yml` as one workflow while all jobs share pull
 request and `main` push triggers. Split workflows when a job needs a different

@@ -40,9 +40,9 @@ import {
   allBatches,
   allOpportunities,
   collectedBatches,
-  internships,
   sourceDate,
 } from "../lib/advisors";
+import { comparisonCandidatesForTopic } from "../lib/comparison-candidates";
 import { getFollowupQuery, getSupplementalSources } from "../lib/comparison-followup";
 import {
   type CandidateSnapshot,
@@ -95,20 +95,24 @@ export function App() {
     "all" | "advisor" | "internship"
   >("all");
   const activeTopic = topics.find((topic) => topic.id === topicId);
+  const availableCandidates = comparisonCandidatesForTopic(
+    allOpportunities,
+    activeTopic,
+  );
   const activeScenario = getScenario(
     candidateScenario === "all" ? "advisor" : candidateScenario,
   );
   const visibleCandidates =
     candidateScenario === "advisor"
-      ? advisors
+      ? availableCandidates.filter((item) => item.type !== "internship")
       : candidateScenario === "internship"
-        ? internships
-        : allOpportunities;
+        ? availableCandidates.filter((item) => item.type === "internship")
+        : availableCandidates;
   const advisor =
-    allOpportunities.find((item) => item.candidateId === selectedAdvisor) ??
+    availableCandidates.find((item) => item.candidateId === selectedAdvisor) ??
     advisors.find((item) => item.candidateId === selectedAdvisor);
   const comparisonCandidates = comparisonIds.flatMap((id) => {
-    const candidate = allOpportunities.find((item) => item.candidateId === id);
+    const candidate = availableCandidates.find((item) => item.candidateId === id);
     return candidate ? [candidate] : [];
   });
   const comparisonNotes = Object.fromEntries(
@@ -229,6 +233,28 @@ export function App() {
         `已把${candidate.name}的补充依据保存到“${activeTopic.name}”，可返回比较继续查看。`,
       );
     });
+  }
+
+  function toggleComparison(candidate: Advisor) {
+    const selected = comparisonCandidates.filter(
+      (item) => item.candidateId !== candidate.candidateId,
+    );
+    if (
+      selected.some(
+        (item) => (item.type === "internship") !== (candidate.type === "internship"),
+      )
+    ) {
+      setMessage("导师与实习岗位使用不同的比较问题；已切换到同类候选。");
+      setComparisonIds([candidate.candidateId]);
+    } else {
+      setComparisonIds((ids) =>
+        ids.includes(candidate.candidateId)
+          ? ids.filter((id) => id !== candidate.candidateId)
+          : [...ids, candidate.candidateId],
+      );
+    }
+    setPerspective(candidate.type === "internship" ? "role" : "research");
+    setFocus("open");
   }
 
   return (
@@ -379,7 +405,7 @@ export function App() {
           </Stack>
           {view === "home" ? (
             <ExploreHome
-              advisors={allOpportunities}
+              advisors={availableCandidates}
               onOpenAdvisors={() => setView("explore")}
               onOpenAdvisor={(candidateId) => {
                 setSelectedAdvisor(candidateId);
@@ -410,19 +436,19 @@ export function App() {
                     selected={candidateScenario === "all"}
                     onClick={() => setCandidateScenario("all")}
                   >
-                    {`全部（${allOpportunities.length}）`}
+                    {`全部（${availableCandidates.length}）`}
                   </SegmentedControl.Button>
                   <SegmentedControl.Button
                     selected={candidateScenario === "advisor"}
                     onClick={() => setCandidateScenario("advisor")}
                   >
-                    {`选导师（${advisors.length}）`}
+                    {`选导师（${availableCandidates.filter((item) => item.type !== "internship").length}）`}
                   </SegmentedControl.Button>
                   <SegmentedControl.Button
                     selected={candidateScenario === "internship"}
                     onClick={() => setCandidateScenario("internship")}
                   >
-                    {`找实习（${internships.length}）`}
+                    {`找实习（${availableCandidates.filter((item) => item.type === "internship").length}）`}
                   </SegmentedControl.Button>
                 </SegmentedControl>
               </Stack>
@@ -442,7 +468,9 @@ export function App() {
                 <Text as="p">
                   共{visibleCandidates.length}项候选，包含研究样稿、岗位与
                   {allBatches.length}
-                  次预采集资料；最近整理于{sourceDate(latestCollection.completedAt)}。
+                  次预采集资料；固定批次最近整理于
+                  {sourceDate(latestCollection.completedAt)}。
+                  当前主题新保存的来源按各自取得时间展示。
                   这里复用已保存的资料，不会实时重查。资料范围和仍待确认的信息见候选详情。
                 </Text>
                 <Stack direction="horizontal" wrap="wrap" align="center">
@@ -469,28 +497,16 @@ export function App() {
                   <Button onClick={() => setView("compare")}>
                     查看当前比较（{comparisonIds.length}）
                   </Button>
-                  {advisor &&
-                    (comparisonSupportedCandidateIds.includes(
-                      advisor.candidateId as (typeof comparisonSupportedCandidateIds)[number],
-                    ) ||
-                      internshipComparisonSupportedCandidateIds.includes(
-                        advisor.candidateId as (typeof internshipComparisonSupportedCandidateIds)[number],
-                      )) && (
-                      <Button
-                        aria-pressed={comparisonIds.includes(advisor.candidateId)}
-                        onClick={() =>
-                          setComparisonIds((ids) =>
-                            ids.includes(advisor.candidateId)
-                              ? ids.filter((id) => id !== advisor.candidateId)
-                              : [...ids, advisor.candidateId],
-                          )
-                        }
-                      >
-                        {comparisonIds.includes(advisor.candidateId)
-                          ? `取消比较${advisor.name}`
-                          : `加入比较${advisor.name}`}
-                      </Button>
-                    )}
+                  {advisor && (
+                    <Button
+                      aria-pressed={comparisonIds.includes(advisor.candidateId)}
+                      onClick={() => toggleComparison(advisor)}
+                    >
+                      {comparisonIds.includes(advisor.candidateId)
+                        ? `取消比较${advisor.name}`
+                        : `加入比较${advisor.name}`}
+                    </Button>
+                  )}
                 </Stack>
                 <ActionList showDividers selectionVariant="single">
                   {visibleCandidates.map((item) => (
@@ -624,6 +640,15 @@ export function App() {
                     <SavedCandidate
                       key={`${activeTopic.id}-${record.candidate.candidateId}`}
                       record={record}
+                      onCompare={() => {
+                        const candidate = availableCandidates.find(
+                          (item) => item.candidateId === record.candidate.candidateId,
+                        );
+                        if (!candidate) return;
+                        if (!comparisonIds.includes(candidate.candidateId))
+                          toggleComparison(candidate);
+                        setView("compare");
+                      }}
                       onUpdate={(reason, questions) =>
                         mutate(() => {
                           initial.store?.updateCandidate(
@@ -805,10 +830,12 @@ function AdvisorDetail({
 
 function SavedCandidate({
   record,
+  onCompare,
   onUpdate,
   onRemove,
 }: {
   record: ExplorationTopic["candidates"][number];
+  onCompare: () => void;
   onUpdate: (reason: string, questions: string[]) => void;
   onRemove: () => void;
 }) {
@@ -851,6 +878,7 @@ function SavedCandidate({
         />
       </FormControl>
       <Stack direction="horizontal" wrap="wrap">
+        <Button onClick={onCompare}>加入比较并查看</Button>
         <Button
           onClick={() =>
             onUpdate(

@@ -129,10 +129,16 @@ export function AdvisorComparison({
           {isInternship ? "实习岗位比较" : "候选比较"}
         </Heading>
         <Text as="p">
-          {isInternship
-            ? "这次比较复用2026年10月16日采集整理的实习岗位信息。岗位招聘要求与入职途径按来源分别说明，当期剩余HC与转正指标仍需面试确认。"
-            : "这次比较复用2026年10月5日采集的整理摘要。招生年份和途径按来源分别说明，当前名额与实际指导体验仍待了解。"}
+          按各候选的已有资料和你在当前主题确认的来源比较，时间与读取范围见依据。
+          新发现候选展示已读节选；尚未自动生成比较结论，当前名额、资格和实际体验仍需核实。
         </Text>
+        {candidates.some(
+          (candidate) => candidate.metadata?.verificationStatus === "needs-review",
+        ) && (
+          <Text as="p">
+            实习旧批次的具体岗位条件尚待核对；已撤下没有正文支持的时长、地点和转正承诺，原摘要保留为待核线索。
+          </Text>
+        )}
         <Stack direction="horizontal" wrap="wrap" align="center">
           <Button onClick={onReturn}>返回候选资料</Button>
           {candidates.map((candidate) => (

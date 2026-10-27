@@ -235,7 +235,7 @@ pub(crate) fn extend_contract(document: &mut Value) {
     document["paths"]["/api/v1/discoveries"] = json!({
         "post": {
             "operationId": "discoverSources",
-            "summary": "Live public-index search or direct reading of one allowed academic HTML URL",
+            "summary": "Live public-index search or direct reading of one allowed academic or recruitment HTML URL",
             "description": format!("{} {}", discovery::DISCOVERY_SCOPE, discovery::DIRECT_URL_SCOPE),
             "security": [],
             "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DiscoveryRequest" } } } },
@@ -248,7 +248,7 @@ pub(crate) fn extend_contract(document: &mut Value) {
         }
     });
     let schemas = &mut document["components"]["schemas"];
-    schemas["DiscoveryRequest"] = json!({ "type": "object", "additionalProperties": false, "required": ["query"], "properties": { "query": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Public interest terms sent to DuckDuckGo, or one complete HTTP(S) URL within the academic allowlist, read directly without search or directory fallback. Invalid or unsupported URLs are rejected. No private notes, identities, credentials or private links." } } });
+    schemas["DiscoveryRequest"] = json!({ "type": "object", "additionalProperties": false, "required": ["query"], "properties": { "query": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Public interest terms sent to DuckDuckGo, or one complete HTTP(S) URL within the academic/recruitment host-and-path allowlist, read directly without search or directory fallback. Invalid or unsupported URLs are rejected. No private notes, identities, credentials or private links." } } });
     schemas["DiscoveryResponse"] = json!({ "type": "object", "required": ["query", "provider", "scope", "status", "collectedAt", "sources", "warnings", "finished", "stopReason", "startedReads", "completedReads", "limits"], "properties": {
         "finished": { "type": "boolean" }, "stopReason": { "type": "string", "enum": ["", "time_limit", "source_limit"] }, "startedReads": { "type": "integer" }, "completedReads": { "type": "integer" }, "limits": { "$ref": "#/components/schemas/DiscoveryLimits" },
         "query": { "type": "string" }, "provider": { "type": "string", "enum": ["duckduckgo_html", "official_directory", "direct_url"] }, "scope": { "type": "string", "description": "Actual provider and bounded reading scope for this attempt." }, "status": { "type": "string", "enum": ["complete", "partial", "failed"] }, "collectedAt": { "type": "string", "format": "date-time" }, "sources": { "type": "array", "items": { "$ref": "#/components/schemas/DiscoverySource" } }, "warnings": { "type": "array", "items": { "$ref": "#/components/schemas/DiscoveryWarning" } }

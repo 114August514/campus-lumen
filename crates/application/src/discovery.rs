@@ -1,4 +1,4 @@
-//! Bounded live discovery: public-index search or one allowed academic HTML URL.
+//! Bounded live discovery: public-index search or one allowed academic/recruitment HTML URL.
 //! Source text is untrusted evidence, never executable instructions.
 use std::collections::HashSet;
 use std::net::{IpAddr, SocketAddr};
@@ -31,7 +31,21 @@ const PERSONAL_HOSTS: &[&str] = &[
     "jzuming.github.io",
     "songzhuoran.github.io",
 ];
-pub const DISCOVERY_SCOPE: &str = "DuckDuckGo公开索引中的高校与研究所网站（edu.cn、ac.cn、cas.cn、edu、edu.hk、ac.uk、edu.sg），及已核对的学术主页tqchen.com、xiangwang1223.github.io、xiongyingfei.github.io、cse.ust.hk、cs.hku.hk、www.cs.hku.hk、jzuming.github.io、songzhuoran.github.io；最多读取5个公开HTML页面，不覆盖全网、私域、PDF或需登录页面。";
+// Exact hosts and path prefixes only; do not allow arbitrary corporate/profile pages.
+const OPPORTUNITY_PATHS: &[(&str, &[&str])] = &[
+    (
+        "www.microsoft.com",
+        &[
+            "/en-us/research/opportunity",
+            "/en-us/research/lab/microsoft-research-asia/careers",
+        ],
+    ),
+    ("www.shlab.org.cn", &["/joinus", "/careers/intern"]),
+    ("jobs.bytedance.com", &["/campus/position"]),
+    ("job.bytedance.com", &["/campus/position"]),
+    ("github.com", &["/open-compass/opencompass"]),
+];
+pub const DISCOVERY_SCOPE: &str = "DuckDuckGo公开索引中的高校、研究所和已核对学术主页，以及限定路径内的微软研究招聘、上海AI实验室招聘、字节校园职位页和OpenCompass仓库。最多读取5个公开HTML页面；不覆盖全网、私域、PDF、需登录或必须运行JavaScript的页面。";
 pub const DIRECT_URL_SCOPE: &str = "仅直接读取所提交的一个范围内公开HTML页面（含通过相同校验的重定向），不使用搜索索引或备用目录；最多1,000,000字节、14秒，提取正文最多16,000字。未判断该页是否回答当前疑问，请阅读正文并核对对象；完整内容请到原站查看。";
 pub const DIRECTORY_SCOPE: &str = "公开索引本次不可用，改为实时读取并匹配两个有限公开目录：Stanford AI Laboratory导师目录（ai.stanford.edu/faculty/）、CMU Machine Learning导师目录（ml.cmu.edu/people/core-faculty）。仅返回目录正文命中，不是全网搜索或个人推荐；不代表当前招生。";
 const DIRECTORIES: &[(&str, &str)] = &[
@@ -228,6 +242,7 @@ async fn discover_steps(result: &mut DiscoveryResult, progress: &Progress) {
     let filter = SUFFIXES
         .iter()
         .chain(PERSONAL_HOSTS)
+        .chain(OPPORTUNITY_PATHS.iter().map(|(host, _)| host))
         .map(|suffix| format!("site:{suffix}"))
         .collect::<Vec<_>>()
         .join(" OR ");
@@ -624,7 +639,7 @@ async fn safe_get(mut url: Url, search: bool) -> Result<(Url, String), &'static 
             .no_proxy()
             .connect_timeout(Duration::from_secs(5))
             .timeout(Duration::from_secs(10))
-            .user_agent("CampusLumenDemo/0.1 (public academic discovery)")
+            .user_agent("CampusLumenDemo/0.1 (public opportunity discovery)")
             .resolve_to_addrs(host, &addresses)
             .build()
             .map_err(|_| "client_failed")?;
@@ -725,11 +740,35 @@ async fn public_addresses(host: &str, port: u16) -> Result<Vec<SocketAddr>, &'st
     Ok(addresses)
 }
 
+fn credential_key(key: &str) -> bool {
+    let key = key.to_ascii_lowercase();
+    let normalized = key.replace('-', "_");
+    normalized.split('_').any(|part| {
+        matches!(
+            part,
+            "token"
+                | "auth"
+                | "authorization"
+                | "session"
+                | "sessionid"
+                | "password"
+                | "credential"
+                | "apikey"
+        )
+    }) || normalized == "api_key"
+}
+
 fn allowed_url(url: &Url, search: bool) -> bool {
     if !matches!(url.scheme(), "http" | "https")
         || !url.username().is_empty()
         || url.password().is_some()
         || !matches!(url.port_or_known_default(), Some(80 | 443))
+        || url.query_pairs().any(|(key, _)| credential_key(&key))
+        || url.fragment().is_some_and(|fragment| {
+            fragment
+                .split('&')
+                .any(|part| credential_key(part.split('=').next().unwrap_or_default()))
+        })
     {
         return false;
     }
@@ -740,6 +779,12 @@ fn allowed_url(url: &Url, search: bool) -> bool {
         return host == SEARCH_HOST && url.scheme() == "https";
     }
     PERSONAL_HOSTS.contains(&host)
+        || OPPORTUNITY_PATHS.iter().any(|(allowed_host, prefixes)| {
+            host == *allowed_host
+                && prefixes.iter().any(|prefix| {
+                    url.path() == *prefix || url.path().starts_with(&format!("{prefix}/"))
+                })
+        })
         || SUFFIXES
             .iter()
             .any(|suffix| host == *suffix || host.ends_with(&format!(".{suffix}")))
@@ -861,6 +906,35 @@ mod tests {
             assert!(!public_ip(ip.parse().unwrap()));
         }
         assert!(public_ip("8.8.8.8".parse().unwrap()));
+    }
+
+    #[test]
+    fn opportunity_scope_accepts_exact_public_paths_and_rejects_neighbors() {
+        for url in [
+            "https://www.microsoft.com/en-us/research/opportunity/research-intern-for-system-group-shanghai/?lang=zh-cn",
+            "https://www.microsoft.com/en-us/research/lab/microsoft-research-asia/careers/",
+            "https://www.shlab.org.cn/joinus/detail/123?mode=campus",
+            "https://jobs.bytedance.com/campus/position/123",
+            "https://job.bytedance.com/campus/position",
+            "https://github.com/open-compass/opencompass/blob/main/README.md",
+        ] {
+            assert!(validate_query(url).is_ok(), "rejected {url}");
+        }
+        for url in [
+            "https://www.microsoft.com/account/",
+            "https://www.microsoft.com/en-us/research/opportunity-elsewhere/",
+            "https://www.shlab.org.cn/joinus-admin/",
+            "https://jobs.bytedance.com/login",
+            "https://nested.jobs.bytedance.com/campus/position",
+            "https://jobs.bytedance.com.evil.example/campus/position",
+            "https://github.com/someone/other-repo",
+            "https://github.com/open-compass/opencompass-private",
+            "https://github.com/open-compass/opencompass?access_token=private",
+            "https://jobs.bytedance.com/campus/position#session_id=private",
+            "https://jobs.bytedance.com/campus/position?api_key=private",
+        ] {
+            assert!(validate_query(url).is_err(), "accepted {url}");
+        }
     }
 
     #[test]

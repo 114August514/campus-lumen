@@ -55,7 +55,7 @@ export function DiscoveryPanel({
   const [research, setResearch] = useState("");
   const readingUrl = /^https?:\/\//i.test(query.trim());
   const knownPages = targetCandidate?.sources.filter(
-    (source) => source.collection?.method === "web_read",
+    (source) => source.collection?.method === "web_read" || source.kind === "live",
   );
   const hasCandidate = targetCandidate
     ? true
@@ -91,7 +91,7 @@ export function DiscoveryPanel({
               onChange={(event) => onQueryChange(event.target.value)}
               placeholder={
                 targetCandidate
-                  ? "输入公开关键词或学术网页链接"
+                  ? "输入公开关键词、学术或已支持的招聘网页链接"
                   : activeScenario.searchPlaceholder
               }
             />
@@ -103,20 +103,33 @@ export function DiscoveryPanel({
             <FormControl>
               <FormControl.Label>也可以选择已收录的官网页面</FormControl.Label>
               <Select
-                value={knownPages.some((source) => source.url === query) ? query : ""}
+                value={
+                  knownPages.some(
+                    (source) => (source.lookupUrl ?? source.url) === query,
+                  )
+                    ? query
+                    : ""
+                }
                 onChange={(event) => {
                   if (event.target.value) onQueryChange(event.target.value);
                 }}
               >
                 <Select.Option value="">选择一个页面，再点击读取</Select.Option>
                 {knownPages.map((source) => (
-                  <Select.Option key={source.url} value={source.url}>
+                  <Select.Option
+                    key={`${source.url}:${source.collectedAt}`}
+                    value={source.lookupUrl ?? source.url}
+                  >
                     {source.title}
                   </Select.Option>
                 ))}
               </Select>
             </FormControl>
           )}
+          <Text as="p" size="small">
+            支持学术网站及微软研究招聘、上海AI实验室招聘、字节校园职位页和OpenCompass仓库的公开HTML。
+            需要登录、动态加载或PDF的内容可能无法读取，请转原站查看。
+          </Text>
           <Text as="p" size="small">
             本轮服务端最多30秒、5个正文、6次读取（含检索）；每次读取最多14秒、1 MB。
             连同传输等待最多35秒。停止后保留已收到的正文，不自动重试；不调用收费模型或搜索API。
@@ -176,7 +189,7 @@ export function DiscoveryPanel({
           )}
           {result.sources.length === 0 && !runningQuery && (
             <Text as="p">
-              没有取得可展示的相关正文。可以换关键词，或先查看已有资料；这不代表没有相关导师。
+              没有取得可展示的相关正文。可以换关键词，或先查看已有资料；这不代表没有相关候选。
             </Text>
           )}
           {result.warnings.map((warning, index) => (

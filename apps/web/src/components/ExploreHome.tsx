@@ -138,7 +138,7 @@ export function ExploreHome({
           <ActionList.Item onSelect={onOpenAdvisors}>
             找导师
             <ActionList.Description variant="block">
-              按研究问题认识导师，比较参与途径，并对公开来源补查。目前收录{" "}
+              按问题认识导师与实习岗位，比较参与途径，并对公开来源补查。当前主题可查看{" "}
               {advisors.length} 名候选。
             </ActionList.Description>
           </ActionList.Item>
@@ -157,7 +157,7 @@ export function ExploreHome({
           ))}
         </ActionList>
         <Text as="p" size="small">
-          找导师是目前最完整的场景。其他类型目前提供入口与条件查询，比较和公开补查尚未覆盖。
+          导师与实习岗位支持比较和公开补查；其他类型提供入口与条件查询。
         </Text>
       </Stack>
     </Stack>

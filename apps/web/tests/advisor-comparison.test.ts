@@ -109,8 +109,8 @@ describe("source-bound advisor comparison", () => {
     };
     for (const row of buildComparisonRows([unsupported], "short-term")) {
       expect(row.cells[0].candidateId).toBe("not-yet-compared");
-      expect(row.cells[0].text).toContain("尚未整理");
-      expect(row.cells[0].sources).toEqual([]);
+      expect(row.cells[0].text.length).toBeGreaterThan(0);
+      expect(row.cells[0].sources).toEqual(unsupported.sources);
     }
   });
 });

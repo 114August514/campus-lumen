@@ -1,6 +1,6 @@
 # Security
 
-Last updated: 2026-10-12
+Last updated: 2026-10-27
 
 The current demo supports bounded public discovery and private browser-local
 explorations. Controls for identity, shared content, uploads and moderation
@@ -10,7 +10,7 @@ create current community or desktop tasks.
 ## Public Discovery Boundary
 
 The discovery endpoint accepts public interest terms or a single public
-academic HTTP(S) URL in `query`. Keywords are sent to the fixed DuckDuckGo HTML
+academic or supported recruitment HTTP(S) URL in `query`. Keywords are sent to the fixed DuckDuckGo HTML
 search endpoint; direct URLs are validated and read without sending them to the
 search provider or falling back to other pages. Retrieved page
 hosts must fall under `edu.cn`, `ac.cn`, `cas.cn`, `edu`, `edu.hk`, `ac.uk`, or
@@ -20,8 +20,17 @@ hosts must fall under `edu.cn`, `ac.cn`, `cas.cn`, `edu`, `edu.hk`, `ac.uk`, or
 personal-page hosts support the October 5 source-checked candidates. A permitted
 hostname is a reading boundary, not an endorsement of its claims.
 
+Supported opportunity paths also include exact hosts `www.microsoft.com`
+(`/en-us/research/opportunity` and `/en-us/research/lab/microsoft-research-asia/careers`),
+`www.shlab.org.cn` (`/joinus`, legacy `/careers/intern`), `jobs.bytedance.com`
+and legacy `job.bytedance.com` (`/campus/position`), and `github.com`
+(`/open-compass/opencompass`). A prefix matches only itself or slash-delimited
+children, not neighboring paths or other repositories. These destinations are
+included in keyword search filtering as well as direct reading. No login,
+corporate account, arbitrary GitHub repository or browser-session access is added.
+
 Every redirect is checked again. HTTP(S) only, allowed ports 80/443, and no URL
-credentials are accepted. Resolved private, loopback, link-local and other
+credentials, token/session query keys or token/session fragment keys are accepted. Resolved private, loopback, link-local and other
 blocked addresses are rejected; accepted addresses are pinned for the actual
 connection, with environment proxies disabled. When local DNS returns only
 synthetic `198.18.0.0/15` addresses, the service asks the fixed HTTPS endpoint

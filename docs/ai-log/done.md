@@ -1,6 +1,6 @@
 # AI Log Done
 
-Last updated: 2026-10-22
+Last updated: 2026-10-27
 
 This file records completed agent-visible work. Keep entries factual and link
 them to commits, files, and verification commands where possible.
@@ -18,6 +18,34 @@ them to commits, files, and verification commands where possible.
 ```
 
 ## Completed
+
+### 2026-10-27 - Prepare high-priority demo branch for GitHub delivery
+
+- Source: User requested pushing the completed work to GitHub.
+- Scope: Commit the scoped demo implementation, its two new comparison files, tests, generated OpenAPI and related docs on `codex/demo-high-priority`; exclude unrelated `.claude/`, old `tools/discovery-trial/` output and ignored work artifacts. No PR or main merge requested.
+- Verification: Rechecked working/staged scope and `git diff --check`; prior runtime, browser and build evidence is recorded below. Publication completion is verified against the remote branch ref after pushing; this entry records delivery preparation, not remote CI success.
+
+### 2026-10-27 - Integrate high-priority demo fixes
+
+- Source: User asked to implement the high-priority audit items, then continue. Result is local on `codex/demo-high-priority`, fast-forwarded from main `7fae667` through remote `51e81dd`/`a374ab0`; prior audit log entries and untracked files preserved. No remote push/merge.
+- Result: Campus Lumen naming, explicit topic editing and bounded cancellable streaming are integrated. Current-topic saved external candidates can enter comparison from saved records or the candidate list; retained body excerpts/sources/time are shown without inventing semantic conclusions. Topic-only resolution excludes other topics' saved objects/private notes. Repeated evidence saving preserves deduplication and private reasons; existing curated advisor interpretations remain separate from supplemental evidence.
+- Content: Removed unsupported job-specific conditions and quality endorsements from internship comparison; detail/comparison/opportunity entry now reuse one set of corrected candidate fields. Original October 16 summaries remain labelled as unverified historical leads. MSRA's three/six-month conflict stays unresolved; the freshly read 2024 Shanghai systems notice is a different unconfirmed job identity, not grounds to overwrite the old distributed-training lead. Source review is documented in development.md and task design §8.7.
+- Discovery: Added exact-host, slash-delimited paths for Microsoft Research opportunities/careers, Shanghai AI Lab recruitment, ByteDance campus positions and the OpenCompass repository. Kept address pinning, private-IP/redirect/size/time/concurrency limits; query/fragment credential-key inputs are rejected. Updated OpenAPI and backend/API/security/privacy docs; no model, paid provider or credential/session integration.
+- Fresh checks: `bun run ci:frontend` passed (17 API-client + 75 Web tests, types, lint, UI checks and build; existing ~840 kB JS warning). `CARGO_TARGET_DIR=/tmp/campus-lumen-target-20261027 cargo test --workspace` passed 24 tests; `cargo clippy --workspace --all-targets -- -D warnings` and cargo formatting passed. `bun run api:types` regenerated the contract; strict `bun run ci:docs` passed with `UV_PROJECT_ENVIRONMENT=/tmp/campus-lumen-docs-venv UV_CACHE_DIR=/tmp/campus-lumen-uv-cache UV_LINK_MODE=copy`. Live database migration/container/desktop checks were not rerun because no corresponding behavior changed.
+- Actual walkthrough: Local API directly read the Microsoft Shanghai systems job page (one 2,777-character body). Browser on isolated test origin `127.0.0.1:5186` saved a new historical-job object, compared it alongside an old lead, saved a synthetic reason, edited topic conditions, reloaded and restored, then verified the second topic has no copied object/private record. Production client/run controller against the real API stopped on the first body snapshot (`sources=1`, `finished=false`) and retained it in cancelled state. Shanghai AI Lab joinus also returned one body; ByteDance campus HTML fetch failed truthfully without substituting stored data. No real student data or private content was sent. Screenshot and disposable script remain ignored under `work/2026-10-26-demo-high-priority/`.
+- Environment: Installed Rust and uv through Homebrew to perform fresh checks. Moved 40 untracked AppleDouble metadata files into ignored work for preservation; the OS regenerated metadata, so Biome now excludes only `**/._*` and the flat Web/API-client test entry globs exclude hidden files. Standard frontend checks then passed with regenerated metadata still present. The separate existing Git pack sidecar diagnostic remains. Initial MkDocs import failure on the external-drive venv was resolved using a fresh temporary venv. Runtime code does not depend on work files or those temporary environments.
+- Follow-up: Review/publish the local changes when requested; association repair, optional preparation/contact help, optional AI sending and full demo/student-benefit acceptance remain separate. Existing browser topics and the storage key/version were not migrated.
+
+
+### 2026-10-26 - Audit current demo completeness
+
+- Source: User asked what remains unfinished after pulling the renamed repository.
+- Baseline: Local main and origin/main at `7fae667`. Reviewed requirements handoff §8.2, task design §7–8, milestones, logs, Web/API/store code and remote development-branch diff. No runtime implementation or branch integration changed.
+- Implemented: Seven advisor and three internship candidates, multi-type entry/resource browsing, source-bound curated comparison, public HTML discovery/direct read, topic-private candidate/opportunity notes and persisted evidence. Browser on a separate local origin (`127.0.0.1:5186`) showed the candidates and internship comparison; selecting time requirements displayed MSRA's three-month text. Did not create personal records or send external queries.
+- Findings: Batch/detail says MSRA requires six months while comparison/entry says three; several detailed location/mentoring/conversion claims lack supporting text in the retained source summaries. New external candidates can be saved but comparison resolves only the static candidate list; deep profiles cover two advisors/two internships. Live discovery remains academic-domain-only, excluding the displayed industrial recruitment domains. Main lacks topic editing UI, cancellation/streaming, association repair and complete optional preparation/contact flow; general resource entries do exist. Curated interpretations do not update automatically from supplemental evidence.
+- Branch distinction: Remote `feat/topic-edit-and-bounded-discovery` has two commits absent from main: `51e81dd` (Campus Lumen rename/workspace docs) and `a374ab0` (topic editing and bounded cancellable streaming). Its log reports prior checks, which were not reexecuted here; no open PR was returned by the current GitHub search. Main still displays Campus Agora.
+- Fresh verification: `bun run ci:frontend` failed when Biome/Bun scanned local `._*` AppleDouble files; initial typecheck and UI-source rules passed. Explicit normal test paths passed (14 API-client + 65 Web tests), and Biome on 16 tracked Web source/data files passed. `bun run build` passed (main JS 829.61 kB / 213.00 kB gzip warning). No browser console warnings/errors were returned in the inspected session. No backend/live external discovery verification or strict MkDocs build: cargo/rustc/uv are not on PATH and localhost:8080 refused the health request. This audit is not full demo acceptance or student-benefit evidence.
+- Changed: AI logs only. Follow-up priorities remain in todo.md; no automatic merge, AI integration, data correction or remote publication.
 
 ### 2026-10-22 - Implement topic conditions and bounded cancellable discovery
 
