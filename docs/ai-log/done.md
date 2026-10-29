@@ -19,6 +19,13 @@ them to commits, files, and verification commands where possible.
 
 ## Completed
 
+### 2026-10-29 - Add USTC 词元计划 to the feasibility analysis
+
+- Source: User pointed out that campus resources such as 词元计划 give students API keys.
+- Result: `docs/project/feasibility.md` §2.1 records public facts read 2026-10-29. Sources: the platform user guide (project + API Key model, OpenAI-compatible `https://api.llm.ustc.edu.cn/v1`, keys kept server-side, 429 on quota), the model page (DeepSeek-V4-Flash 1M context, Qwen3.6, DeepSeek-V4-Pro) and the network-center 成长营 README (student-eligible models and multipliers; quota 30M/3h, 70M/12h, 100M/24h tokens). One analysis request (about 55k tokens) at 2× allows about 270 per 3h and 900 per day. Two integration options: a team key held server-side (the platform's recommended pattern, works for external judges) or student-supplied keys forwarded without storage. Economic, risk and legal sections and the conclusion now prefer the campus platform; commercial prices remain as the off-campus fallback.
+- Unverified: logged-in terms (logging and retention), whether quota is per account or per project, and whether one project key may serve many students. These are confirmation items, not adopted decisions.
+- Process note: the 2026-09-24 finding about 词元计划 had not been promoted into feasibility; recorded in `retrospective.md`.
+
 ### 2026-10-29 - Repair software-engineering documentation and record process gaps
 
 - Source: After an audit of missing, over-constrained and superficial items, the user chose to fix documentation first.
