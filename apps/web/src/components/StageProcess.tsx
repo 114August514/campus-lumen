@@ -238,7 +238,9 @@ export function StageProcess({
           {conflicts.map(({ item, conflict }) => (
             <InlineMessage variant="warning" key={`${item.id}-${conflict.topic}`}>
               {item.name} · {conflict.topic}存在不同说法：
-              {conflict.versions.map((version) => version.text).join(" ／ ")}
+              {conflict.versions
+                .map((version) => version.text.replace(/。$/, ""))
+                .join(" ／ ")}
               。保留待核，不自行判定。
             </InlineMessage>
           ))}
