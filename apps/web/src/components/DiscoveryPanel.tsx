@@ -2,6 +2,7 @@ import { SearchIcon } from "@primer/octicons-react";
 import {
   Banner,
   Button,
+  Details,
   FormControl,
   Heading,
   Select,
@@ -9,7 +10,7 @@ import {
   Text,
   TextInput,
 } from "@primer/react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { type Advisor, allOpportunities } from "../lib/advisors";
 import { type DiscoveryRunState, createDiscoveryRun } from "../lib/discovery-run";
 import type { CandidateSnapshot, SourceSnapshot } from "../lib/exploration-store";
@@ -38,6 +39,7 @@ export function DiscoveryPanel({
   candidateList = allOpportunities,
 }: Props) {
   const activeScenario = scenario ?? getScenario("advisor");
+  const headingId = useId();
   const [runState, setRunState] = useState<DiscoveryRunState>({
     query: "",
     phase: "idle",
@@ -68,7 +70,10 @@ export function DiscoveryPanel({
   }
 
   return (
-    <Stack gap="normal" as="section">
+    <Stack gap="normal" as="section" aria-labelledby={headingId}>
+      <Heading as="h2" variant="medium" id={headingId}>
+        补查外部资料
+      </Heading>
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -117,13 +122,18 @@ export function DiscoveryPanel({
               </Select>
             </FormControl>
           )}
-          <Text as="p" size="small">
-            本轮服务端最多30秒、5个正文、6次读取（含检索）；每次读取最多14秒、1 MB。
-            连同传输等待最多35秒。停止后保留已收到的正文，不自动重试；不调用收费模型或搜索API。
-          </Text>
-          <Text as="p" size="small">
-            外部HTTP请求最多48次，包含重定向与地址解析备用请求。
-          </Text>
+          <Details>
+            <Details.Summary>本轮查找的上限与停止说明</Details.Summary>
+            <Stack gap="condensed" paddingBlock="normal">
+              <Text as="p" size="small">
+                本轮服务端最多30秒、5个正文、6次读取（含检索）；每次读取最多14秒、1
+                MB。连同传输等待最多35秒。停止后保留已收到的正文，不自动重试；不调用收费模型或搜索API。
+              </Text>
+              <Text as="p" size="small">
+                外部HTTP请求最多48次，包含重定向与地址解析备用请求。
+              </Text>
+            </Stack>
+          </Details>
           <Stack direction="horizontal" align="center" wrap="wrap">
             <Button type="submit" leadingVisual={SearchIcon} disabled={!query.trim()}>
               {runningQuery
@@ -162,7 +172,7 @@ export function DiscoveryPanel({
       </div>
       {result && (
         <Stack gap="normal">
-          <Heading as="h2" variant="small">
+          <Heading as="h2" variant="medium">
             本次外部资料
           </Heading>
           <Text as="p">
@@ -258,6 +268,21 @@ export function DiscoveryPanel({
               </FormControl>
             </Stack>
           )}
+          {result.sources.length > 0 && !canSave && !targetCandidate && (
+            <Text as="p">
+              想保存这些依据时，先在页面顶部选择或创建主题；现在可以直接阅读。
+            </Text>
+          )}
+          {result.sources.length > 0 &&
+            canSave &&
+            !targetCandidate &&
+            !hasCandidate && (
+              <Text as="p">
+                保存前，先在上方选择这条依据关联的
+                {activeScenario.candidateEntityName}
+                （或自行填写新{activeScenario.candidateEntityName}）。
+              </Text>
+            )}
           {result.sources.map((source) => {
             const snapshot: SourceSnapshot = {
               url: source.url,

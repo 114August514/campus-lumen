@@ -55,12 +55,17 @@ export function OpportunityBrowser({
     .filter((item) => !hideEnded || item.timing !== "historical")
     .sort((a, b) => timingOrder[a.timing] - timingOrder[b.timing]);
   const hidden = inScope.length - shown.length;
+  const hasFilters = Boolean(query.trim() || type || hideEnded);
+
+  function clearFilters() {
+    setQuery("");
+    onTypeChange("");
+    setHideEnded(false);
+  }
 
   return (
     <Stack as="section" gap="normal">
-      <Heading as="h2" variant="small">
-        机会与入口
-      </Heading>
+      <Heading as="h1">机会与入口</Heading>
       <Text as="p">
         科研、升学、实习、竞赛、交流、活动、资源与规则的入口和适用条件。找到入口即可结束；名额与截止日期以原站为准。
       </Text>
@@ -101,23 +106,41 @@ export function OpportunityBrowser({
           <FormControl.Label>隐藏已结束的批次</FormControl.Label>
         </FormControl>
       </Stack>
-      <Text as="p" size="small">
-        共 {shown.length} 项{hidden > 0 && `，另有 ${hidden} 项已结束的批次已隐藏`}。
-        {!canSave && " 想保留时，先在上方选择或创建主题。"}
-      </Text>
-      {shown.length === 0 && (
-        <Text as="p">
-          当前收录中没有找到。这不代表没有相关机会，可以换个关键词或类型，或到学校、院系官网查找。
+      <Stack
+        direction="horizontal"
+        justify="space-between"
+        align="center"
+        wrap="wrap"
+        gap="condensed"
+      >
+        <Text as="output" size="small">
+          共 {shown.length} 项{hidden > 0 && `，另有 ${hidden} 项已结束的批次已隐藏`}。
+          {!canSave && " 想保留时，先在上方选择或创建主题。"}
         </Text>
+        {hasFilters && shown.length > 0 && (
+          <Button size="small" variant="invisible" onClick={clearFilters}>
+            清除筛选
+          </Button>
+        )}
+      </Stack>
+      {shown.length === 0 && (
+        <Stack gap="normal" align="start">
+          <Text as="p">
+            当前收录中没有找到。这不代表没有相关机会，可以换个关键词或类型，或到学校、院系官网查找。
+          </Text>
+          {hasFilters && <Button onClick={clearFilters}>清除筛选，查看全部</Button>}
+        </Stack>
       )}
-      {shown.map((item) => (
-        <OpportunityItem
-          key={item.id}
-          opportunity={item}
-          canSave={canSave}
-          onSave={() => onSave(item)}
-        />
-      ))}
+      <Stack gap="spacious">
+        {shown.map((item) => (
+          <OpportunityItem
+            key={item.id}
+            opportunity={item}
+            canSave={canSave}
+            onSave={() => onSave(item)}
+          />
+        ))}
+      </Stack>
     </Stack>
   );
 }
@@ -138,7 +161,7 @@ function OpportunityItem({
       gap="condensed"
       aria-labelledby={`opportunity-${opportunity.id}`}
     >
-      <Heading as="h3" variant="small" id={`opportunity-${opportunity.id}`}>
+      <Heading as="h2" variant="medium" id={`opportunity-${opportunity.id}`}>
         <Link href={opportunity.entry.url} target="_blank" rel="noreferrer">
           {opportunity.name} <LinkExternalIcon aria-label="在新窗口打开原站" />
         </Link>

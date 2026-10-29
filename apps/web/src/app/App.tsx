@@ -1,8 +1,20 @@
-import { BookmarkIcon } from "@primer/octicons-react";
+import {
+  BookmarkIcon,
+  HomeIcon,
+  LinkIcon,
+  MoonIcon,
+  PeopleIcon,
+  PlusIcon,
+  SunIcon,
+  TableIcon,
+} from "@primer/octicons-react";
 import {
   ActionList,
+  ActionMenu,
   Banner,
   Button,
+  CounterLabel,
+  Details,
   FormControl,
   Heading,
   Label,
@@ -16,16 +28,20 @@ import {
   Textarea,
   UnderlineNav,
 } from "@primer/react";
-import { useState } from "react";
+import { Hidden } from "@primer/react/experimental";
+import { useEffect, useState } from "react";
+import brandMark from "../assets/campus-lumen-mark.svg";
 import {
   AdvisorComparison,
   type ComparisonNotes,
 } from "../components/AdvisorComparison";
+import { AdvisorDetail } from "../components/AdvisorDetail";
 import { DiscoveryPanel } from "../components/DiscoveryPanel";
 import { ExploreHome } from "../components/ExploreHome";
 import { OpportunityBrowser } from "../components/OpportunityBrowser";
 import { SourceView } from "../components/SourceView";
 import { TopicEditor } from "../components/TopicEditor";
+import { TopicSessionItem } from "../components/TopicSessionItem";
 import {
   type AnyComparisonFocus,
   type AnyComparisonPerspective,
@@ -42,6 +58,7 @@ import {
   collectedBatches,
   internships,
   sourceDate,
+  sourceSummary,
 } from "../lib/advisors";
 import { getFollowupQuery, getSupplementalSources } from "../lib/comparison-followup";
 import {
@@ -57,23 +74,66 @@ import {
   opportunityTypeText,
 } from "../lib/opportunities";
 
+// Additive resume pointer for the session-style topic organization: the last
+// opened exploration topic is remembered separately from the topic records, so
+// reopening the app resumes that session. The v1 explorations key and data
+// shape are untouched; a missing or unreadable pointer falls back silently.
+export const LAST_TOPIC_STORAGE_KEY = "campus-agora:last-topic:v1";
+
+// null = no pointer stored (legacy install) or unreadable; "" = the user
+// explicitly chose "暂不保存"; any other value is a topic id to resume.
+function readLastTopicId(): string | null {
+  try {
+    return window.localStorage.getItem(LAST_TOPIC_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+// An explicit "暂不保存" choice stays topic-less across reloads; only a
+// missing, unreadable or stale pointer falls back to the first topic.
+export function resolveInitialTopicId(
+  topics: ExplorationTopic[],
+  lastId: string | null,
+): string {
+  if (lastId === "") return "";
+  if (lastId !== null && topics.some((topic) => topic.id === lastId)) {
+    return lastId;
+  }
+  return topics[0]?.id ?? "";
+}
+
 function loadExplorations() {
   try {
     const store = createExplorationStore(window.localStorage);
-    return { store, topics: store.listTopics(), error: "" };
+    const topics = store.listTopics();
+    const topicId = resolveInitialTopicId(topics, readLastTopicId());
+    return { store, topics, topicId, error: "" };
   } catch (error) {
     return {
       store: null,
       topics: [] as ExplorationTopic[],
+      topicId: "",
       error: `本地保存不可用：${error instanceof Error ? error.message : "无法读取浏览器资料"}。仍可以浏览和查找。`,
     };
   }
 }
 
-export function App() {
+/** Most recently active explorations first, like a session list. */
+export function byRecency(topics: ExplorationTopic[]): ExplorationTopic[] {
+  return [...topics].sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+}
+
+export function App({
+  colorMode,
+  onToggleColorMode,
+}: {
+  colorMode: "day" | "night";
+  onToggleColorMode: () => void;
+}) {
   const [initial] = useState(loadExplorations);
   const [topics, setTopics] = useState(initial.topics);
-  const [topicId, setTopicId] = useState(initial.topics[0]?.id ?? "");
+  const [topicId, setTopicIdState] = useState(initial.topicId);
   const [view, setView] = useState<
     "home" | "explore" | "opportunities" | "saved" | "compare" | "followup"
   >("home");
@@ -88,12 +148,35 @@ export function App() {
   const [query, setQuery] = useState("AI systems compiler Tianqi Chen");
   const [selectedAdvisor, setSelectedAdvisor] = useState("tianqi-chen");
   const [topicName, setTopicName] = useState("");
+  const [creatingTopic, setCreatingTopic] = useState(false);
   const [error, setError] = useState(initial.error);
   const [message, setMessage] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [candidateScenario, setCandidateScenario] = useState<
     "all" | "advisor" | "internship"
   >("all");
+
+  function navigate(next: typeof view) {
+    setView(next);
+    setMessage("");
+    setDeleteConfirm(false);
+  }
+
+  // Switching the active exploration session: state plus the resume pointer.
+  function selectTopic(id: string) {
+    setTopicIdState(id);
+    try {
+      window.localStorage.setItem(LAST_TOPIC_STORAGE_KEY, id);
+    } catch {
+      // Resume is best-effort; switching sessions still works in-page.
+    }
+  }
+
+  // Switching views starts each page from the top, like following a link.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll to top whenever the view changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [view]);
   const activeTopic = topics.find((topic) => topic.id === topicId);
   const activeScenario = getScenario(
     candidateScenario === "all" ? "advisor" : candidateScenario,
@@ -104,9 +187,22 @@ export function App() {
       : candidateScenario === "internship"
         ? internships
         : allOpportunities;
-  const advisor =
-    allOpportunities.find((item) => item.candidateId === selectedAdvisor) ??
-    advisors.find((item) => item.candidateId === selectedAdvisor);
+  const advisor = visibleCandidates.some((item) => item.candidateId === selectedAdvisor)
+    ? visibleCandidates.find((item) => item.candidateId === selectedAdvisor)
+    : visibleCandidates[0];
+
+  function changeScenario(next: "all" | "advisor" | "internship") {
+    setCandidateScenario(next);
+    const nextList =
+      next === "advisor"
+        ? advisors
+        : next === "internship"
+          ? internships
+          : allOpportunities;
+    if (!nextList.some((item) => item.candidateId === selectedAdvisor)) {
+      setSelectedAdvisor(nextList[0]?.candidateId ?? "");
+    }
+  }
   const comparisonCandidates = comparisonIds.flatMap((id) => {
     const candidate = allOpportunities.find((item) => item.candidateId === id);
     return candidate ? [candidate] : [];
@@ -217,7 +313,7 @@ export function App() {
     setQuery(getFollowupQuery(candidate, perspective));
     setError("");
     setMessage("");
-    setView("followup");
+    navigate("followup");
   }
 
   function saveSupplemental(candidate: CandidateSnapshot) {
@@ -231,64 +327,113 @@ export function App() {
     });
   }
 
+  const navSection = view === "followup" ? "compare" : view;
+  const navItems: {
+    id: "home" | "explore" | "opportunities" | "compare" | "saved";
+    label: string;
+    icon: typeof PeopleIcon;
+    counter?: number;
+  }[] = [
+    { id: "home", label: "首页", icon: HomeIcon },
+    { id: "explore", label: "找导师", icon: PeopleIcon },
+    { id: "opportunities", label: "机会与入口", icon: LinkIcon },
+    {
+      id: "compare",
+      label: "比较",
+      icon: TableIcon,
+      counter: comparisonIds.length || undefined,
+    },
+    {
+      id: "saved",
+      label: "我的探索",
+      icon: BookmarkIcon,
+      counter: topics.length || undefined,
+    },
+  ];
+  const currentItem = navItems.find((item) => item.id === navSection) ?? navItems[0];
+
   return (
-    <PageLayout containerWidth="large" padding="normal">
+    <PageLayout containerWidth="large" padding="normal" rowGap="normal">
       <PageLayout.Header>
-        <Stack gap="condensed">
-          <Heading as="h1" variant="medium">
-            Campus Lumen
-          </Heading>
-          <UnderlineNav aria-label="主导航" variant="flush">
-            <UnderlineNav.Item
-              aria-current={view === "home" ? "page" : undefined}
-              onSelect={(event) => {
-                event.preventDefault();
-                setView("home");
-              }}
+        <Stack gap="normal">
+          <Stack
+            direction="horizontal"
+            align="center"
+            justify="space-between"
+            gap="normal"
+          >
+            <Button
+              variant="invisible"
+              onClick={() => navigate("home")}
+              aria-label="Campus Lumen 首页"
             >
-              探索
-            </UnderlineNav.Item>
-            <UnderlineNav.Item
-              aria-current={view === "explore" ? "page" : undefined}
-              onSelect={(event) => {
-                event.preventDefault();
-                setView("explore");
-              }}
+              <Stack as="span" direction="horizontal" align="center" gap="condensed">
+                <img src={brandMark} width={28} height={28} alt="" />
+                <Text size="large" weight="semibold">
+                  Campus Lumen
+                </Text>
+              </Stack>
+            </Button>
+            <Button
+              variant="invisible"
+              size="small"
+              leadingVisual={colorMode === "day" ? MoonIcon : SunIcon}
+              onClick={onToggleColorMode}
+              aria-label={`切换到${colorMode === "day" ? "深色" : "浅色"}模式`}
             >
-              找导师
-            </UnderlineNav.Item>
-            <UnderlineNav.Item
-              aria-current={view === "opportunities" ? "page" : undefined}
-              onSelect={(event) => {
-                event.preventDefault();
-                setView("opportunities");
-              }}
-            >
-              机会与入口
-            </UnderlineNav.Item>
-            <UnderlineNav.Item
-              counter={comparisonIds.length}
-              aria-current={
-                view === "compare" || view === "followup" ? "page" : undefined
-              }
-              onSelect={(event) => {
-                event.preventDefault();
-                setView("compare");
-              }}
-            >
-              比较
-            </UnderlineNav.Item>
-            <UnderlineNav.Item
-              counter={topics.length}
-              aria-current={view === "saved" ? "page" : undefined}
-              onSelect={(event) => {
-                event.preventDefault();
-                setView("saved");
-              }}
-            >
-              我的探索
-            </UnderlineNav.Item>
-          </UnderlineNav>
+              {colorMode === "day" ? "深色模式" : "浅色模式"}
+            </Button>
+          </Stack>
+          <Hidden when="narrow">
+            <UnderlineNav aria-label="主导航" variant="flush">
+              {navItems.map((item) => (
+                <UnderlineNav.Item
+                  key={item.id}
+                  icon={item.icon}
+                  counter={item.counter}
+                  aria-current={navSection === item.id ? "page" : undefined}
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    navigate(item.id);
+                  }}
+                >
+                  {item.label}
+                </UnderlineNav.Item>
+              ))}
+            </UnderlineNav>
+          </Hidden>
+          <Hidden when={["regular", "wide"]}>
+            <ActionMenu>
+              <ActionMenu.Button aria-label={`页面导航：${currentItem.label}`}>
+                {currentItem.label}{" "}
+                {currentItem.counter && (
+                  <CounterLabel>{currentItem.counter}</CounterLabel>
+                )}
+              </ActionMenu.Button>
+              <ActionMenu.Overlay>
+                <ActionList aria-label="主导航">
+                  {navItems.map((item) => (
+                    <ActionList.Item
+                      key={item.id}
+                      active={navSection === item.id}
+                      aria-current={navSection === item.id ? "page" : undefined}
+                      onSelect={() => navigate(item.id)}
+                    >
+                      <ActionList.LeadingVisual>
+                        <item.icon />
+                      </ActionList.LeadingVisual>
+                      {item.label}
+                      {item.counter && (
+                        <ActionList.TrailingVisual>
+                          <CounterLabel>{item.counter}</CounterLabel>
+                        </ActionList.TrailingVisual>
+                      )}
+                    </ActionList.Item>
+                  ))}
+                </ActionList>
+              </ActionMenu.Overlay>
+            </ActionMenu>
+          </Hidden>
         </Stack>
       </PageLayout.Header>
       <PageLayout.Content width="large">
@@ -297,98 +442,154 @@ export function App() {
             {message && <Banner variant="success" layout="compact" title={message} />}
             {error && <Banner variant="critical" layout="compact" title={error} />}
           </div>
-          <Stack
-            direction={{ narrow: "vertical", regular: "horizontal" }}
-            gap="normal"
-            align="start"
-          >
-            <FormControl>
-              <FormControl.Label>当前探索主题</FormControl.Label>
-              <Select
-                value={topicId}
-                onChange={(event) => {
-                  setTopicId(event.target.value);
-                  setDeleteConfirm(false);
-                  setMessage("");
-                }}
-              >
-                <Select.Option value="">暂不保存</Select.Option>
-                {topics.map((topic) => (
-                  <Select.Option key={topic.id} value={topic.id}>
-                    {topic.name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </FormControl>
-            {activeTopic && initial.store && (
-              <TopicEditor
-                key={activeTopic.id}
-                topic={activeTopic}
-                onSave={(patch) => {
-                  if (!initial.store)
-                    throw new Error("浏览器保存不可用，编辑内容已保留。");
-                  initial.store.updateTopic(activeTopic.id, patch);
-                  setTopics(initial.store.listTopics());
-                  setError("");
-                  setMessage(
-                    "主题条件已保存。已有候选、依据和私人记录保持原样；查找内容需另行修改并提交。",
-                  );
-                }}
-              />
-            )}
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                mutate(() => {
-                  const created = initial.store?.createTopic({
-                    name: topicName,
-                    question:
-                      view === "home" || view === "opportunities" || view === "saved"
-                        ? ""
-                        : view === "compare"
-                          ? `了解${comparisonCandidates.map((item) => item.name).join("、") || "候选"}的${perspective === "research" ? "研究内容" : perspective === "graduate" ? "读研参与途径" : perspective === "role" ? "业务职责" : perspective === "growth" ? "转正与成长途径" : "时间要求或参与途径"}`
-                          : query,
-                  });
-                  if (created) {
-                    setTopicId(created.id);
-                    setTopicName("");
-                    setMessage(`已创建“${created.name}”。`);
-                  }
-                });
-              }}
+          {view !== "home" && (
+            <Stack
+              direction={{ narrow: "vertical", regular: "horizontal" }}
+              gap="normal"
+              align={{ narrow: "start", regular: "end" }}
             >
-              <Stack
-                direction={{ narrow: "vertical", regular: "horizontal" }}
-                align="end"
-                gap="condensed"
-              >
-                <FormControl>
-                  <FormControl.Label>新主题名称</FormControl.Label>
-                  <TextInput
-                    value={topicName}
-                    onChange={(event) => setTopicName(event.target.value)}
-                    placeholder="例如 暑期科研、长期导师"
-                    maxLength={100}
-                  />
-                </FormControl>
-                <Button type="submit" disabled={!topicName.trim() || !initial.store}>
-                  创建主题
+              <FormControl>
+                <FormControl.Label>当前探索主题</FormControl.Label>
+                <Select
+                  value={topicId}
+                  onChange={(event) => {
+                    selectTopic(event.target.value);
+                    setDeleteConfirm(false);
+                    setMessage("");
+                  }}
+                >
+                  <Select.Option value="">暂不保存</Select.Option>
+                  {topics.map((topic) => (
+                    <Select.Option key={topic.id} value={topic.id}>
+                      {topic.name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </FormControl>
+              {activeTopic && initial.store && (
+                <TopicEditor
+                  key={activeTopic.id}
+                  topic={activeTopic}
+                  onSave={(patch) => {
+                    if (!initial.store)
+                      throw new Error("浏览器保存不可用，编辑内容已保留。");
+                    initial.store.updateTopic(activeTopic.id, patch);
+                    setTopics(initial.store.listTopics());
+                    setError("");
+                    setMessage(
+                      "主题条件已保存。已有候选、依据和私人记录保持原样；查找内容需另行修改并提交。",
+                    );
+                  }}
+                />
+              )}
+              {creatingTopic ? (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    mutate(() => {
+                      const created = initial.store?.createTopic({
+                        name: topicName,
+                        question:
+                          view === "opportunities" || view === "saved"
+                            ? ""
+                            : view === "compare"
+                              ? `了解${comparisonCandidates.map((item) => item.name).join("、") || "候选"}的${perspective === "research" ? "研究内容" : perspective === "graduate" ? "读研参与途径" : perspective === "role" ? "业务职责" : perspective === "growth" ? "转正与成长途径" : "时间要求或参与途径"}`
+                              : query,
+                      });
+                      if (created) {
+                        selectTopic(created.id);
+                        setTopicName("");
+                        setCreatingTopic(false);
+                        setMessage(`已创建“${created.name}”。`);
+                      }
+                    });
+                  }}
+                >
+                  <Stack
+                    direction={{ narrow: "vertical", regular: "horizontal" }}
+                    align="end"
+                    gap="condensed"
+                  >
+                    <FormControl>
+                      <FormControl.Label>新主题名称</FormControl.Label>
+                      <TextInput
+                        value={topicName}
+                        onChange={(event) => setTopicName(event.target.value)}
+                        placeholder="例如 暑期科研、长期导师"
+                        maxLength={100}
+                        autoFocus
+                      />
+                    </FormControl>
+                    <Stack direction="horizontal" gap="condensed">
+                      <Button
+                        type="submit"
+                        disabled={!topicName.trim() || !initial.store}
+                      >
+                        创建主题
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="invisible"
+                        onClick={() => {
+                          setCreatingTopic(false);
+                          setTopicName("");
+                        }}
+                      >
+                        取消
+                      </Button>
+                    </Stack>
+                  </Stack>
+                </form>
+              ) : (
+                <Button
+                  leadingVisual={PlusIcon}
+                  disabled={!initial.store}
+                  onClick={() => setCreatingTopic(true)}
+                >
+                  新建主题
                 </Button>
-              </Stack>
-            </form>
-          </Stack>
+              )}
+            </Stack>
+          )}
           {view === "home" ? (
             <ExploreHome
               advisors={allOpportunities}
-              onOpenAdvisors={() => setView("explore")}
+              topics={byRecency(topics)
+                .slice(0, 3)
+                .map((topic) => ({
+                  id: topic.id,
+                  name: topic.name,
+                  question: topic.question,
+                  updatedAt: topic.updatedAt,
+                  savedCount:
+                    topic.candidates.length + (topic.opportunities?.length ?? 0),
+                }))}
+              onOpenAdvisors={() => {
+                // The home entries promise the full candidate list; reset any
+                // scenario filter left over from an earlier explore session.
+                changeScenario("all");
+                navigate("explore");
+              }}
               onOpenAdvisor={(candidateId) => {
+                const opened = allOpportunities.find(
+                  (item) => item.candidateId === candidateId,
+                );
+                setCandidateScenario(
+                  opened?.type === "internship" ? "internship" : "advisor",
+                );
                 setSelectedAdvisor(candidateId);
-                setView("explore");
+                navigate("explore");
               }}
               onOpenType={(type) => {
                 setOpportunityType(type);
-                setView("opportunities");
+                navigate("opportunities");
               }}
+              onOpenTopic={(id) => {
+                selectTopic(id);
+                navigate("saved");
+              }}
+              onOpenTopics={() => navigate("saved")}
+              onCarryAdvisorQuery={(value) => setQuery(value)}
             />
           ) : view === "opportunities" ? (
             <OpportunityBrowser
@@ -399,28 +600,32 @@ export function App() {
             />
           ) : view === "explore" ? (
             <>
+              <Heading as="h1">找导师</Heading>
               <Stack
                 direction="horizontal"
                 justify="space-between"
                 align="center"
                 wrap="wrap"
               >
-                <SegmentedControl aria-label="候选场景类型">
+                <SegmentedControl
+                  aria-label="候选场景类型"
+                  variant={{ narrow: "dropdown", regular: "default" }}
+                >
                   <SegmentedControl.Button
                     selected={candidateScenario === "all"}
-                    onClick={() => setCandidateScenario("all")}
+                    onClick={() => changeScenario("all")}
                   >
                     {`全部（${allOpportunities.length}）`}
                   </SegmentedControl.Button>
                   <SegmentedControl.Button
                     selected={candidateScenario === "advisor"}
-                    onClick={() => setCandidateScenario("advisor")}
+                    onClick={() => changeScenario("advisor")}
                   >
                     {`选导师（${advisors.length}）`}
                   </SegmentedControl.Button>
                   <SegmentedControl.Button
                     selected={candidateScenario === "internship"}
-                    onClick={() => setCandidateScenario("internship")}
+                    onClick={() => changeScenario("internship")}
                   >
                     {`找实习（${internships.length}）`}
                   </SegmentedControl.Button>
@@ -435,8 +640,8 @@ export function App() {
                 scenario={activeScenario}
                 candidateList={visibleCandidates}
               />
-              <Stack as="section" gap="normal">
-                <Heading as="h2" variant="small">
+              <Stack as="section" gap="normal" aria-labelledby="candidates-heading">
+                <Heading as="h2" variant="medium" id="candidates-heading">
                   已有候选资料
                 </Heading>
                 <Text as="p">
@@ -451,7 +656,7 @@ export function App() {
                       setComparisonIds([...comparisonSupportedCandidateIds]);
                       setPerspective("research");
                       setFocus("open");
-                      setView("compare");
+                      navigate("compare");
                     }}
                   >
                     比较两名导师候选
@@ -461,14 +666,16 @@ export function App() {
                       setComparisonIds([...internshipComparisonSupportedCandidateIds]);
                       setPerspective("role");
                       setFocus("open");
-                      setView("compare");
+                      navigate("compare");
                     }}
                   >
                     比较两项实习岗位
                   </Button>
-                  <Button onClick={() => setView("compare")}>
-                    查看当前比较（{comparisonIds.length}）
-                  </Button>
+                  {comparisonIds.length > 0 && (
+                    <Button onClick={() => navigate("compare")}>
+                      查看当前比较（{comparisonIds.length}）
+                    </Button>
+                  )}
                   {advisor &&
                     (comparisonSupportedCandidateIds.includes(
                       advisor.candidateId as (typeof comparisonSupportedCandidateIds)[number],
@@ -492,36 +699,50 @@ export function App() {
                       </Button>
                     )}
                 </Stack>
-                <ActionList showDividers selectionVariant="single">
-                  {visibleCandidates.map((item) => (
-                    <ActionList.Item
-                      key={item.candidateId}
-                      selected={selectedAdvisor === item.candidateId}
-                      onSelect={() => setSelectedAdvisor(item.candidateId)}
-                    >
-                      <Stack direction="horizontal" gap="condensed" align="center">
-                        <Text>{item.name}</Text>
-                        <Label
-                          variant={item.type === "internship" ? "primary" : "accent"}
+                <PageLayout padding="none" columnGap="normal">
+                  <PageLayout.Pane
+                    position="start"
+                    width="medium"
+                    divider="line"
+                    sticky
+                    aria-label="候选列表"
+                  >
+                    <ActionList showDividers selectionVariant="single">
+                      {visibleCandidates.map((item) => (
+                        <ActionList.Item
+                          key={item.candidateId}
+                          selected={selectedAdvisor === item.candidateId}
+                          onSelect={() => setSelectedAdvisor(item.candidateId)}
                         >
-                          {item.type === "internship" ? "实习岗位" : "导师"}
-                        </Label>
-                      </Stack>
-                      <ActionList.Description variant="block">
-                        {item.institution}。{item.research}
-                      </ActionList.Description>
-                    </ActionList.Item>
-                  ))}
-                </ActionList>
+                          <Stack direction="horizontal" gap="condensed" align="center">
+                            <Text>{item.name}</Text>
+                            <Label
+                              variant={
+                                item.type === "internship" ? "primary" : "accent"
+                              }
+                            >
+                              {item.type === "internship" ? "实习岗位" : "导师"}
+                            </Label>
+                          </Stack>
+                          <ActionList.Description variant="block">
+                            {item.institution}。{item.research}（{sourceSummary(item)}）
+                          </ActionList.Description>
+                        </ActionList.Item>
+                      ))}
+                    </ActionList>
+                  </PageLayout.Pane>
+                  <PageLayout.Content as="div" aria-label="候选详情">
+                    {advisor && (
+                      <AdvisorDetail
+                        key={`${advisor.candidateId}-${topicId}`}
+                        advisor={advisor}
+                        topic={activeTopic}
+                        onSave={save}
+                      />
+                    )}
+                  </PageLayout.Content>
+                </PageLayout>
               </Stack>
-              {advisor && (
-                <AdvisorDetail
-                  key={`${advisor.candidateId}-${topicId}`}
-                  advisor={advisor}
-                  topic={activeTopic}
-                  onSave={save}
-                />
-              )}
             </>
           ) : view === "followup" && followupCandidate ? (
             <Stack as="section" gap="normal">
@@ -531,10 +752,8 @@ export function App() {
                 align="center"
                 wrap="wrap"
               >
-                <Heading as="h2" variant="small">
-                  补查{followupCandidate.name}
-                </Heading>
-                <Button onClick={() => setView("compare")}>返回比较</Button>
+                <Heading as="h1">补查{followupCandidate.name}</Heading>
+                <Button onClick={() => navigate("compare")}>返回比较</Button>
               </Stack>
               <Text as="p">
                 按当前比较视角预填了公开检索词，可以修改问题后查找，也可以选择已收录的官网页面读取正文。
@@ -551,26 +770,6 @@ export function App() {
             </Stack>
           ) : view === "compare" ? (
             <Stack as="section" gap="normal">
-              <Stack direction="horizontal" wrap="wrap" align="center">
-                <Button
-                  onClick={() => {
-                    setComparisonIds([...comparisonSupportedCandidateIds]);
-                    setPerspective("research");
-                    setFocus("open");
-                  }}
-                >
-                  比较导师候选（江祖铭 / 宋卓然）
-                </Button>
-                <Button
-                  onClick={() => {
-                    setComparisonIds([...internshipComparisonSupportedCandidateIds]);
-                    setPerspective("role");
-                    setFocus("open");
-                  }}
-                >
-                  比较实习岗位（上海 AI 实验室 / MSRA）
-                </Button>
-              </Stack>
               <AdvisorComparison
                 candidates={comparisonCandidates}
                 perspective={perspective}
@@ -583,13 +782,37 @@ export function App() {
                     getSupplementalSources(candidate, activeTopic),
                   ]),
                 )}
+                headerActions={
+                  <>
+                    <Button
+                      onClick={() => {
+                        setComparisonIds([...comparisonSupportedCandidateIds]);
+                        setPerspective("research");
+                        setFocus("open");
+                      }}
+                    >
+                      比较导师候选（江祖铭 / 宋卓然）
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setComparisonIds([
+                          ...internshipComparisonSupportedCandidateIds,
+                        ]);
+                        setPerspective("role");
+                        setFocus("open");
+                      }}
+                    >
+                      比较实习岗位（上海 AI 实验室 / MSRA）
+                    </Button>
+                  </>
+                }
                 onFollowup={startFollowup}
                 onPerspectiveChange={setPerspective}
                 onFocusChange={setFocus}
                 onRemove={(id) =>
                   setComparisonIds((ids) => ids.filter((item) => item !== id))
                 }
-                onReturn={() => setView("explore")}
+                onReturn={() => navigate("explore")}
                 onNotesChange={(id, notes) =>
                   setComparisonDrafts((drafts) => ({
                     ...drafts,
@@ -601,83 +824,158 @@ export function App() {
             </Stack>
           ) : (
             <Stack as="section" gap="normal">
-              <Heading as="h2" variant="small">
-                {activeTopic?.name ?? "我的探索"}
-              </Heading>
+              <Stack
+                direction="horizontal"
+                justify="space-between"
+                align="center"
+                wrap="wrap"
+              >
+                <Heading as="h1">{activeTopic?.name ?? "我的探索"}</Heading>
+                {activeTopic && (
+                  <Button
+                    size="small"
+                    variant="invisible"
+                    onClick={() => selectTopic("")}
+                  >
+                    返回全部探索
+                  </Button>
+                )}
+              </Stack>
               <Text as="p">
-                保存在此浏览器，不跨设备同步。清除网站数据会移除记录；浏览和保存都不代表决定申请。
+                每个探索主题是一次独立的探索：各自保留自己的问题、条件、候选、私人理由与待问项，可以随时离开、改天回来继续。记录保存在此浏览器，不跨设备同步；清除网站数据会移除记录。浏览和保存都不代表决定申请。
               </Text>
-              {!activeTopic && (
-                <Text as="p">选择一个主题查看，或返回探索继续浏览。</Text>
-              )}
+              {!activeTopic &&
+                (topics.length > 0 ? (
+                  <ActionList showDividers aria-label="全部探索主题，按最近活跃排序">
+                    {byRecency(topics).map((topic) => (
+                      <TopicSessionItem
+                        key={topic.id}
+                        topic={topic}
+                        onOpen={() => selectTopic(topic.id)}
+                      />
+                    ))}
+                  </ActionList>
+                ) : (
+                  <Text as="p">
+                    还没有探索主题。浏览和查找不要求创建主题；想保留内容时，可以在上方创建一个。
+                  </Text>
+                ))}
               {activeTopic && (
                 <>
-                  <Text as="p">当前问题：{activeTopic.question || "未填写"}</Text>
-                  <Text as="p">偏好与条件：{activeTopic.preferences || "未填写"}</Text>
+                  <Text as="p">
+                    {`创建于 ${sourceDate(activeTopic.createdAt)} · 最近活跃 ${sourceDate(activeTopic.updatedAt)}。这里的私人理由与待问项只属于“${activeTopic.name}”，不会带入其他探索；公共候选与来源资料可在其他主题中复用。`}
+                  </Text>
+                  <Text as="p">
+                    <Text weight="semibold">当前问题：</Text>
+                    {activeTopic.question || "未填写"}
+                  </Text>
+                  <Text as="p">
+                    <Text weight="semibold">偏好与条件：</Text>
+                    {activeTopic.preferences || "未填写"}
+                  </Text>
                   {activeTopic.candidates.length === 0 &&
                     (activeTopic.opportunities ?? []).length === 0 && (
-                      <Text as="p">
-                        还没有保存内容。可以回到探索，看见值得保留的导师或机会时再保存。
-                      </Text>
+                      <Stack gap="normal" align="start">
+                        <Text as="p">
+                          还没有保存内容。浏览不要求保存；看见值得保留的导师或机会时再保存即可。
+                        </Text>
+                        <Stack direction="horizontal" wrap="wrap" gap="condensed">
+                          <Button onClick={() => navigate("explore")}>
+                            浏览导师与岗位
+                          </Button>
+                          <Button onClick={() => navigate("opportunities")}>
+                            浏览机会与入口
+                          </Button>
+                        </Stack>
+                      </Stack>
                     )}
-                  {activeTopic.candidates.map((record) => (
-                    <SavedCandidate
-                      key={`${activeTopic.id}-${record.candidate.candidateId}`}
-                      record={record}
-                      onUpdate={(reason, questions) =>
-                        mutate(() => {
-                          initial.store?.updateCandidate(
-                            activeTopic.id,
-                            record.candidate.candidateId,
-                            { reason, questions },
-                          );
-                          clearComparisonDrafts(
-                            activeTopic.id,
-                            record.candidate.candidateId,
-                          );
-                          setMessage("私人理由和疑问已保存。");
-                        })
-                      }
-                      onRemove={() =>
-                        mutate(() => {
-                          initial.store?.removeCandidate(
-                            activeTopic.id,
-                            record.candidate.candidateId,
-                          );
-                          clearComparisonDrafts(
-                            activeTopic.id,
-                            record.candidate.candidateId,
-                          );
-                          setMessage("已从这个主题移除，其他主题不受影响。");
-                        })
-                      }
-                    />
-                  ))}
-                  {(activeTopic.opportunities ?? []).map((record) => (
-                    <SavedOpportunity
-                      key={`${activeTopic.id}-${record.opportunity.opportunityId}`}
-                      record={record}
-                      onUpdate={(reason, questions) =>
-                        mutate(() => {
-                          initial.store?.updateOpportunity(
-                            activeTopic.id,
-                            record.opportunity.opportunityId,
-                            { reason, questions },
-                          );
-                          setMessage("私人理由和疑问已保存。");
-                        })
-                      }
-                      onRemove={() =>
-                        mutate(() => {
-                          initial.store?.removeOpportunity(
-                            activeTopic.id,
-                            record.opportunity.opportunityId,
-                          );
-                          setMessage("已从这个主题移除，其他主题不受影响。");
-                        })
-                      }
-                    />
-                  ))}
+                  <Stack as="section" gap="spacious" aria-label="已保存的候选与机会">
+                    {activeTopic.candidates.length > 0 &&
+                      (activeTopic.opportunities ?? []).length > 0 && (
+                        <Heading as="h3" variant="small">
+                          候选
+                        </Heading>
+                      )}
+                    {activeTopic.candidates.map((record) => (
+                      <SavedCandidate
+                        key={`${activeTopic.id}-${record.candidate.candidateId}`}
+                        record={record}
+                        onOpen={
+                          allOpportunities.some(
+                            (item) => item.candidateId === record.candidate.candidateId,
+                          )
+                            ? () => {
+                                setSelectedAdvisor(record.candidate.candidateId);
+                                setCandidateScenario(
+                                  record.candidate.type === "internship"
+                                    ? "internship"
+                                    : "advisor",
+                                );
+                                navigate("explore");
+                              }
+                            : undefined
+                        }
+                        onUpdate={(reason, questions) =>
+                          mutate(() => {
+                            initial.store?.updateCandidate(
+                              activeTopic.id,
+                              record.candidate.candidateId,
+                              { reason, questions },
+                            );
+                            clearComparisonDrafts(
+                              activeTopic.id,
+                              record.candidate.candidateId,
+                            );
+                            setMessage("私人理由和疑问已保存。");
+                          })
+                        }
+                        onRemove={() =>
+                          mutate(() => {
+                            initial.store?.removeCandidate(
+                              activeTopic.id,
+                              record.candidate.candidateId,
+                            );
+                            clearComparisonDrafts(
+                              activeTopic.id,
+                              record.candidate.candidateId,
+                            );
+                            setMessage("已从这个主题移除，其他主题不受影响。");
+                          })
+                        }
+                      />
+                    ))}
+                    {activeTopic.candidates.length > 0 &&
+                      (activeTopic.opportunities ?? []).length > 0 && (
+                        <Heading as="h3" variant="small">
+                          机会与入口
+                        </Heading>
+                      )}
+                    {(activeTopic.opportunities ?? []).map((record) => (
+                      <SavedOpportunity
+                        key={`${activeTopic.id}-${record.opportunity.opportunityId}`}
+                        record={record}
+                        onUpdate={(reason, questions) =>
+                          mutate(() => {
+                            initial.store?.updateOpportunity(
+                              activeTopic.id,
+                              record.opportunity.opportunityId,
+                              { reason, questions },
+                            );
+                            setMessage("私人理由和疑问已保存。");
+                          })
+                        }
+                        onRemove={() =>
+                          mutate(() => {
+                            initial.store?.removeOpportunity(
+                              activeTopic.id,
+                              record.opportunity.opportunityId,
+                            );
+                            setMessage("已从这个主题移除，其他主题不受影响。");
+                          })
+                        }
+                      />
+                    ))}
+                  </Stack>
                   <Stack gap="condensed">
                     {deleteConfirm ? (
                       <>
@@ -691,7 +989,7 @@ export function App() {
                               mutate(() => {
                                 initial.store?.deleteTopic(activeTopic.id);
                                 clearComparisonDrafts(activeTopic.id);
-                                setTopicId("");
+                                selectTopic("");
                                 setDeleteConfirm(false);
                                 setMessage("这个主题已删除。");
                               })
@@ -717,89 +1015,23 @@ export function App() {
           )}
         </Stack>
       </PageLayout.Content>
-      <PageLayout.Footer>
-        <Text as="p" size="small">
-          资料保存在此浏览器。浏览和保存不代表决定申请。
-        </Text>
+      <PageLayout.Footer divider="line">
+        <Stack gap="normal" paddingBlock="normal">
+          <Text size="small">名额、截止日期与申请条件以原站为准。</Text>
+          <Details>
+            <Details.Summary>资料与保存说明</Details.Summary>
+            <Stack gap="condensed" paddingBlock="normal">
+              <Text size="small">
+                资料来自公开页面，附来源与查看日期；已结束的批次仅作历史参考，不代表当前开放。补查外部来源只按你提交的查找内容发起，主题条件与私人理由不会随查找发送。
+              </Text>
+              <Text size="small">
+                探索主题、私人理由与外观选择保存在本浏览器，不同步到其他设备；清除网站数据会移除记录。浏览和保存都不代表决定申请。
+              </Text>
+            </Stack>
+          </Details>
+        </Stack>
       </PageLayout.Footer>
     </PageLayout>
-  );
-}
-
-function AdvisorDetail({
-  advisor,
-  topic,
-  onSave,
-}: {
-  advisor: Advisor;
-  topic?: ExplorationTopic;
-  onSave: (candidate: CandidateSnapshot, reason: string, questions: string[]) => void;
-}) {
-  const [reason, setReason] = useState("");
-  const [question, setQuestion] = useState("");
-  return (
-    <Stack as="section" gap="normal">
-      <Stack direction="horizontal" gap="condensed" align="center">
-        <Heading as="h2" variant="small">
-          {advisor.name}
-        </Heading>
-        <Label variant={advisor.type === "internship" ? "primary" : "accent"}>
-          {advisor.type === "internship" ? "实习岗位" : "导师"}
-        </Label>
-      </Stack>
-      <Text as="p">
-        <Text weight="semibold">
-          {advisor.type === "internship" ? "岗位方向与课题：" : "研究问题："}
-        </Text>
-        {advisor.research}
-      </Text>
-      <Text as="p">{advisor.approach}</Text>
-      <Text as="p">
-        <Text weight="semibold">
-          {advisor.type === "internship" ? "入职与出勤要求：" : "参与途径："}
-        </Text>
-        {advisor.participation}
-      </Text>
-      <Text as="p">
-        <Text weight="semibold">仍待了解：</Text>
-        {advisor.unknowns}
-      </Text>
-      {advisor.sources.map((source, index) => (
-        <SourceView
-          key={`${source.url}-${source.collectedAt}-${index}`}
-          source={source}
-        />
-      ))}
-      <FormControl>
-        <FormControl.Label>自己的理由（可不填）</FormControl.Label>
-        <Textarea
-          block
-          value={reason}
-          onChange={(event) => setReason(event.target.value)}
-          rows={3}
-        />
-      </FormControl>
-      <FormControl>
-        <FormControl.Label>想进一步了解什么（可不填）</FormControl.Label>
-        <TextInput
-          block
-          value={question}
-          onChange={(event) => setQuestion(event.target.value)}
-        />
-      </FormControl>
-      <Stack direction="horizontal" align="center" wrap="wrap">
-        <Button
-          leadingVisual={BookmarkIcon}
-          disabled={!topic}
-          onClick={() =>
-            onSave(advisor, reason, question.trim() ? [question.trim()] : [])
-          }
-        >
-          保存{advisor.name}到主题
-        </Button>
-        {!topic && <Text size="small">想保留时，再选择或创建主题。</Text>}
-      </Stack>
-    </Stack>
   );
 }
 
@@ -807,22 +1039,29 @@ function SavedCandidate({
   record,
   onUpdate,
   onRemove,
+  onOpen,
 }: {
   record: ExplorationTopic["candidates"][number];
   onUpdate: (reason: string, questions: string[]) => void;
   onRemove: () => void;
+  onOpen?: () => void;
 }) {
   const [reason, setReason] = useState(record.reason);
   const [question, setQuestion] = useState(record.questions.join("\n"));
   return (
     <Stack as="section" gap="normal">
-      <Stack direction="horizontal" gap="condensed" align="center">
-        <Heading as="h3" variant="small">
+      <Stack direction="horizontal" gap="condensed" align="center" wrap="wrap">
+        <Heading as="h2" variant="medium">
           {record.candidate.name} · {record.candidate.institution}
         </Heading>
         <Label variant={record.candidate.type === "internship" ? "primary" : "accent"}>
           {record.candidate.type === "internship" ? "实习岗位" : "导师"}
         </Label>
+        {onOpen && (
+          <Button size="small" variant="invisible" onClick={onOpen}>
+            在找导师中查看
+          </Button>
+        )}
       </Stack>
       <Text as="p">{record.candidate.research}</Text>
       {record.candidate.sources.map((source, index) => (
@@ -886,7 +1125,7 @@ function SavedOpportunity({
   const { opportunity } = record;
   return (
     <Stack as="section" gap="normal">
-      <Heading as="h3" variant="small">
+      <Heading as="h2" variant="medium">
         {opportunity.name}
       </Heading>
       <Text as="p" size="small">
