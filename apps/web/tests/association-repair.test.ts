@@ -230,7 +230,9 @@ describe("private records after a split", () => {
     store.repairAssociations(planAssociationRepairs(store.listTopics(), [split()]));
     const topic = store.getTopic(b.id);
     expect(findItem("example:same-name", topic)).toBeUndefined();
-    const record = sessionRecords(topic).find((entry) => entry.item.id === "example:same-name");
+    const record = sessionRecords(topic).find(
+      (entry) => entry.item.id === "example:same-name",
+    );
     expect(record?.pendingAssociation).toBe(true);
   });
 });

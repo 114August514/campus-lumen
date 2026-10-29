@@ -36,11 +36,7 @@ function textValues(profile: CandidateProfile): string[] {
     profile.beyond.gap,
     ...profile.beyond.records.flatMap((record) => [record.role, record.period]),
     ...profile.beyond.askList,
-    ...profile.preparation.flatMap((item) => [
-      item.text,
-      item.reason,
-      item.origin,
-    ]),
+    ...profile.preparation.flatMap((item) => [item.text, item.reason, item.origin]),
     ...profile.conflicts.map((conflict) => conflict.topic),
   ];
 }

@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { opportunities, opportunityTypeText, opportunityTypes } from "../src/lib/opportunities";
+import {
+  opportunities,
+  opportunityTypeText,
+  opportunityTypes,
+} from "../src/lib/opportunities";
 
 describe("opportunity data", () => {
   test("every item has a unique id, a type, an https entry and a check date", () => {
