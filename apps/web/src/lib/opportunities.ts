@@ -1,5 +1,3 @@
-import { internships } from "./advisors";
-
 // Opportunities, resources and rules across types, reused from the P1 research notes
 // (docs/constraints/opportunity-needs-map.md, mentor-source-reference.md,
 // tools/prototypes/opportunity-content.md). Facts are only what those notes record.
@@ -424,110 +422,8 @@ export const opportunities: Opportunity[] = [
       checkedAt: "2026-09-24",
     },
   },
-  ...internships.map(
-    (candidate): Opportunity => ({
-      id:
-        candidate.candidateId === "bytedance-ai-systems-intern"
-          ? "bytedance-ai-lab-intern"
-          : candidate.candidateId,
-      name: `${candidate.institution}：${candidate.name}（待核线索）`,
-      types: ["internship", "research"],
-      timing: "unknown",
-      period: "2026-10-16旧批次；2026-10-26复核，当前状态待核",
-      summary: candidate.research,
-      conditions: candidate.participation,
-      caveat: candidate.unknowns,
-      entry: {
-        label: "原批次来源入口（需定位具体职位）",
-        url: candidate.sources[0].url,
-        checkedAt: "2026-10-26",
-      },
-    }),
-  ),
 ];
 
 export function findOpportunity(id: string): Opportunity | undefined {
   return opportunities.find((o) => o.id === id);
-}
-
-export function matchesOpportunity(opportunity: Opportunity, query: string): boolean {
-  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  if (terms.length === 0) return true;
-  const text = [
-    opportunity.name,
-    opportunity.summary,
-    opportunity.conditions,
-    opportunity.support ?? "",
-    opportunity.period,
-    ...opportunity.types.map((type) => opportunityTypeText[type]),
-  ]
-    .join(" ")
-    .toLowerCase();
-  return terms.every((term) => text.includes(term));
-}
-
-export interface ScenarioDefinition {
-  type: string;
-  title: string;
-  shortLabel: string;
-  badgeVariant: "primary" | "accent" | "attention" | "secondary";
-  searchPlaceholder: string;
-  candidateEntityName: string;
-  nameLabel: string;
-  institutionLabel: string;
-  researchLabel: string;
-}
-
-export const SCENARIOS: Record<string, ScenarioDefinition> = {
-  advisor: {
-    type: "advisor",
-    title: "选导师",
-    shortLabel: "导师",
-    badgeVariant: "accent",
-    searchPlaceholder: "输入研究方向、导师姓名或主页链接，例如 数据库、周志华",
-    candidateEntityName: "导师候选",
-    nameLabel: "导师姓名",
-    institutionLabel: "所属高校/研究所",
-    researchLabel: "研究方向与领域",
-  },
-  internship: {
-    type: "internship",
-    title: "找实习",
-    shortLabel: "实习",
-    badgeVariant: "primary",
-    searchPlaceholder: "输入研究型实习、大模型系统或具体实验室，例如 异构计算、MSRA",
-    candidateEntityName: "实习岗位",
-    nameLabel: "岗位名称与团队",
-    institutionLabel: "企业/实验室名称",
-    researchLabel: "职责领域与技术栈",
-  },
-  competition: {
-    type: "competition",
-    title: "打比赛",
-    shortLabel: "竞赛",
-    badgeVariant: "attention",
-    searchPlaceholder: "输入学科竞赛、系统设计赛或赛事名称",
-    candidateEntityName: "竞赛项目",
-    nameLabel: "竞赛项目名称",
-    institutionLabel: "主办单位/学校",
-    researchLabel: "赛道方向与要求",
-  },
-  general: {
-    type: "general",
-    title: "综合机会",
-    shortLabel: "机会",
-    badgeVariant: "secondary",
-    searchPlaceholder: "输入公开关键词或网页链接",
-    candidateEntityName: "机会对象",
-    nameLabel: "对象名称",
-    institutionLabel: "所属机构",
-    researchLabel: "内容描述",
-  },
-};
-
-export function getScenario(type?: string): ScenarioDefinition {
-  if (type && type in SCENARIOS) {
-    return SCENARIOS[type];
-  }
-  return SCENARIOS.advisor;
 }

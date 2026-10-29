@@ -1,21 +1,11 @@
 import type { Advisor } from "./advisors";
-import type { CandidateSnapshot, ExplorationTopic } from "./exploration-store";
+import type { CandidateSnapshot } from "./exploration-store";
 
-/** Only the active topic contributes saved objects; private notes are never copied. */
-export function comparisonCandidatesForTopic(
-  publicCandidates: Advisor[],
-  topic?: ExplorationTopic,
-): Advisor[] {
-  const candidates = new Map(publicCandidates.map((item) => [item.candidateId, item]));
-  for (const { candidate, association } of topic?.candidates ?? []) {
-    // A record whose object is still being confirmed after a split is not compared.
-    if (association?.status === "pending") continue;
-    if (candidates.has(candidate.candidateId)) continue;
-    candidates.set(candidate.candidateId, savedCandidateForComparison(candidate));
-  }
-  return [...candidates.values()];
-}
-
+/**
+ * A saved object that is not in the public catalog (for example one created from a
+ * live reading). Only its identity and retained sources are reused; private notes
+ * are never copied, and unstructured fields say so instead of inventing facts.
+ */
 export function savedCandidateForComparison(candidate: CandidateSnapshot): Advisor {
   return {
     ...candidate,

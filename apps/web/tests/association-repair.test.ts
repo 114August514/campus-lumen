@@ -7,7 +7,7 @@ import {
   parseAssociationCorrections,
   planAssociationRepairs,
 } from "../src/lib/association-repair";
-import { comparisonCandidatesForTopic } from "../src/lib/comparison-candidates";
+import { findItem, sessionRecords } from "../src/lib/catalog";
 import { createExplorationStore } from "../src/lib/exploration-store";
 
 // Synthetic objects only: two different people mistakenly merged under one id.
@@ -228,9 +228,9 @@ describe("private records after a split", () => {
   test("a pending record does not enter comparison under its old merged identity", () => {
     const { store, b } = setup();
     store.repairAssociations(planAssociationRepairs(store.listTopics(), [split()]));
-    const ids = comparisonCandidatesForTopic([], store.getTopic(b.id)).map(
-      (item) => item.candidateId,
-    );
-    expect(ids).not.toContain("example:same-name");
+    const topic = store.getTopic(b.id);
+    expect(findItem("example:same-name", topic)).toBeUndefined();
+    const record = sessionRecords(topic).find((entry) => entry.item.id === "example:same-name");
+    expect(record?.pendingAssociation).toBe(true);
   });
 });

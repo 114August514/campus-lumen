@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./app/App";
 import { type ColorMode, ThemeRoot } from "./components/ui/ThemeRoot";
+import { AppStateProvider } from "./state/app-state";
 import "./app/theme.css";
 
 // Kept from the PR #15 frontend: the reader's appearance choice persists in
@@ -29,12 +30,14 @@ function AppRoot() {
 
   return (
     <ThemeRoot colorMode={colorMode}>
-      <App
-        colorMode={colorMode}
-        onToggleColorMode={() =>
-          setColorMode((mode) => (mode === "day" ? "night" : "day"))
-        }
-      />
+      <AppStateProvider>
+        <App
+          colorMode={colorMode}
+          onToggleColorMode={() =>
+            setColorMode((mode) => (mode === "day" ? "night" : "day"))
+          }
+        />
+      </AppStateProvider>
     </ThemeRoot>
   );
 }

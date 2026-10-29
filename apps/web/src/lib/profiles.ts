@@ -73,10 +73,7 @@ const tianqiMpk = sourceUrl(
   "https://catalyst.cs.cmu.edu/projects/mpk.html",
 );
 const tianqiFaq = sourceUrl("tianqi-chen", "https://tqchen.com/faq");
-const charles = sourceUrl(
-  "charles-zhang",
-  "https://www.cse.ust.hk/~charlesz/",
-);
+const charles = sourceUrl("charles-zhang", "https://www.cse.ust.hk/~charlesz/");
 const guPost = sourceUrl(
   "shangding-gu",
   "https://www.xiaohongshu.com/explore/6a7574850000000024024a50",
@@ -94,10 +91,7 @@ const jiangOfficial = sourceUrl(
   "https://www.cs.hku.hk/people/academic-staff/jzuming",
 );
 const jiangHome = sourceUrl("zuming-jiang", "https://jzuming.github.io/");
-const jiangLab = sourceUrl(
-  "zuming-jiang",
-  "https://jzuming.github.io/lab.html",
-);
+const jiangLab = sourceUrl("zuming-jiang", "https://jzuming.github.io/lab.html");
 const songPost = sourceUrl(
   "zhuoran-song",
   "https://www.xiaohongshu.com/explore/6aae08600000000026014ac1",
@@ -188,7 +182,8 @@ export const candidateProfiles: Readonly<Record<string, CandidateProfile>> = {
       },
       {
         text: "需要动手验证知识编辑代码时，再核对可用算力与账号条件。",
-        reason: "相关工作可能涉及模型计算；平台存在不代表个人已有权限，也不是继续了解的前提。",
+        reason:
+          "相关工作可能涉及模型计算；平台存在不代表个人已有权限，也不是继续了解的前提。",
         origin: "curated",
         urls: [wang],
         resourceIds: ["scc-ai-platform"],
@@ -283,13 +278,15 @@ export const candidateProfiles: Readonly<Record<string, CandidateProfile>> = {
     preparation: [
       {
         text: "读一个 HoarePrompt 的程序状态例子，记录仍不清楚的判断步骤。",
-        reason: "可用具体例子判断自己是否关心代码正确性与程序验证，而不是据论文主题推断招生。",
+        reason:
+          "可用具体例子判断自己是否关心代码正确性与程序验证，而不是据论文主题推断招生。",
         origin: "curated",
         urls: [xiong],
       },
       {
         text: "先写下想了解的参与类型，再查询对应院系与本人公开说明。",
-        reason: "现有来源没有给出当期招生或短期参与途径，不能把研究兴趣直接当成可申请结论。",
+        reason:
+          "现有来源没有给出当期招生或短期参与途径，不能把研究兴趣直接当成可申请结论。",
         origin: "curated",
         urls: [xiong],
       },
