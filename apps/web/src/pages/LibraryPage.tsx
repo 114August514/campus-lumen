@@ -101,7 +101,7 @@ export default function LibraryPage({ route }: { route: LibraryRoute }) {
                 leadingVisual={SearchIcon}
                 value={text}
                 onChange={(event) => setText(event.target.value)}
-                placeholder="例如：算力、暑期、竞赛报名、文献"
+                placeholder="例如：GPU、暑期、竞赛、文献"
               />
               <FormControl.Caption>会同时匹配条件和注意事项。</FormControl.Caption>
             </FormControl>

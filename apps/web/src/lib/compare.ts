@@ -47,7 +47,10 @@ export interface CellSource {
 export interface CompareCell {
   itemId: string;
   text: string;
-  status?: RouteStatus | OpportunityTiming;
+  /** Participation-route status (advisor rows). */
+  status?: RouteStatus;
+  /** Batch timing (entry rows). */
+  timing?: OpportunityTiming;
   sources: CellSource[];
   /** The cell states missing or unconfirmed information. */
   unknown: boolean;
@@ -357,7 +360,7 @@ function entryRows(items: CatalogItem[]): CompareRow[] {
   const field = (
     id: string,
     label: string,
-    pick: (item: CatalogItem) => { text?: string; status?: OpportunityTiming },
+    pick: (item: CatalogItem) => { text?: string; timing?: OpportunityTiming },
     followup = false,
   ): CompareRow => ({
     id,
@@ -368,7 +371,7 @@ function entryRows(items: CatalogItem[]): CompareRow[] {
       return {
         itemId: item.id,
         text: value.text || "来源没有说明。",
-        status: value.status,
+        timing: value.timing,
         sources: entrySource(item),
         unknown: !value.text || followup,
       };
@@ -380,7 +383,7 @@ function entryRows(items: CatalogItem[]): CompareRow[] {
     field("support", "支持与费用", (item) => ({ text: item.entry?.support })),
     field("timing", "时期与状态", (item) => ({
       text: `${item.period}；${timingText[item.timing]}`,
-      status: item.timing,
+      timing: item.timing,
     })),
     field("caveat", "仍需确认", (item) => ({ text: item.entry?.caveat }), true),
   ];

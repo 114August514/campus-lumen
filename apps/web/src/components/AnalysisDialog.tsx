@@ -262,7 +262,9 @@ export function AnalysisDialog({
             {request.selectedPrivateFragments.length} 条
           </Text>
           {demo.analysisOutcome !== "ok" && (
-            <Label variant="attention">演示设置：{outcomeText[demo.analysisOutcome]}</Label>
+            <Label variant="attention">
+              演示设置：{outcomeText[demo.analysisOutcome]}
+            </Label>
           )}
         </Stack>
 

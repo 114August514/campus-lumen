@@ -111,10 +111,11 @@ const steps: Step[] = [
     route: { name: "compare", ids: ["mpi-internship", "ista-internship"] },
   },
   {
-    title: "资料库直达：搜“算力”，打开原站",
-    expect: "只查入口时搜到即可离开，不需要建主题；条目注明“可申请不等于获批”。",
+    title: "资料库直达：搜“GPU”，打开原站",
+    expect:
+      "只查入口时搜到即可离开，不需要建主题；条目注明“可申请不等于获批”，GPU 等条件未确认的写明待核。",
     modes: ["已有资料"],
-    route: { name: "library", q: "算力" },
+    route: { name: "library", q: "GPU" },
   },
   {
     title: "切换到另一个合成主题，查看同一位导师",

@@ -3,6 +3,7 @@ import {
   PlusIcon,
   SearchIcon,
   SparkleFillIcon,
+  XIcon,
 } from "@primer/octicons-react";
 import {
   ActionList,
@@ -16,20 +17,14 @@ import {
   Stack,
   Text,
   TextInput,
-  Token,
 } from "@primer/react";
 import { Blankslate, type Column, DataTable, Hidden } from "@primer/react/experimental";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type Route, go, routeHref } from "../app/router";
 import { AnalysisDialog } from "../components/AnalysisDialog";
 import { LiveDiscovery } from "../components/LiveDiscovery";
 import { PrivateNotes } from "../components/PrivateNotes";
-import {
-  RouteStatusLabel,
-  TimingLabel,
-  formatDate,
-  routeStatusText,
-} from "../components/meta";
+import { RouteStatusLabel, TimingLabel, formatDate } from "../components/meta";
 import { evidenceFromRows } from "../lib/analysis";
 import {
   type CatalogItem,
@@ -50,8 +45,6 @@ import {
   perspectives,
   supplementalSources,
 } from "../lib/compare";
-import type { OpportunityTiming } from "../lib/opportunities";
-import type { RouteStatus } from "../lib/profiles";
 import { useAppState } from "../state/app-state";
 
 type CompareRoute = Extract<Route, { name: "compare" }>;
@@ -73,13 +66,10 @@ function CellView({
 }) {
   return (
     <Stack gap="condensed">
-      {cell.status && (
+      {(cell.status || cell.timing) && (
         <Stack direction="horizontal">
-          {cell.status in routeStatusText ? (
-            <RouteStatusLabel status={cell.status as RouteStatus} />
-          ) : (
-            <TimingLabel timing={cell.status as OpportunityTiming} />
-          )}
+          {cell.status && <RouteStatusLabel status={cell.status} />}
+          {cell.timing && <TimingLabel timing={cell.timing} />}
         </Stack>
       )}
       <Text whiteSpace="pre-wrap">{cell.text}</Text>
@@ -177,6 +167,28 @@ export default function ComparePage({ route }: { route: CompareRoute }) {
   } | null>(null);
   const [followup, setFollowup] = useState<CatalogItem | null>(null);
   const [analysisOpen, setAnalysisOpen] = useState(false);
+  // Dialogs here open from many cell buttons; return focus to the one that opened it.
+  const trigger = useRef<HTMLElement | null>(null);
+  const rememberTrigger = () => {
+    trigger.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  };
+  const restoreFocus = () => requestAnimationFrame(() => trigger.current?.focus());
+  const openEvidence = (
+    target: CompareCell,
+    targetRow: CompareRow,
+    owner: CatalogItem,
+  ) => {
+    rememberTrigger();
+    setEvidence({
+      title: `${owner.name} · ${targetRow.label}的依据`,
+      sources: target.sources,
+    });
+  };
+  const openFollowup = (item: CatalogItem) => {
+    rememberTrigger();
+    setFollowup(item);
+  };
   const rows = kind ? buildCompareRows(items, perspective) : [];
 
   // The URL is the source of truth; keep the tray in step with what is shown.
@@ -262,13 +274,8 @@ export default function ComparePage({ route }: { route: CompareRoute }) {
               row={row}
               item={item}
               supplements={supplementalSources(item, topic)}
-              onEvidence={(target, targetRow, owner) =>
-                setEvidence({
-                  title: `${owner.name} · ${targetRow.label}的依据`,
-                  sources: target.sources,
-                })
-              }
-              onFollowup={setFollowup}
+              onEvidence={openEvidence}
+              onFollowup={openFollowup}
             />
           ) : (
             <Text size="small">依据不足</Text>
@@ -304,11 +311,15 @@ export default function ComparePage({ route }: { route: CompareRoute }) {
         >
           <Stack direction="horizontal" gap="condensed" wrap="wrap" align="center">
             {items.map((item) => (
-              <Token
+              <Button
                 key={item.id}
-                text={item.name}
-                onRemove={() => setIds(route.ids.filter((id) => id !== item.id))}
-              />
+                size="small"
+                trailingVisual={XIcon}
+                aria-label={`从比较中移除${item.name}`}
+                onClick={() => setIds(route.ids.filter((id) => id !== item.id))}
+              >
+                {item.name}
+              </Button>
             ))}
             {items.length < 4 && sameKind.length > 0 && (
               <ActionMenu>
@@ -378,13 +389,8 @@ export default function ComparePage({ route }: { route: CompareRoute }) {
                       row={row}
                       item={item}
                       supplements={supplementalSources(item, topic)}
-                      onEvidence={(target, targetRow, owner) =>
-                        setEvidence({
-                          title: `${owner.name} · ${targetRow.label}的依据`,
-                          sources: target.sources,
-                        })
-                      }
-                      onFollowup={setFollowup}
+                      onEvidence={openEvidence}
+                      onFollowup={openFollowup}
                     />
                   </Stack>
                 ) : null;
@@ -398,7 +404,10 @@ export default function ComparePage({ route }: { route: CompareRoute }) {
         <Button
           variant="primary"
           leadingVisual={SparkleFillIcon}
-          onClick={() => setAnalysisOpen(true)}
+          onClick={() => {
+            rememberTrigger();
+            setAnalysisOpen(true);
+          }}
         >
           按问题整理差异（模拟）
         </Button>
@@ -447,14 +456,20 @@ export default function ComparePage({ route }: { route: CompareRoute }) {
         <EvidenceDialog
           title={evidence.title}
           sources={evidence.sources}
-          onClose={() => setEvidence(null)}
+          onClose={() => {
+            setEvidence(null);
+            restoreFocus();
+          }}
         />
       )}
       {followup && (
         <Dialog
           title={`补查：${followup.name}`}
           width="xlarge"
-          onClose={() => setFollowup(null)}
+          onClose={() => {
+            setFollowup(null);
+            restoreFocus();
+          }}
         >
           <LiveDiscovery
             initialQuery={(question.trim()
@@ -478,7 +493,10 @@ export default function ComparePage({ route }: { route: CompareRoute }) {
           }
           items={items}
           evidence={evidenceFromRows(rows)}
-          onClose={() => setAnalysisOpen(false)}
+          onClose={() => {
+            setAnalysisOpen(false);
+            restoreFocus();
+          }}
         />
       )}
     </Stack>
