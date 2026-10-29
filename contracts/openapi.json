@@ -1,6 +1,324 @@
 {
   "components": {
     "schemas": {
+      "AnalysisEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "aspect": {
+            "maxLength": 40,
+            "minLength": 1,
+            "type": "string"
+          },
+          "collectedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "ref": {
+            "maxLength": 40,
+            "minLength": 1,
+            "type": "string"
+          },
+          "sourceTitle": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "sourceUrl": {
+            "format": "uri",
+            "maxLength": 500,
+            "pattern": "^https://",
+            "type": "string"
+          },
+          "subjectId": {
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 800,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref",
+          "subjectId",
+          "aspect",
+          "text"
+        ],
+        "type": "object"
+      },
+      "AnalysisOperation": {
+        "enum": [
+          "compare",
+          "shortlist"
+        ],
+        "type": "string"
+      },
+      "AnalysisPoint": {
+        "additionalProperties": false,
+        "properties": {
+          "evidenceRefs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "privateFragmentIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "evidenceRefs",
+          "privateFragmentIds"
+        ],
+        "type": "object"
+      },
+      "AnalysisProvider": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "const": "simulated-organizer",
+            "type": "string"
+          },
+          "label": {
+            "const": "模拟整理服务",
+            "type": "string"
+          },
+          "retention": {
+            "const": "none",
+            "type": "string"
+          },
+          "simulated": {
+            "const": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "simulated",
+          "retention"
+        ],
+        "type": "object"
+      },
+      "AnalysisReceived": {
+        "additionalProperties": false,
+        "properties": {
+          "evidenceRefs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "privateFragmentIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "subjectIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "subjectIds",
+          "evidenceRefs",
+          "privateFragmentIds"
+        ],
+        "type": "object"
+      },
+      "AnalysisRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisEvidence"
+            },
+            "maxItems": 60,
+            "type": "array"
+          },
+          "operation": {
+            "$ref": "#/components/schemas/AnalysisOperation"
+          },
+          "question": {
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string"
+          },
+          "selectedPrivateFragments": {
+            "items": {
+              "$ref": "#/components/schemas/SelectedPrivateFragment"
+            },
+            "maxItems": 10,
+            "type": "array"
+          },
+          "simulation": {
+            "$ref": "#/components/schemas/AnalysisSimulation"
+          },
+          "subjects": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisSubject"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "operation",
+          "question",
+          "subjects",
+          "evidence",
+          "selectedPrivateFragments"
+        ],
+        "type": "object"
+      },
+      "AnalysisResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "analysisId": {
+            "type": "string"
+          },
+          "caveats": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "operation": {
+            "$ref": "#/components/schemas/AnalysisOperation"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/AnalysisProvider"
+          },
+          "question": {
+            "type": "string"
+          },
+          "received": {
+            "$ref": "#/components/schemas/AnalysisReceived"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisSection"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "analysisId",
+          "operation",
+          "question",
+          "createdAt",
+          "provider",
+          "received",
+          "sections",
+          "caveats"
+        ],
+        "type": "object"
+      },
+      "AnalysisSection": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/AnalysisSectionKind"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisPoint"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "title",
+          "points"
+        ],
+        "type": "object"
+      },
+      "AnalysisSectionKind": {
+        "enum": [
+          "differences",
+          "question_related",
+          "your_notes",
+          "to_confirm"
+        ],
+        "type": "string"
+      },
+      "AnalysisSimulation": {
+        "additionalProperties": false,
+        "properties": {
+          "delayMs": {
+            "maximum": 5000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/AnalysisSimulationOutcome"
+          }
+        },
+        "required": [
+          "outcome"
+        ],
+        "type": "object"
+      },
+      "AnalysisSimulationOutcome": {
+        "enum": [
+          "ok",
+          "error",
+          "hang"
+        ],
+        "type": "string"
+      },
+      "AnalysisSubject": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AnalysisSubjectKind"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind"
+        ],
+        "type": "object"
+      },
+      "AnalysisSubjectKind": {
+        "enum": [
+          "advisor",
+          "internship",
+          "entry"
+        ],
+        "type": "string"
+      },
       "ApiErrorResponse": {
         "properties": {
           "code": {
@@ -262,6 +580,13 @@
         ],
         "type": "object"
       },
+      "PrivateFragmentKind": {
+        "enum": [
+          "reason",
+          "question"
+        ],
+        "type": "string"
+      },
       "ReadinessChecks": {
         "properties": {
           "postgres": {
@@ -295,6 +620,35 @@
           "checks"
         ],
         "type": "object"
+      },
+      "SelectedPrivateFragment": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PrivateFragmentKind"
+          },
+          "subjectId": {
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "text"
+        ],
+        "type": "object"
       }
     }
   },
@@ -304,6 +658,66 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/analyses": {
+      "post": {
+        "description": "No model or external network is used. Private fragments are accepted only when explicitly selected, are never logged as text, and are not retained.",
+        "operationId": "requestAnalysis",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResponse"
+                }
+              }
+            },
+            "description": "Deterministic simulated organization"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Request body exceeds configured limit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request with field-specific details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Requested simulated failure"
+          }
+        },
+        "security": [],
+        "summary": "Organize explicitly selected evidence and private fragments with a deterministic simulated service"
+      }
+    },
     "/api/v1/discoveries": {
       "post": {
         "description": "DuckDuckGo公开索引中的高校、研究所和已核对学术主页，以及限定路径内的微软研究招聘、上海AI实验室招聘、字节校园职位页和OpenCompass仓库。最多读取5个公开HTML页面；不覆盖全网、私域、PDF、需登录或必须运行JavaScript的页面。 仅直接读取所提交的一个范围内公开HTML页面（含通过相同校验的重定向），不使用搜索索引或备用目录；最多1,000,000字节、14秒，提取正文最多16,000字。未判断该页是否回答当前疑问，请阅读正文并核对对象；完整内容请到原站查看。",

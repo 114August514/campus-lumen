@@ -30,6 +30,8 @@ const PERSONAL_HOSTS: &[&str] = &[
     "www.cs.hku.hk",
     "jzuming.github.io",
     "songzhuoran.github.io",
+    "www.cis.mpg.de",
+    "phd.ista.ac.at",
 ];
 // Exact hosts and path prefixes only; do not allow arbitrary corporate/profile pages.
 const OPPORTUNITY_PATHS: &[(&str, &[&str])] = &[
@@ -754,8 +756,12 @@ fn credential_key(key: &str) -> bool {
                 | "password"
                 | "credential"
                 | "apikey"
+                | "secret"
+                | "sig"
+                | "signature"
+                | "jwt"
         )
-    }) || normalized == "api_key"
+    }) || matches!(normalized.as_str(), "api_key" | "client_secret")
 }
 
 fn allowed_url(url: &Url, search: bool) -> bool {
@@ -883,12 +889,16 @@ mod tests {
             "https://cs.hku.hk/",
             "https://jzuming.github.io/",
             "https://songzhuoran.github.io/",
+            "https://www.cis.mpg.de/departments/",
+            "https://phd.ista.ac.at/apply/",
         ] {
             assert!(allowed_url(&Url::parse(url).unwrap(), false));
         }
         for url in [
             "http://127.0.0.1/",
             "https://cs.ustc.edu.cn.evil.example/",
+            "https://evil.cis.mpg.de/",
+            "https://phd.ista.ac.at.evil.example/",
             "https://user:password@cs.ustc.edu.cn/",
             "https://cs.ustc.edu.cn:9000/",
         ] {
@@ -934,6 +944,19 @@ mod tests {
             "https://jobs.bytedance.com/campus/position?api_key=private",
         ] {
             assert!(validate_query(url).is_err(), "accepted {url}");
+        }
+    }
+
+    #[test]
+    fn credential_keys_are_rejected_in_queries_and_fragments() {
+        for key in ["secret", "client_secret", "sig", "signature", "jwt"] {
+            let query = format!("https://www.cis.mpg.de/?{key}=private");
+            let fragment = format!("https://phd.ista.ac.at/#other=ok&{key}=private");
+            assert!(validate_query(&query).is_err(), "accepted query key {key}");
+            assert!(
+                validate_query(&fragment).is_err(),
+                "accepted fragment key {key}"
+            );
         }
     }
 

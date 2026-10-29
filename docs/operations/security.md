@@ -1,6 +1,6 @@
 # Security
 
-Last updated: 2026-10-27
+Last updated: 2026-10-29
 
 The current demo supports bounded public discovery and private browser-local
 explorations. Controls for identity, shared content, uploads and moderation
@@ -16,9 +16,11 @@ search provider or falling back to other pages. Retrieved page
 hosts must fall under `edu.cn`, `ac.cn`, `cas.cn`, `edu`, `edu.hk`, `ac.uk`, or
 `edu.sg`, or equal one of the checked academic hosts `tqchen.com`,
 `xiangwang1223.github.io`, `xiongyingfei.github.io`, `cse.ust.hk`, `www.cs.hku.hk`,
-`cs.hku.hk`, `jzuming.github.io`, and `songzhuoran.github.io`. The latter HKU and
-personal-page hosts support the October 5 source-checked candidates. A permitted
-hostname is a reading boundary, not an endorsement of its claims.
+`cs.hku.hk`, `jzuming.github.io`, `songzhuoran.github.io`, `www.cis.mpg.de`, or
+`phd.ista.ac.at`. These are exact-host entries: subdomains such as
+`evil.cis.mpg.de` and names with appended suffixes are not accepted. The HKU,
+personal-page, Max Planck, and ISTA hosts support source-checked demo candidates.
+A permitted hostname is a reading boundary, not an endorsement of its claims.
 
 Supported opportunity paths also include exact hosts `www.microsoft.com`
 (`/en-us/research/opportunity` and `/en-us/research/lab/microsoft-research-asia/careers`),
@@ -30,14 +32,17 @@ included in keyword search filtering as well as direct reading. No login,
 corporate account, arbitrary GitHub repository or browser-session access is added.
 
 Every redirect is checked again. HTTP(S) only, allowed ports 80/443, and no URL
-credentials, token/session query keys or token/session fragment keys are accepted. Resolved private, loopback, link-local and other
-blocked addresses are rejected; accepted addresses are pinned for the actual
-connection, with environment proxies disabled. When local DNS returns only
-synthetic `198.18.0.0/15` addresses, the service asks the fixed HTTPS endpoint
-`https://dns.google/resolve` for public A records of the already-allowed host.
-Returned addresses must pass the same public-address checks and are pinned;
-the synthetic/private addresses are never page-fetch destinations. Other
-private DNS answers remain blocked.
+credentials are accepted. Query and fragment credential-key checks reject the
+existing token, auth, session, password, credential and API-key forms, plus
+`secret`, `client_secret`, `sig`, `signature`, and `jwt` (case-insensitive, with
+hyphen/underscore normalization). Resolved private, loopback, link-local and
+other blocked addresses are rejected; accepted addresses are pinned for the
+actual connection, with environment proxies disabled. When local DNS returns
+only synthetic `198.18.0.0/15` addresses, the service asks the fixed HTTPS
+endpoint `https://dns.google/resolve` for public A records of the already-allowed
+host. Returned addresses must pass the same public-address checks and are pinned;
+the synthetic/private addresses are never page-fetch destinations. Other private
+DNS answers remain blocked.
 
 There are two concurrent discovery permits per process, at most five fetched
 search-result pages, a 1,000,000-byte page cap, and a 14-second bound per
@@ -53,6 +58,18 @@ The service uses no model or paid API key. It does not store private reasons,
 topics or fetched pages in the backend. Public query terms may reach the
 search provider, and lookup hostnames may reach `dns.google`; see
 [Privacy](../product/privacy.md).
+
+## Simulated Analysis Privacy Boundary
+
+The public `POST /api/v1/analyses` demo endpoint makes no outbound request and
+has no persistence. It receives private reasons or questions only in
+`selectedPrivateFragments`, which the browser must populate from the user's
+explicit per-item selection. Application logs record request ID and counts of
+subjects, evidence, and selected private fragments only; they never record the
+question, evidence text, or private-fragment text. Responses declare the
+simulated provider and `retention: none`. Cancellation or client timeout cannot
+prove whether a dispatched request reached the service, so clients must present
+that state as delivery unknown rather than as retracted.
 
 ## Secrets
 
@@ -111,7 +128,7 @@ Desktop permissions must stay minimal:
 - No long-lived token in WebView localStorage.
 - No unsigned auto-update process.
 
-Capability changes must update `docs/architecture/desktop.md`.
+Capability changes must update `docs/archive/architecture/desktop.md`.
 
 ## Audit And Data Protection
 

@@ -22,6 +22,7 @@ const DEFAULT_CORS_ALLOWED_ORIGINS: &[&str] = &["http://127.0.0.1:5173", "http:/
 const REQUEST_ID_HEADER: &str = "x-request-id";
 static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(1);
 
+mod analysis;
 mod discovery;
 
 #[derive(Clone, Debug)]
@@ -188,6 +189,7 @@ pub fn build_router_with_state_and_config(state: ApiState, config: ApiRuntimeCon
         .route("/readyz", get(readyz))
         .route("/api/v1/meta", get(meta))
         .route("/api/v1/discoveries", post(discovery::discover))
+        .route("/api/v1/analyses", post(analysis::analyze))
         .fallback(not_found)
         .with_state(state)
         .layer(cors_layer(&config))
@@ -364,6 +366,7 @@ pub fn openapi_document() -> Value {
             }
         }
     });
+    analysis::extend_contract(&mut document);
     discovery::extend_contract(&mut document);
     document
 }
