@@ -19,6 +19,14 @@ them to commits, files, and verification commands where possible.
 
 ## Completed
 
+### 2026-10-29 - Repair software-engineering documentation and record process gaps
+
+- Source: After an audit of missing, over-constrained and superficial items, the user chose to fix documentation first.
+- Result: Added `docs/project/detailed-design.md` (modules, routes, storage schema, state machines, algorithms, interfaces, technical debt), `reviews.md` (performed and missing reviews) and `retrospective.md` (per-phase problems, root causes, improvement list). Extended `requirements-spec.md` with design personas (labelled as non-research), use-case diagram and descriptions, user stories and a P→N→FR→UC→acceptance traceability matrix; `requirements-handoff.md` with a conclusion table, consolidated limitations and current status; `progress.md` with real timeline, WBS, two-member division of labour (AI agents listed as tools) and a risk register; `feasibility.md` with verified technical risks and a cited cost model (DeepSeek and Brave prices read 2026-10-29; Kimi price not confirmable, omitted).
+- Corrections: `acceptance.md` F02 tightened to require both keyword discovery and direct read; `test-report.md` now records F02 and F18 as partial, F09 as passing only by the gap criterion, self-verification and unarchived screenshots as evidence limits, and AI-written profiles as unreviewed.
+- Verification: strict `bun run ci:docs` passes.
+- Follow-up: human review of the seven advisor profiles, peer approval of requirements, independent acceptance walkthrough, USTC user interviews; decisions on widening the reading allowlist and on real-model integration.
+
 ### 2026-10-29 - Mid-term integration, unified frontend and software-engineering docs
 
 - Source: User asked for a mid-term review (requirements, feasibility, actual progress), a software-engineering repository organization, acceptance criteria first, and an excellent frontend showing the intended demo; then corrected scope to one 探索 → 发现 → 处理 flow for all types, simulated AI, and coordinator-owned frontend.
