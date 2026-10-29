@@ -15,7 +15,7 @@ Last updated: 2026-10-29
 | OS / 浏览器 | Arch Linux x64；omp 托管的无头 Chromium 150 |
 | API / Web 地址 | `cargo run -p campus_agora_api`（127.0.0.1:8080）、`bun --cwd apps/web dev`（127.0.0.1:5173） |
 | 桌面 / 窄屏视口 | 1280×900；390×844（移动端模拟） |
-| CI 运行 | 见 PR #21 的检查结果（E05） |
+| CI 运行 | PR #21 的 GitHub Actions 运行 40855069098（代码头 `28ea7a4`） |
 | 截图与日志 | 被忽略的 `work/2026-10-29-midterm/`；截图在本次会话中查看，未加入仓库 |
 | 测试数据 | 一个走查主题“AI 系统短期科研（浏览器走查）”，以及演示路线载入的两个“（合成示例）”主题；理由均为编写的合成内容 |
 
@@ -73,7 +73,7 @@ Last updated: 2026-10-29
 | E02 | Rust fmt / clippy / test | 通过 | 34 项测试通过 |
 | E03 | OpenAPI 与生成类型无漂移 | 通过 | `bun run api:check` 返回 0 |
 | E04 | `bun run ci:docs` strict | 通过 | MkDocs strict 构建成功 |
-| E05 | 集成 PR 六项 GitHub CI | 待确认 | 以 PR #21 的检查结果为准 |
+| E05 | 集成 PR 六项 GitHub CI | 通过 | 运行 40855069098（`28ea7a4`）：frontend、backend、desktop、contract、docs、container 六项全部 success；之后的提交只改了文档 |
 | E06 | 新增关键测试覆盖 | 通过 | 新增 `catalog`、`compare`、`analysis`、`router` 测试，以及 store 新方法、profiles、后端 analysis 的测试 |
 
 ## 文档与仓库 D
@@ -97,6 +97,6 @@ Last updated: 2026-10-29
 
 ## 结论
 
-M1–M4 全部通过。F 项中 18 项通过，F13 部分通过（只有自动测试覆盖，浏览器专项走查未做）。Q 项中 Q03 部分通过，其余通过。E01–E04、E06 通过，E05 以 PR #21 的 CI 为准。D 项全部通过。
+M1–M4 全部通过。F 项中 18 项通过，F13 部分通过（只有自动测试覆盖，浏览器专项走查未做）。Q 项中 Q03 部分通过，其余通过。E 项全部通过。D 项全部通过。
 
 结论：在开发者走查的范围内，中期 demo 达到最低验收。这是开发者走查，不是学生试用；不代表收益已经验证。
