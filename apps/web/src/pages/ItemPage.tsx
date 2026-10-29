@@ -9,7 +9,6 @@ import {
 } from "@primer/octicons-react";
 import {
   Button,
-  Details,
   Dialog,
   Heading,
   Label,
@@ -17,11 +16,11 @@ import {
   PageLayout,
   Stack,
   Text,
-  useDetails,
 } from "@primer/react";
 import { Blankslate, InlineMessage } from "@primer/react/experimental";
 import { type ReactNode, useState } from "react";
 import { routeHref } from "../app/router";
+import { Disclosure } from "../components/Disclosure";
 import { ItemStatus, itemMeta } from "../components/ItemList";
 import { LiveDiscovery } from "../components/LiveDiscovery";
 import { PrivateNotes } from "../components/PrivateNotes";
@@ -92,7 +91,6 @@ function ProfileSections({
 }: { profile: CandidateProfile; item: CatalogItem }) {
   const { topic } = useAppState();
   const { addItem, updateNotes } = useSessionActions();
-  const prep = useDetails({ closeOnOutsideClick: false });
   const record = recordFor(topic, item);
 
   function addQuestion(question: string) {
@@ -213,42 +211,42 @@ function ProfileSections({
       </Section>
 
       {profile.preparation.length > 0 && (
-        <Details {...prep.getDetailsProps()}>
-          <Details.Summary>
-            <Heading as="h2" variant="medium">
-              {prep.open ? "准备重点（按需）" : "需要时展开：准备重点"}
-            </Heading>
-          </Details.Summary>
-          <Stack gap="normal" padding="condensed">
-            <Text as="p" size="small">
-              已经有基础，或者暂时不打算继续，都可以跳过。
-            </Text>
-            {profile.preparation.map((step) => (
-              <Stack key={step.text} gap="condensed">
-                <Stack
-                  direction="horizontal"
-                  gap="condensed"
-                  align="center"
-                  wrap="wrap"
-                >
-                  <Text weight="semibold">{step.text}</Text>
-                  <Label variant="secondary">
-                    {step.origin === "source" ? "来源建议" : "整理建议"}
-                  </Label>
+        <Section id="prep" title="准备重点（按需）">
+          <Disclosure
+            summary={`需要时展开 ${profile.preparation.length} 条准备建议`}
+            openSummary="收起准备建议"
+          >
+            <Stack gap="normal">
+              <Text as="p" size="small">
+                已经有基础，或者暂时不打算继续，都可以跳过。
+              </Text>
+              {profile.preparation.map((step) => (
+                <Stack key={step.text} gap="condensed">
+                  <Stack
+                    direction="horizontal"
+                    gap="condensed"
+                    align="center"
+                    wrap="wrap"
+                  >
+                    <Text weight="semibold">{step.text}</Text>
+                    <Label variant="secondary">
+                      {step.origin === "source" ? "来源建议" : "整理建议"}
+                    </Label>
+                  </Stack>
+                  <Text as="p">为什么：{step.reason}</Text>
+                  {step.resourceIds?.map((id) => {
+                    const resource = findItem(id);
+                    return resource ? (
+                      <Link key={id} href={routeHref({ name: "item", id })}>
+                        相关资源：{resource.name}
+                      </Link>
+                    ) : null;
+                  })}
                 </Stack>
-                <Text as="p">为什么：{step.reason}</Text>
-                {step.resourceIds?.map((id) => {
-                  const resource = findItem(id);
-                  return resource ? (
-                    <Link key={id} href={routeHref({ name: "item", id })}>
-                      相关资源：{resource.name}
-                    </Link>
-                  ) : null;
-                })}
-              </Stack>
-            ))}
-          </Stack>
-        </Details>
+              ))}
+            </Stack>
+          </Disclosure>
+        </Section>
       )}
 
       <Section id="unknowns" title="仍需确认">

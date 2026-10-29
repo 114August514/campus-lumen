@@ -100,6 +100,12 @@ export interface CompareTray {
   ids: string[];
 }
 
+export interface AppMessage {
+  tone: "success" | "critical" | "info";
+  text: string;
+  at: number;
+}
+
 interface AppState {
   store: Store | null;
   topics: ExplorationTopic[];
@@ -115,8 +121,10 @@ interface AppState {
     preferences?: string;
     types?: string[];
   }) => string | null;
-  message: { tone: "success" | "critical" | "info"; text: string } | null;
-  setMessage: (message: AppState["message"]) => void;
+  message: AppMessage | null;
+  setMessage: (message: Omit<AppMessage, "at"> | null) => void;
+  /** Drop a message that was set before the user moved to another view. */
+  clearStaleMessage: () => void;
   storageError: string;
   tray: CompareTray;
   toggleCompare: (item: CatalogItem) => void;
@@ -131,9 +139,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [initial] = useState(loadOnce);
   const [topics, setTopics] = useState(initial.topics);
   const [topicId, setTopicId] = useState(initial.topicId);
-  const [message, setMessage] = useState<AppState["message"]>(
-    initial.notice ? { tone: "info", text: initial.notice } : null,
+  const [message, setMessageState] = useState<AppMessage | null>(
+    initial.notice ? { tone: "info", text: initial.notice, at: Date.now() } : null,
   );
+  const setMessage = useCallback((next: Omit<AppMessage, "at"> | null) => {
+    setMessageState(next ? { ...next, at: Date.now() } : null);
+  }, []);
+  const clearStaleMessage = useCallback(() => {
+    // A message set within the navigation that just happened still belongs to it.
+    setMessageState((current) =>
+      current && Date.now() - current.at > 1500 ? null : current,
+    );
+  }, []);
   // One comparison tray per session, so switching topics never shows another
   // topic's saved objects or a stale count.
   const [trays, setTrays] = useState<Record<string, CompareTray>>({});
@@ -177,7 +194,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return false;
       }
     },
-    [store, initial.error],
+    [store, initial.error, setMessage],
   );
 
   const createTopic = useCallback<AppState["createTopic"]>(
@@ -231,7 +248,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       }
       setCompareIds(item.kind, [...current.ids, item.id]);
     },
-    [trays, topicId, setCompareIds],
+    [trays, topicId, setCompareIds, setMessage],
   );
 
   const value = useMemo<AppState>(
@@ -245,6 +262,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       createTopic,
       message,
       setMessage,
+      clearStaleMessage,
       storageError: initial.error,
       tray,
       toggleCompare,
@@ -261,6 +279,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       mutate,
       createTopic,
       message,
+      setMessage,
+      clearStaleMessage,
       initial.error,
       tray,
       toggleCompare,

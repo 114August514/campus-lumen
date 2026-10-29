@@ -12,7 +12,6 @@ import {
 import {
   Banner,
   Button,
-  Details,
   FormControl,
   Heading,
   Label,
@@ -23,7 +22,6 @@ import {
   Text,
   TextInput,
   Timeline,
-  useDetails,
 } from "@primer/react";
 import { useEffect, useId, useMemo, useState } from "react";
 import { type CatalogItem, kindText, toSaveTarget } from "../lib/catalog";
@@ -31,6 +29,7 @@ import { REPLAY_LABEL, classifyWarning, replayRunner } from "../lib/demo-replay"
 import { type DiscoveryRunState, createDiscoveryRun } from "../lib/discovery-run";
 import type { CandidateSnapshot, SourceSnapshot } from "../lib/exploration-store";
 import { useAppState } from "../state/app-state";
+import { Disclosure } from "./Disclosure";
 import { formatDateTime } from "./meta";
 
 export interface ReadablePage {
@@ -197,7 +196,6 @@ function ReadSource({
   linkOptions: CatalogItem[];
 }) {
   const { topic, mutate, setMessage } = useAppState();
-  const { getDetailsProps, open } = useDetails({ closeOnOutsideClick: false });
   const [choice, setChoice] = useState(target?.id ?? "");
   const [name, setName] = useState("");
   const [org, setOrg] = useState("");
@@ -266,14 +264,14 @@ function ReadSource({
           {source.relevanceEvidence.join("\n")}
         </Text>
       )}
-      <Details {...getDetailsProps()}>
-        <Details.Summary>
-          {open ? "收起正文" : `查看读到的正文（${source.content.length} 字）`}
-        </Details.Summary>
+      <Disclosure
+        summary={`查看读到的正文（${source.content.length} 字）`}
+        openSummary="收起正文"
+      >
         <Text as="p" whiteSpace="pre-wrap">
           {source.content}
         </Text>
-      </Details>
+      </Disclosure>
       {source.unknowns.map((unknown) => (
         <Text key={unknown} size="small">
           未确认：{unknown}
@@ -490,15 +488,14 @@ export function LiveDiscovery({
           </Button>
         </Stack>
       )}
-      <Details>
-        <Details.Summary>本轮上限与停止说明</Details.Summary>
+      <Disclosure summary="本轮上限与停止说明">
         <Text as="p" size="small">
           每轮服务端最多 30 秒、5 条正文、6 次读取（含检索），每次读取最多 14 秒、1
           MB；连同传输最多等待 35 秒。 外部请求最多 48
           次。停止后保留已收到的正文，不自动重试；不调用收费模型或搜索 API。 只读取静态
           HTML；需要登录、动态加载或 PDF 的页面会明确失败，可以打开原站查看。
         </Text>
-      </Details>
+      </Disclosure>
       <div aria-live="polite">
         {(runState.phase !== "idle" || history.length > 0) && (
           <RunTimeline state={runState} history={history} replay={Boolean(replay)} />

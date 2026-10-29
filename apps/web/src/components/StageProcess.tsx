@@ -3,7 +3,6 @@ import {
   ActionList,
   ActionMenu,
   Button,
-  Details,
   FormControl,
   Heading,
   IconButton,
@@ -32,6 +31,7 @@ import { useAppState } from "../state/app-state";
 import { useSessionActions } from "../state/session-actions";
 import { AnalysisDialog, AnalysisResult } from "./AnalysisDialog";
 import { AssociationNotice } from "./AssociationNotice";
+import { Disclosure } from "./Disclosure";
 import { ItemStatus, itemMeta } from "./ItemList";
 import { DecisionLabel, TypeIcon, decisionText, formatDateTime } from "./meta";
 
@@ -149,7 +149,8 @@ export function StageProcess({
       id: "item",
       header: "对象",
       rowHeader: true,
-      width: "growCollapse",
+      width: "grow",
+      minWidth: 280,
       renderCell: (record) => (
         <Stack gap="condensed">
           <Stack direction="horizontal" gap="condensed" align="center">
@@ -166,7 +167,7 @@ export function StageProcess({
     {
       id: "status",
       header: "状态",
-      width: "auto",
+      width: "growCollapse",
       renderCell: (record) => <ItemStatus item={record.item} />,
     },
     {
@@ -408,13 +409,11 @@ export function StageProcess({
             只保存在本主题；每条记录注明当时发送了哪些个人内容。
           </Text>
           {topic.analyses?.map((analysis) => (
-            <Details key={analysis.id}>
-              <Details.Summary>
-                {formatDateTime(analysis.createdAt)} ·{" "}
-                {analysis.subjects.map((subject) => subject.name).join("、")} ·
-                发送个人内容 {analysis.sentFragmentIds.length} 条
-              </Details.Summary>
-              <Stack gap="normal" padding="condensed">
+            <Disclosure
+              key={analysis.id}
+              summary={`${formatDateTime(analysis.createdAt)} · ${analysis.subjects.map((subject) => subject.name).join("、")} · 发送个人内容 ${analysis.sentFragmentIds.length} 条`}
+            >
+              <Stack gap="normal">
                 <AnalysisResult analysis={analysis} />
                 <Button
                   size="small"
@@ -429,16 +428,15 @@ export function StageProcess({
                   删除这条记录
                 </Button>
               </Stack>
-            </Details>
+            </Disclosure>
           ))}
         </Stack>
       )}
 
-      <Details>
-        <Details.Summary>
-          {topic.pausedNote ? "这个探索已暂停（查看备注）" : "暂停这个探索"}
-        </Details.Summary>
-        <Stack gap="condensed" padding="condensed">
+      <Disclosure
+        summary={topic.pausedNote ? "这个探索已暂停（查看备注）" : "暂停这个探索"}
+      >
+        <Stack gap="condensed">
           <Text as="p" size="small">
             暂停只是留个备注，不会提醒或推送；什么时候回来都可以。
           </Text>
@@ -480,7 +478,7 @@ export function StageProcess({
             )}
           </Stack>
         </Stack>
-      </Details>
+      </Disclosure>
     </Stack>
   );
 }

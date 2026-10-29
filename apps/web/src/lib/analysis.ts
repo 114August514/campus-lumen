@@ -24,6 +24,18 @@ export interface PrivateFragmentOption {
   text: string;
 }
 
+/** The service accepts single-line text; line breaks become separators, then trim to the limit. */
+function sendable(text: string, limit: number): string {
+  return (
+    text
+      .replace(/\s*[\r\n]+\s*/g, "；")
+      // biome-ignore lint/suspicious/noControlCharactersInRegex: stripping control characters is the point
+      .replace(/[\u0000-\u001f\u007f]/g, " ")
+      .trim()
+      .slice(0, limit)
+  );
+}
+
 /** The current topic's notes on these items; nothing from other topics. */
 export function privateFragmentOptions(
   topic: ExplorationTopic | undefined,
@@ -46,7 +58,7 @@ export function privateFragmentOptions(
         kind: "reason",
         subjectId: item.id,
         subjectName: item.name,
-        text: reason.slice(0, 500),
+        text: sendable(reason, 500),
       });
     }
     record.questions.forEach((question, index) => {
@@ -57,7 +69,7 @@ export function privateFragmentOptions(
         kind: "question",
         subjectId: item.id,
         subjectName: item.name,
-        text: text.slice(0, 500),
+        text: sendable(text, 500),
       });
     });
   }
@@ -75,7 +87,7 @@ export function evidenceFromRows(rows: CompareRow[]): AnalysisEvidence[] {
         ref: `e${evidence.length + 1}`,
         subjectId: cell.itemId,
         aspect: row.followup ? "unknowns" : row.label,
-        text: cell.text.slice(0, 800),
+        text: sendable(cell.text, 800),
         ...(source
           ? {
               sourceTitle: source.title.slice(0, 200),
@@ -98,7 +110,7 @@ export function evidenceFromItems(items: CatalogItem[]): AnalysisEvidence[] {
       ref: `e${evidence.length + 1}`,
       subjectId: item.id,
       aspect,
-      text: text.slice(0, 800),
+      text: sendable(text, 800),
       sourceTitle: item.name.slice(0, 200),
       ...(item.entryUrl.startsWith("https://") ? { sourceUrl: item.entryUrl } : {}),
     });

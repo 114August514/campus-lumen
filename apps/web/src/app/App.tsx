@@ -20,13 +20,17 @@ export function App({
   onToggleColorMode: () => void;
 }) {
   const route = useRoute();
-  const { message, setMessage, storageError } = useAppState();
+  const { message, setMessage, clearStaleMessage, storageError } = useAppState();
 
   // Each view starts at the top, like following a link; messages belong to one view.
   // biome-ignore lint/correctness/useExhaustiveDependencies: run on every route change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [route.name]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: run on every route change
+  useEffect(() => {
+    clearStaleMessage();
+  }, [route]);
 
   return (
     <PageLayout containerWidth="xlarge" padding="none" rowGap="none">

@@ -73,12 +73,15 @@ function CellView({
 }) {
   return (
     <Stack gap="condensed">
-      {cell.status &&
-        (cell.status in routeStatusText ? (
-          <RouteStatusLabel status={cell.status as RouteStatus} />
-        ) : (
-          <TimingLabel timing={cell.status as OpportunityTiming} />
-        ))}
+      {cell.status && (
+        <Stack direction="horizontal">
+          {cell.status in routeStatusText ? (
+            <RouteStatusLabel status={cell.status as RouteStatus} />
+          ) : (
+            <TimingLabel timing={cell.status as OpportunityTiming} />
+          )}
+        </Stack>
+      )}
       <Text whiteSpace="pre-wrap">{cell.text}</Text>
       {row.followup &&
         supplements.map((source) => (

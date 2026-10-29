@@ -1,6 +1,7 @@
 import { LinkExternalIcon } from "@primer/octicons-react";
-import { Details, Label, Link, Stack, Text, useDetails } from "@primer/react";
+import { Label, Link, Stack, Text } from "@primer/react";
 import type { SourceSnapshot } from "../lib/exploration-store";
+import { Disclosure } from "./Disclosure";
 import { formatDate } from "./meta";
 
 function sourceKind(source: SourceSnapshot): [string, "accent" | "secondary"] {
@@ -11,40 +12,36 @@ function sourceKind(source: SourceSnapshot): [string, "accent" | "secondary"] {
 }
 
 function SourceDetails({ source }: { source: SourceSnapshot }) {
-  const { getDetailsProps, open } = useDetails({ closeOnOutsideClick: false });
   return (
-    <Details {...getDetailsProps()}>
-      <Details.Summary>{open ? "收起依据" : "查看依据与读取范围"}</Details.Summary>
-      <Stack gap="condensed" padding="condensed">
-        {source.relevanceEvidence?.length ? (
-          <Text as="p" whiteSpace="pre-wrap">
-            <Text weight="semibold">与查找相关的段落：</Text>
-            {source.relevanceEvidence.join("\n")}
-          </Text>
-        ) : null}
+    <Disclosure summary="查看依据与读取范围" openSummary="收起依据">
+      {source.relevanceEvidence?.length ? (
         <Text as="p" whiteSpace="pre-wrap">
-          {source.content.length > 1600
-            ? `${source.content.slice(0, 1600)}…`
-            : source.content}
+          <Text weight="semibold">与查找相关的段落：</Text>
+          {source.relevanceEvidence.join("\n")}
         </Text>
-        {source.collection && (
-          <Text as="p" size="small">
-            {source.collection.method === "browser_dom" ? "浏览器读取" : "网页读取"}；
-            {source.collection.readStatus === "partial"
-              ? "只读取了部分内容"
-              : "已完成本次范围内的读取"}
-            ；范围：{source.collection.scope}
-          </Text>
-        )}
-        {source.query && <Text size="small">当时的查询：{source.query}</Text>}
-        {source.accessNote && <Text size="small">{source.accessNote}</Text>}
-        {source.unknowns?.map((unknown) => (
-          <Text key={unknown} size="small">
-            未确认：{unknown}
-          </Text>
-        ))}
-      </Stack>
-    </Details>
+      ) : null}
+      <Text as="p" whiteSpace="pre-wrap">
+        {source.content.length > 1600
+          ? `${source.content.slice(0, 1600)}…`
+          : source.content}
+      </Text>
+      {source.collection && (
+        <Text as="p" size="small">
+          {source.collection.method === "browser_dom" ? "浏览器读取" : "网页读取"}；
+          {source.collection.readStatus === "partial"
+            ? "只读取了部分内容"
+            : "已完成本次范围内的读取"}
+          ；范围：{source.collection.scope}
+        </Text>
+      )}
+      {source.query && <Text size="small">当时的查询：{source.query}</Text>}
+      {source.accessNote && <Text size="small">{source.accessNote}</Text>}
+      {source.unknowns?.map((unknown) => (
+        <Text key={unknown} size="small">
+          未确认：{unknown}
+        </Text>
+      ))}
+    </Disclosure>
   );
 }
 

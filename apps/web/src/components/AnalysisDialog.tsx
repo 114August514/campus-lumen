@@ -9,7 +9,6 @@ import {
   Button,
   Checkbox,
   CheckboxGroup,
-  Details,
   Dialog,
   FormControl,
   Heading,
@@ -32,6 +31,14 @@ import {
 import type { CatalogItem } from "../lib/catalog";
 import type { SavedAnalysis } from "../lib/exploration-store";
 import { type AnalysisOutcome, useAppState } from "../state/app-state";
+import { Disclosure } from "./Disclosure";
+
+const outcomeText: Record<AnalysisOutcome, string> = {
+  ok: "正常",
+  delay: "延迟 3 秒",
+  hang: "超时",
+  error: "服务错误",
+};
 
 const deliveryText: Record<
   DeliveryState,
@@ -206,11 +213,9 @@ export function AnalysisDialog({
           />
         </FormControl>
 
-        <Details>
-          <Details.Summary>
-            公开依据 {request.evidence.length} 条（
-            {items.map((item) => item.name).join("、")}）
-          </Details.Summary>
+        <Disclosure
+          summary={`查看将发送的公开依据 ${request.evidence.length} 条（${items.map((item) => item.name).join("、")}）`}
+        >
           <Stack as="ul" gap="condensed" padding="condensed">
             {request.evidence.map((item) => (
               <Text as="li" size="small" key={item.ref}>
@@ -223,7 +228,7 @@ export function AnalysisDialog({
               </Text>
             ))}
           </Stack>
-        </Details>
+        </Disclosure>
 
         <CheckboxGroup disabled={busy}>
           <CheckboxGroup.Label>
@@ -257,7 +262,7 @@ export function AnalysisDialog({
             {request.selectedPrivateFragments.length} 条
           </Text>
           {demo.analysisOutcome !== "ok" && (
-            <Label variant="attention">演示设置：{demo.analysisOutcome}</Label>
+            <Label variant="attention">演示设置：{outcomeText[demo.analysisOutcome]}</Label>
           )}
         </Stack>
 
