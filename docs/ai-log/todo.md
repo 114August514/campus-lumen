@@ -1,6 +1,6 @@
 # AI Log Todo
 
-Last updated: 2026-10-22
+Last updated: 2026-10-25
 
 This file records meaningful pending work for AI agents and collaborators.
 Keep entries short, dated, and actionable.
@@ -19,6 +19,34 @@ Keep entries short, dated, and actionable.
 ```
 
 ## Pending
+
+### 2026-10-25 - Review backend capability/domain design before implementation
+
+- Source: User requested backend design addressing single-task coupling and extensibility.
+- Milestone: P2.
+- Status: Proposal complete in work/2026-10-25-backend-design/design.md and summary.md. Reuses four Rust crates; separates public objects/routes/offerings/evidence from discovery/analysis/run execution, keeps private topics local, and preserves legacy discovery/storage contracts. Frontend PR #19 unchanged.
+- Next: Review the proposed model and take one minimal object/evidence + source-bound comparison backend slice; promote adopted architecture/API/privacy changes when implementing. No runtime changes, server private storage or feature expansion adopted by producing the proposal.
+
+### 2026-10-25 - Peer review Kimi product frontend pre-design (PR #19)
+
+- Source: User requests peer review of Kimi frontend design.
+- Milestone: P2.
+- Status: [PR #19](https://github.com/114August514/campus-lumen/pull/19), documentation-only, open/unmerged at f8e15ec. Original Kimi draft/summary/research archived under docs/product/frontend-pre-design/ on the PR branch, with coordinator review guide/caveats separate.
+- Acceptance: Discuss how this product frontend should be designed from final requirements: product presentation, IA, pages and UE. Frontend/backend implementation are separate; no working integration required. User requested minimal coordinator framing without extra analysis or prescribed review checklist.
+
+### 2026-10-24 - Align exploration and comparison semantics before further UI work
+
+- Source: User requested assembling semantic-alignment materials first, with concrete outcomes and proportionate treatment of boundaries.
+- Status: Review material prepared in ignored work/2026-10-24-semantic-alignment/alignment.md. User subsequently requested an independent Kimi page diagnosis, now delivered in work/2026-10-24-kimi-page-diagnosis/diagnosis.md and summary.md. Positioning-led Kimi pre-design and renewed diagnosis now available in work/2026-10-25-kimi-positioning-ia/. Frontend-first reflection and 10 structured scenario fixtures are now reviewed in work/2026-10-25-kimi-frontend-first/ (frontend-target.md, contracts-and-backlog.md, coordinator-review.md). Proposed next slice: question-through comparison, local continuation and a scenario runner; backend comparison before optional catalog migration. User then requested an independent requirements-led round; Kimi originals are in work/2026-10-25-kimi-independent-product-design/ (design-draft.md and summary.md), with separate coordinator-notes.md for textual inconsistencies. No new requirements accepted and no further frontend implementation started.
+- Acceptance: A readable concept map, grounded current-state gap analysis, worked Jiang/Song comparison and actionable Kimi handoff; keep interpretations distinguishable from confirmed requirements. Resolve meaning with the user before prescribing another UI implementation.
+
+### 2026-10-23 - Identify and install the requested Kimi frontend design skill
+
+- Source: User requested a locally installed Kimi-official skill, followed by this project's frontend design work using Kimi.
+- Milestone: P2; design work must follow the existing task design and Primer UI rules.
+- Status: User suggested extracting skills from the official desktop package. Static inspection of Kimi Work 3.2.19 succeeded: extracted genuine `kimi-design` (PPTD design assets, including a static UI-design profile) and `widgetdesign` (Kimi-hosted iframe UI), plus their references, to ignored `work/2026-10-23-kimi-skill-inspection/official-assets/`. These are not a portable React frontend workflow; `webapp-building` was not found in the inspected package inventories. No skill/plugin installed or application launched.
+- Acceptance: Confirm an official downloadable source, inspect and install it, verify local loading with Kimi through OMP, then apply it to a bounded project frontend task. Do not substitute a community copy or Anthropic skill without resolving the user's source preference.
+- Dependencies: An applicable portable official frontend skill, or a decision to use the extracted official UI guidelines as references with an explicitly project-authored integration. Preserve provenance and distinguish Kimi-specific tooling from OMP capabilities. Subsequent experiments installed official CLI 2.3.1 only under ignored work and verified four Blueprint read tools through a temporary locally authored MCP bridge; data creation/layout/binding passed, but Kimi-hosted display and Python Automation completion did not. This does not install a frontend Skill or make the Work stack a project dependency.
 
 ### 2026-10-22 - Continue after topic editing and bounded discovery
 

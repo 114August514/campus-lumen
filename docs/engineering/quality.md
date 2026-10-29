@@ -1,6 +1,6 @@
 # Quality Gates
 
-Last updated: 2026-10-04
+Last updated: 2026-10-23
 
 M0.1 turns the repository skeleton into a checked engineering loop.
 
@@ -51,10 +51,20 @@ suite. New UI primitives must still provide:
 
 ## UI Regression Boundary
 
+Frontend design/implementation runs through the project-local
+Kimi workflow (`tools/kimi/README.md`), with its explicit Skill and
+single-provider configuration. Check the launcher boundaries with
+`python3 -m unittest discover -s tools/kimi -p 'test_*.py'` when changing that
+orchestration. Its `pending_browser_review` status is not visual acceptance;
+browser feedback must return to Kimi for frontend fixes. Downloaded third-party
+Skills remain contextual references and cannot override the UI specification.
+
 The active advisor UI follows [the Primer specification](../product/ui-system.md).
 `bun run lint:styles` now checks application sources for handwritten styles,
 `style`/`sx`/`className` attributes, non-Primer stylesheet imports and selected
-incompatible UI imports. Primer distribution CSS is allowed. This static check
+incompatible UI imports. Primer distribution CSS and the single declarative
+document theme file `src/app/theme.css` (validated to contain only `:root`
+theme rules) are allowed. This static check
 does not establish visual compliance, contrast or keyboard usability. Web tests
 exercise same-browser storage/isolated topics; use actual browser operations to
 check rendered saving and restoration.

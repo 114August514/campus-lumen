@@ -1,6 +1,6 @@
 # Development
 
-Last updated: 2026-10-22
+Last updated: 2026-10-23
 
 ## Requirements
 
@@ -8,6 +8,50 @@ Last updated: 2026-10-22
 - Rust stable with `rustfmt` and `clippy`
 - PostgreSQL 16 for migration smoke tests
 - uv for MkDocs
+
+## Local UI Workbench (Dev Only)
+
+For iterating on UI with real components, run `bun run dev:web` and open
+`http://127.0.0.1:5173/workbench.html`. This is a development tool, not a
+student-facing feature: the entry HTML files (`workbench.html`,
+`workbench-preview.html`) are served by Vite in dev only, are not listed in
+the production build inputs, and the product entry and navigation do not
+reference them.
+
+The canvas composes the real explore home (`ExploreHome`), candidate detail
+(`AdvisorDetail`, shared with `App.tsx`) and comparison (`AdvisorComparison`)
+screens against the repository's built-in public sample candidates. Screen
+and content selection live in the shell; the same selection can be deep-linked
+through URL parameters (`?screen=detail&candidate=...&pair=...`).
+
+- Viewport: “桌面（当前窗口）” renders inline at the real window width; “窄屏
+  390px” renders the preview inside a 390px iframe, so media queries and
+  responsive component props evaluate against that true viewport. The frame
+  uses the native `frameBorder` attribute (no CSS) so its client width really
+  is 390px; once mounted its document stays stable and selection changes
+  arrive over postMessage instead of reloading the frame. “在新窗口打开窄屏预览”
+  opens the same canvas at 390×844 with the current selection in its URL for
+  real-window checks. Desktop mode renders inline at the current window width.
+  No CSS, style or sx is added for any of this.
+- Entries: the product entry and both workbench entries mount through the
+  single shared `src/components/ui/ThemeRoot.tsx` theme wrapper; the product
+  entry restores the PR #15 day/night toggle, the workbench stays on the
+  default light scheme.
+- Feedback hygiene: save/warning banners are cleared when the previewed
+  screen, candidate or comparison pair changes, so stale messages cannot
+  describe a different view.
+- Isolation: the preview saves through the real `createExplorationStore` code
+  backed by an in-memory shim (`createPreviewStorage()`), never localStorage;
+  the workbench key `campus-lumen:workbench-preview:v1` is distinct from the
+  product key and disappears on reload. The canvas deliberately excludes
+  `DiscoveryPanel`, so it never starts external discovery.
+- HMR: editing reused components under `src/` refreshes the shell, the iframe
+  canvas and any preview window through Vite HMR. There is no online code
+  editor, arbitrary HTML execution, drag-and-drop designer or backend.
+- Shell↔iframe sync uses a validated same-origin postMessage protocol in
+  `src/workbench/workbench-config.ts`; `tests/workbench-config.test.ts` and
+  `tests/workbench-preview.test.tsx` cover selection parsing, message
+  validation, storage isolation and the rendered screens.
 
 ## Local API
 
