@@ -1,6 +1,6 @@
 # AI Log Done
 
-Last updated: 2026-10-27
+Last updated: 2026-10-29
 
 This file records completed agent-visible work. Keep entries factual and link
 them to commits, files, and verification commands where possible.
@@ -18,6 +18,15 @@ them to commits, files, and verification commands where possible.
 ```
 
 ## Completed
+
+### 2026-10-29 - Mid-term integration, unified frontend and software-engineering docs
+
+- Source: User asked for a mid-term review (requirements, feasibility, actual progress), a software-engineering repository organization, acceptance criteria first, and an excellent frontend showing the intended demo; then corrected scope to one 探索 → 发现 → 处理 flow for all types, simulated AI, and coordinator-owned frontend.
+- Result: Branch `feat/midterm-demo` ([PR #21](https://github.com/114August514/campus-lumen/pull/21)) integrates #18, `codex/demo-high-priority`, #20 and the preserved Kimi work (`wip/kimi-frontend-2026-10-25`). New frontend: hash routes, lazy pages, unified catalog, per-kind comparison, live-discovery run timeline with stop/late isolation, entry evidence, AI send-confirm with current-topic-only unticked notes and five delivery states, demo route with synthetic sessions/AI outcomes/replays. Backend `POST /api/v1/analyses` simulated organizer (no model, no network, no storage, echoes received ids); allowlist adds MPI/ISTA hosts. Seven source-bound advisor profiles. Kimi workbench removed.
+- Docs: `docs/project/` (index, feasibility, requirements-spec, acceptance, test-report, progress, user-guide), `docs/product/frontend-design.md` v1.1, archived legacy docs under `docs/archive/`, fixed requirement/status contradictions, AGENTS.md records the 2026-10-29 decisions.
+- Verification: `bun run ci:frontend` (21 client + 125 web tests, UI rules, build; main JS gzip 156 kB); cargo fmt/clippy/test (34); `bun run api:check`; strict `bun run ci:docs`. Browser walkthrough at 1280/390/dark/keyboard with live direct reads of jzuming.github.io and cis.mpg.de/internships; results and deviations in `docs/project/test-report.md`. Developer walkthrough only, not student trial.
+- Repository: with user approval, deleted squash-merged local branches and remote `claude/*` branches after `archive/*` tags (remote tags pushed for `claude/*`); removed old worktrees after committing their uncommitted content as WIP and tagging `archive/*-wip`.
+- Follow-up: E05 GitHub CI on PR #21; browser walkthrough for F12/F13; full keyboard/screen-reader pass; real-model integration remains deferred; keyword search often hits verification pages.
 
 ### 2026-10-27 - Repair mistaken public associations without losing private records
 

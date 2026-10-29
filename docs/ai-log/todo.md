@@ -1,6 +1,6 @@
 # AI Log Todo
 
-Last updated: 2026-10-27
+Last updated: 2026-10-29
 
 This file records meaningful pending work for AI agents and collaborators.
 Keep entries short, dated, and actionable.
@@ -19,6 +19,13 @@ Keep entries short, dated, and actionable.
 ```
 
 ## Pending
+
+### 2026-10-29 - Review and merge the mid-term integration PR
+
+- Source: Mid-term delivery; facts in done.md and `docs/project/test-report.md`.
+- Status: [PR #21](https://github.com/114August514/campus-lumen/pull/21) open from `feat/midterm-demo`; merging to main awaits user approval. It supersedes #18 and #20 (teammate's) — closing them is the user's decision.
+- Remaining: confirm six CI jobs; browser walkthroughs for F12 (no request on condition edit) and F13 (synthetic split); complete keyboard and screen-reader pass; decide whether to keep `wip/kimi-frontend-2026-10-25`, `backup/*`, `docs/requirements-handoff` and `prototype/advisor-guide` branches.
+- Later (not mid-term): real-model integration with the same selected-content contract; structured participation routes for route-level association repair; more sourced content for non-advisor types.
 
 ### 2026-10-27 - Follow up after high-priority demo integration
 
