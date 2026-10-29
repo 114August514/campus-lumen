@@ -1,6 +1,6 @@
 # Agent Notes
 
-Last updated: 2026-10-22
+Last updated: 2026-10-24
 
 This file is the project-level instruction sheet for AI agents and human
 collaborators. Follow it before making changes.
@@ -205,10 +205,40 @@ credits/GPA and other recognition; only applicable rules support eligibility.
 
 ## UI Rules
 
-Follow `docs/product/ui-system.md` before any UI or prototype work. Use only Primer React Product UI + Primer Primitives + Octicons. No Tailwind, handwritten CSS/CSS Modules, inline style, sx or CSS-in-JS. Use library layouts and one declarative theme configuration. Fix light neutral palette with Primer blue interaction, system sans-serif and normal letter spacing. Ban emoji icons, eyebrows, subtitles/taglines, gradients, bordered content cards, display monospace and tracking. Keep necessary field borders and keyboard focus. The current Web app uses Primer; the historical HTML prototype remains superseded and is not a compliant template. Reference sites inform interaction only; they cannot override these rules.
+Follow `docs/product/ui-system.md` before any UI or prototype work. Use only Primer React Product UI + Primer Primitives + Octicons. No Tailwind, handwritten component CSS/CSS Modules, inline style, sx or CSS-in-JS. Use library layouts and one declarative theme configuration; the sole document mapping is `apps/web/src/app/theme.css`. Following the user's 2026-10-23 choice, PR #15 is the visual starting point, with its open-compass brand mark and a toggle between locked Primer light/dark schemes (light by default). Keep Primer blue interaction, system sans-serif and normal letter spacing. Ban emoji icons, eyebrows, subtitles/taglines, gradients, bordered content cards, display monospace and tracking. Keep necessary field borders and keyboard focus. The brand SVG is distinct from Octicons functional icons. The historical standalone HTML prototype remains superseded and is not a compliant template. Reference sites inform interaction only; they cannot override these rules or the user's latest design direction.
 
 ## Collaboration Rules
 
+- User reference direction (2026-10-24): explore Qwen-style paired model-output
+  comparison as an interaction reference for comparing two people, and
+  agent-session-style organization for exploration topics. The user supplied
+  `https://github.com/HKUDS/DeepTutor` (labeled OpenHarness) as a frontend source
+  reference. Kimi must inspect the actual referenced implementation and own the
+  adaptation; these analogies do not imply implemented model generation,
+  concurrent agents or cross-topic private-data sharing.
+- User direction (2026-10-24): use `k3-256k` for frontend work. Kimi should
+  first research relevant open-source products, then own the project-specific
+  IA, user experience and UI design. The coordinator must not preselect its
+  layout, navigation or visual solution. Existing screens preserve functional
+  contracts, not a frozen information architecture. Select vendor Skills only
+  when useful for the current scenario; do not require all Skills or MCP reads.
+  Prior product/privacy and Primer requirements remain unless the user changes
+  them explicitly. Record actual sources, design decisions and evidence limits.
+- User preference (2026-10-23): frontend design and code implementation must use
+  the Kimi API. Use a Kimi-only provider configuration without fallback to other
+  models. The coordinating agent may relay constraints and verify results; send
+  frontend corrections back to Kimi rather than authoring them with another model.
+  Do not send private topic records or unrelated personal context to Kimi.
+  For frontend tasks, use `tools/kimi/run.py` and the explicitly loaded
+  `tools/kimi/skills/campus-frontend/SKILL.md`; see `tools/kimi/README.md`.
+  Vendor Skills are contextual references, not overrides for this file or the
+  Primer system. Return reproducible browser findings to Kimi within the task's
+  original deadline; readiness alone is not browser acceptance.
+- User design direction (2026-10-23): continue from PR #15's frontend
+  (`1a3a9c6`, `feat/web-opportunity-prototype`), with Kimi owning visual design
+  and optimization. Avoid coordinator micromanagement of design. Preserve later
+  functional/data/privacy improvements while porting that visual starting point;
+  reconcile older conflicting design rules with this latest user direction.
 - Read the relevant local context before editing: this file, the active spec,
   applicable docs, package scripts, and nearby source files. Reuse context
   already read in the session; reread when it changes or is no longer reliable.

@@ -1,6 +1,6 @@
 # Tools
 
-Last updated: 2026-10-22
+Last updated: 2026-10-23
 
 This directory stores tool-specific configuration that does not need to live in
 the repository root for automatic discovery.
@@ -13,6 +13,7 @@ running nested tool commands directly.
 
 - `docs/`: MkDocs and uv configuration for the documentation site.
 - `discovery/`: Offline collected-batch validation, invoked with `bun run discovery:validate <batch.json>`; it does not browse or publish.
+- `kimi/`: [Kimi-only frontend workflow](kimi/README.md), explicit project Skill, pinned reference Skills/catalog text and bounded launcher; does not replace Primer or start a schedule.
 - `skills/opportunity-discovery/`: Repository draft research skill and batch-format reference. Ask the agent to read its `SKILL.md` explicitly; it is not installed into an automatic skill-discovery directory.
 - `prototypes/`: Reviewed historical text specimens and their scope notes. The local legacy HTML is kept in `work/legacy/prototype/`, outside this maintained tools directory.
 

@@ -8,11 +8,13 @@ import {
   Text,
   Textarea,
 } from "@primer/react";
-import { type Column, DataTable } from "@primer/react/experimental";
+import { type Column, DataTable, Hidden } from "@primer/react/experimental";
+import type { ReactNode } from "react";
 import {
   type AnyComparisonFocus,
   type AnyComparisonPerspective,
   type ComparisonPerspective,
+  type ComparisonRow,
   type InternshipFocus,
   type InternshipPerspective,
   type ResearchFocus,
@@ -31,12 +33,44 @@ export interface ComparisonNotes {
   questions: string;
 }
 
-interface ComparisonItem {
-  id: string;
-  advisor: Advisor;
+// One candidate's answer to one comparison question, with its evidence and
+// follow-up entry. Shared by the wide side-by-side table and the narrow
+// stacked layout so both present identical content.
+function CandidateAnswer({
+  rowId,
+  criterion,
+  advisor,
+  text,
+  sources,
+  onFollowup,
+}: {
+  rowId: string;
   criterion: string;
+  advisor: Advisor;
   text: string;
   sources: SourceSnapshot[];
+  onFollowup: (advisor: Advisor) => void;
+}) {
+  return (
+    <Stack gap="condensed">
+      <Text as="p">{text}</Text>
+      {rowId === "unknowns" && (
+        <Button onClick={() => onFollowup(advisor)}>补查{advisor.name}</Button>
+      )}
+      {sources.length > 0 && (
+        <Details>
+          <Details.Summary aria-label={`查看${advisor.name}「${criterion}」的依据`}>
+            查看依据（{sources.length}）
+          </Details.Summary>
+          <Stack gap="normal">
+            {sources.map((source) => (
+              <SourceView key={`${source.url}-${source.collectedAt}`} source={source} />
+            ))}
+          </Stack>
+        </Details>
+      )}
+    </Stack>
+  );
 }
 
 export function AdvisorComparison({
@@ -46,6 +80,7 @@ export function AdvisorComparison({
   topicName,
   notes,
   supplementalSources,
+  headerActions,
   onFollowup,
   onPerspectiveChange,
   onFocusChange,
@@ -60,6 +95,7 @@ export function AdvisorComparison({
   topicName?: string;
   notes: Record<string, ComparisonNotes>;
   supplementalSources: Record<string, SourceSnapshot[]>;
+  headerActions?: ReactNode;
   onFollowup: (advisor: Advisor) => void;
   onPerspectiveChange: (value: AnyComparisonPerspective) => void;
   onFocusChange: (value: AnyComparisonFocus) => void;
@@ -75,57 +111,54 @@ export function AdvisorComparison({
   const hints = isInternship
     ? buildInternshipFocusHints(candidates, focus as InternshipFocus)
     : buildResearchFocusHints(candidates, focus as ResearchFocus);
-  const columns: Column<ComparisonItem>[] = [
+  // Wide layout: one row per comparison question, one column per candidate,
+  // so both answers to the same question sit side by side at the same reading
+  // position (the paired-output comparison pattern). Each column keeps the
+  // candidate's own identity, evidence and follow-up entry.
+  const sideBySideColumns: Column<ComparisonRow>[] = [
     {
-      id: "candidate",
-      header: isInternship ? "岗位" : "候选",
+      id: "criterion",
+      header: "比较项",
       rowHeader: true,
-      width: 96,
-      renderCell: ({ advisor }) => (
-        <Stack gap="condensed">
-          <Text weight="semibold">{advisor.name}</Text>
-          <Text size="small">{advisor.institution}</Text>
-        </Stack>
-      ),
+      width: 112,
+      renderCell: (row) => <Text weight="semibold">{row.label}</Text>,
     },
-    {
-      id: "answer",
-      header: "已知信息与待确认项",
-      width: "growCollapse",
-      renderCell: (item) => (
-        <Stack gap="condensed">
-          <Text as="p">{item.text}</Text>
-          {item.criterion === "还有哪些未知" && (
-            <Button onClick={() => onFollowup(item.advisor)}>
-              补查{item.advisor.name}
-            </Button>
-          )}
-          {item.sources.length > 0 && (
-            <Details>
-              <Details.Summary
-                aria-label={`查看${item.advisor.name}「${item.criterion}」的依据`}
-              >
-                查看依据（{item.sources.length}）
-              </Details.Summary>
-              <Stack gap="normal">
-                {item.sources.map((source) => (
-                  <SourceView
-                    key={`${source.url}-${source.collectedAt}`}
-                    source={source}
-                  />
-                ))}
-              </Stack>
-            </Details>
-          )}
-        </Stack>
-      ),
-    },
+    ...candidates.map((candidate): Column<ComparisonRow> => {
+      const answerFor = (row: ComparisonRow) =>
+        row.cells.find((cell) => cell.candidateId === candidate.candidateId);
+      return {
+        id: candidate.candidateId,
+        header: () => (
+          <Stack gap="condensed">
+            <Text weight="semibold">{candidate.name}</Text>
+            <Text size="small">{candidate.institution}</Text>
+          </Stack>
+        ),
+        width: "growCollapse",
+        renderCell: (row) => {
+          const cell = answerFor(row);
+          if (!cell) {
+            return <Text size="small">此项暂未整理。</Text>;
+          }
+          return (
+            <CandidateAnswer
+              rowId={row.id}
+              criterion={row.label}
+              advisor={candidate}
+              text={cell.text}
+              sources={cell.sources}
+              onFollowup={onFollowup}
+            />
+          );
+        },
+      };
+    }),
   ];
 
   return (
     <Stack as="section" gap="spacious">
       <Stack gap="normal">
-        <Heading as="h2" variant="small">
+        <Heading as="h1" id="comparison-heading">
           {isInternship ? "实习岗位比较" : "候选比较"}
         </Heading>
         <Text as="p">
@@ -141,6 +174,7 @@ export function AdvisorComparison({
         )}
         <Stack direction="horizontal" wrap="wrap" align="center">
           <Button onClick={onReturn}>返回候选资料</Button>
+          {headerActions}
           {candidates.map((candidate) => (
             <Button
               key={candidate.candidateId}
@@ -216,35 +250,53 @@ export function AdvisorComparison({
           {candidates.length === 1 && (
             <Text as="p">当前只看一名候选；也可以返回资料加入另一名。</Text>
           )}
-          {rows.map((row) => (
-            <Stack as="section" key={row.id} gap="normal">
-              <Heading as="h3" variant="small" id={`comparison-${row.id}`}>
-                {row.label}
-              </Heading>
-              <DataTable
-                aria-labelledby={`comparison-${row.id}`}
-                columns={columns}
-                data={row.cells.flatMap((cell) => {
-                  const candidate = candidates.find(
-                    (item) => item.candidateId === cell.candidateId,
-                  );
-                  return candidate
-                    ? [
-                        {
-                          ...cell,
-                          id: cell.candidateId,
-                          advisor: candidate,
-                          criterion: row.label,
-                        },
-                      ]
-                    : [];
-                })}
-              />
+          <Hidden when="narrow">
+            <DataTable
+              aria-labelledby="comparison-heading"
+              columns={sideBySideColumns}
+              data={rows}
+            />
+          </Hidden>
+          <Hidden when={["regular", "wide"]}>
+            <Stack gap="spacious">
+              {rows.map((row) => (
+                <Stack
+                  as="section"
+                  key={row.id}
+                  gap="normal"
+                  aria-labelledby={`comparison-${row.id}`}
+                >
+                  <Heading as="h2" variant="medium" id={`comparison-${row.id}`}>
+                    {row.label}
+                  </Heading>
+                  {row.cells.map((cell) => {
+                    const candidate = candidates.find(
+                      (item) => item.candidateId === cell.candidateId,
+                    );
+                    if (!candidate) return null;
+                    return (
+                      <Stack key={cell.candidateId} gap="condensed">
+                        <Text weight="semibold">
+                          {candidate.name} · {candidate.institution}
+                        </Text>
+                        <CandidateAnswer
+                          rowId={row.id}
+                          criterion={row.label}
+                          advisor={candidate}
+                          text={cell.text}
+                          sources={cell.sources}
+                          onFollowup={onFollowup}
+                        />
+                      </Stack>
+                    );
+                  })}
+                </Stack>
+              ))}
             </Stack>
-          ))}
+          </Hidden>
           {hints.length > 0 && (
             <Stack as="section" gap="normal">
-              <Heading as="h3" variant="small">
+              <Heading as="h2" variant="medium">
                 按关注点继续了解
               </Heading>
               <Text as="p">
@@ -277,7 +329,7 @@ export function AdvisorComparison({
             </Stack>
           )}
           <Stack as="section" gap="normal">
-            <Heading as="h3" variant="small">
+            <Heading as="h2" variant="medium">
               补充依据
             </Heading>
             <Text as="p">
@@ -316,7 +368,7 @@ export function AdvisorComparison({
             })}
           </Stack>
           <Stack as="section" gap="normal">
-            <Heading as="h3" variant="small">
+            <Heading as="h2" variant="medium">
               自己的记录
             </Heading>
             <Text as="p">

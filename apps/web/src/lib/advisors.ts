@@ -151,3 +151,14 @@ export const allBatches = [...advisorBatches, ...internshipBatches];
 export function sourceDate(date: string): string {
   return new Date(date).toLocaleDateString("zh-CN");
 }
+
+// Provenance summary for list rows: how many sources back this candidate and
+// when the newest one was collected (collection time, not a freshness or
+// availability claim). Candidates without sources stay honest.
+export function sourceSummary(candidate: CandidateSnapshot): string {
+  if (candidate.sources.length === 0) return "暂无收录来源";
+  const latest = candidate.sources.reduce((newest, source) =>
+    Date.parse(source.collectedAt) > Date.parse(newest.collectedAt) ? source : newest,
+  );
+  return `${candidate.sources.length} 条来源 · 最新收录于 ${sourceDate(latest.collectedAt)}`;
+}
