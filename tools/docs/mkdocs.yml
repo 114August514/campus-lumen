@@ -4,26 +4,33 @@ docs_dir: ../../docs
 site_dir: ../../site
 strict: true
 exclude_docs: |
-  superpowers/specs/**
-  superpowers/plans/**
+  archive/superpowers/specs/**
+  archive/superpowers/plans/**
 
 nav:
   - 首页: index.md
+  - 软件工程文档:
+      - 导航: project/index.md
+      - 可行性分析: project/feasibility.md
+      - 需求规格说明: project/requirements-spec.md
+      - 验收与测试计划: project/acceptance.md
+      - 中期测试报告: project/test-report.md
+      - 项目计划与进度: project/progress.md
+      - 用户手册与演示脚本: project/user-guide.md
   - 产品:
       - 需求分析 v1.0: product/requirements-handoff.md
       - 概览: product/overview.md
       - 需求论证与研究记录: product/needs-analysis.md
       - 需求基线与分析契约: product/requirements.md
-      - 选导师任务与信息结构: product/advisor-task-design.md
+      - 前端设计 v1.1: product/frontend-design.md
+      - 任务与信息结构: product/advisor-task-design.md
       - UI 组件与视觉规范: product/ui-system.md
       - 隐私: product/privacy.md
       - 里程碑: product/milestones.md
   - 架构:
-      - 概览: architecture/overview.md
+      - 概要设计: architecture/overview.md
       - API 契约: architecture/api-contracts.md
-      - 认证与权限: architecture/auth-permissions.md
       - 后端: architecture/backend.md
-      - 桌面端: architecture/desktop.md
   - 工程:
       - 开发: engineering/development.md
       - 文件树与过程文件归属: engineering/repository-layout.md
@@ -38,20 +45,24 @@ nav:
       - 导师工作流需求证据: constraints/mentor-workflow-evidence.md
       - 全产品需求地图: constraints/opportunity-needs-map.md
       - 学生发展文献调研: constraints/student-development-literature.md
-      - 旧产品定位（历史）: constraints/product-positioning-reference.md
-      - 旧内容边界（历史）: constraints/content-boundary-reference.md
-      - 旧资料社区（历史）: constraints/archive-community-reference.md
       - 前端: constraints/frontend-reference.md
       - 后端: constraints/backend-reference.md
       - API 契约: constraints/api-contract-reference.md
       - Monorepo: constraints/monorepo-reference.md
       - 运维风险: constraints/operations-risk-reference.md
-      - 产品治理: constraints/product-governance-reference.md
       - 高级工程: constraints/advanced-engineering-reference.md
   - 运维:
-      - 概览: operations/overview.md
-      - 部署: operations/deployment.md
+      - 概览（历史 / 未来参考）: operations/overview.md
+      - 部署（历史 / 未来参考）: operations/deployment.md
       - 安全: operations/security.md
+  - 历史归档:
+      - 旧 M 系列: archive/legacy-m-series.md
+      - 旧认证与权限: archive/architecture/auth-permissions.md
+      - 旧桌面端: archive/architecture/desktop.md
+      - 旧产品定位: archive/constraints/product-positioning-reference.md
+      - 旧内容边界: archive/constraints/content-boundary-reference.md
+      - 旧资料社区: archive/constraints/archive-community-reference.md
+      - 旧产品治理: archive/constraints/product-governance-reference.md
   - AI Log:
       - Todo: ai-log/todo.md
       - Done: ai-log/done.md

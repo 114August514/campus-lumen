@@ -1,6 +1,6 @@
 # Agent Notes
 
-Last updated: 2026-10-24
+Last updated: 2026-10-29
 
 This file is the project-level instruction sheet for AI agents and human
 collaborators. Follow it before making changes.
@@ -19,19 +19,20 @@ analysis v1.0. `docs/product/overview.md` summarizes decisions and
 and actionable guidance across institutions and disciplines, initially serving
 USTC students. The initial product is exclusively a personal-use tool; community
 features are a possible future extension, not current scope or a scheduled phase.
-Current planning stage: P2 task design and bounded implementation experiments,
-following the requirements v1.0 baseline. The product
-deliverable is a reusable discovery-to-action workflow. The user's AIDS mentor
-search is its first real pilot, not a standalone advisor-list delivery goal or
-the boundary of needs research. P1 explores product-wide users and opportunities
-(research, study, internships, competitions, exchange, activities/notices); keep
-research scope separate from the first implementation slice. On 2026-09-29
-the user confirmed the first version is an advisor-selection guide (选导师指南)
-that does not distinguish home-campus from external advisors, plus lightweight
-entry/resource lookups; other opportunity types are not first-version scope.
+Current delivery is the mid-term demo on `feat/midterm-demo`. All opportunity
+types share one frontend workflow: 探索 → 发现 → 处理. Advisor selection remains
+the deepest content example; other types use existing curated entries, without
+claiming equal evidence depth or authorizing new research. The product
+deliverable is a reusable discovery-to-action workflow, initially for personal
+use by USTC students.
+
+On 2026-10-29 the user assigned frontend design and implementation to the
+coordinating agent (Claude). Mid-term AI organization uses a clearly labelled
+simulated service; real-model integration is deferred. Acceptance is maintained
+in `docs/project/acceptance.md`.
 
 The user authorized a product reset on 2026-09-22. The initialization spec at
-`docs/superpowers/specs/2026-07-06-campus-agora-init-design.md` and the old M-series
+`docs/archive/superpowers/specs/2026-07-06-campus-agora-init-design.md` and the old M-series
 community roadmap are historical, not active feature requirements. Do not revive
 discussion, archival, campus-auth or desktop tasks merely because code or docs
 already exist. Evaluate reuse against the new requirements. Existing engineering
@@ -209,36 +210,20 @@ Follow `docs/product/ui-system.md` before any UI or prototype work. Use only Pri
 
 ## Collaboration Rules
 
-- User reference direction (2026-10-24): explore Qwen-style paired model-output
-  comparison as an interaction reference for comparing two people, and
-  agent-session-style organization for exploration topics. The user supplied
-  `https://github.com/HKUDS/DeepTutor` (labeled OpenHarness) as a frontend source
-  reference. Kimi must inspect the actual referenced implementation and own the
-  adaptation; these analogies do not imply implemented model generation,
-  concurrent agents or cross-topic private-data sharing.
-- User direction (2026-10-24): use `k3-256k` for frontend work. Kimi should
-  first research relevant open-source products, then own the project-specific
-  IA, user experience and UI design. The coordinator must not preselect its
-  layout, navigation or visual solution. Existing screens preserve functional
-  contracts, not a frozen information architecture. Select vendor Skills only
-  when useful for the current scenario; do not require all Skills or MCP reads.
-  Prior product/privacy and Primer requirements remain unless the user changes
-  them explicitly. Record actual sources, design decisions and evidence limits.
-- User preference (2026-10-23): frontend design and code implementation must use
-  the Kimi API. Use a Kimi-only provider configuration without fallback to other
-  models. The coordinating agent may relay constraints and verify results; send
-  frontend corrections back to Kimi rather than authoring them with another model.
-  Do not send private topic records or unrelated personal context to Kimi.
-  For frontend tasks, use `tools/kimi/run.py` and the explicitly loaded
-  `tools/kimi/skills/campus-frontend/SKILL.md`; see `tools/kimi/README.md`.
-  Vendor Skills are contextual references, not overrides for this file or the
-  Primer system. Return reproducible browser findings to Kimi within the task's
-  original deadline; readiness alone is not browser acceptance.
-- User design direction (2026-10-23): continue from PR #15's frontend
-  (`1a3a9c6`, `feat/web-opportunity-prototype`), with Kimi owning visual design
-  and optimization. Avoid coordinator micromanagement of design. Preserve later
-  functional/data/privacy improvements while porting that visual starting point;
-  reconcile older conflicting design rules with this latest user direction.
+- User direction (2026-10-29): the coordinating agent (Claude) owns frontend
+  design and implementation. The 2026-10-23/24 Kimi-only provider rule and the
+  instruction that the coordinator must not preselect layout are superseded.
+  Historical note: Kimi drafts, PR #15 and the Qwen/OpenHarness analogies remain
+  optional design references, not active ownership or provider requirements.
+- Preserve the Primer UI rules above, the public/private data boundary, truthful
+  live/simulated labels, and actual-source evidence limits regardless of which
+  agent implements the frontend. Do not send private topic records or unrelated
+  personal context to any model or tool.
+- Mid-term decisions (2026-10-29): every opportunity type uses one
+  探索 → 发现 → 处理 flow; advisor selection remains the deepest content;
+  other types use existing curated entries. AI organization uses the local
+  clearly labelled simulated service; real-model integration is deferred.
+  The acceptance source of truth is `docs/project/acceptance.md`.
 - Read the relevant local context before editing: this file, the active spec,
   applicable docs, package scripts, and nearby source files. Reuse context
   already read in the session; reread when it changes or is no longer reliable.

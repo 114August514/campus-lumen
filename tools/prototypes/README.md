@@ -1,12 +1,14 @@
 # Opportunity content prototype
 
-Last updated: 2026-10-22
+Last updated: 2026-10-29
 
-Delivery status: this directory contains `opportunity-content.md` and this README. On 2026-10-22 the untracked historical HTML was moved to `work/legacy/prototype/opportunities.html`, with its contents preserved. It stays local and ignored by Git. The preview instructions and functional checks below describe that historical artifact, not functionality shipped by the current Web app. Start with the text specimen for peer review.
+Delivery status: this directory contains the source-backed text specimen
+`opportunity-content.md` and this README. The historical untracked HTML lives
+under ignored `work/legacy/prototype/` and may be absent from a fresh clone.
 
-Visual status: superseded by `docs/product/ui-system.md`. Its custom CSS, bordered cards, eyebrow and subtitle are not approved patterns for future UI. Retain this file only for content/interaction reference until Primer migration.
-
-`work/legacy/prototype/opportunities.html` is a standalone P1 content prototype, separate from the production Web application. It may be absent from a fresh clone. Its temporary display name is “启程”; this does not rename the project. No dependencies or build step are required.
+Visual status: historical and superseded by `docs/product/frontend-design.md`
+and `docs/product/ui-system.md`. Do not use its custom styling or old navigation
+as a current frontend template; the text remains a content reference.
 
 From the repository root:
 

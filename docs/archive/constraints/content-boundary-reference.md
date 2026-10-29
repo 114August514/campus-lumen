@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-22
 
-> 状态：历史方案，已于 2026-09-22 废止。以下原文保留供回看，不是现行约束或待办。当前依据为[产品概览](../product/overview.md)与[里程碑](../product/milestones.md)。
+> 状态：历史方案，已于 2026-09-22 废止。以下原文保留供回看，不是现行约束或待办。当前依据为[产品概览](../../product/overview.md)与[里程碑](../../product/milestones.md)。
 
 本文保存内容范围与治理边界约束。已经接受的正式边界位于 `docs/product/overview.md`、`docs/product/privacy.md` 和 `docs/operations/security.md`。
 

@@ -1,6 +1,6 @@
 # 文件树与过程文件归属
 
-Last updated: 2026-10-22
+Last updated: 2026-10-29
 
 本页说明现有仓库的目录职责与文件放置规则。代码目录依据当前工作区配置保留；目录存在不代表对应产品能力属于当前范围。产品范围与顺序仍以[产品概览](../product/overview.md)和[里程碑](../product/milestones.md)为准。
 
@@ -9,28 +9,30 @@ Last updated: 2026-10-22
 ```text
 campus-lumen/
 ├── apps/
-│   ├── web/                  React Web 应用、测试、已核对的演示数据
-│   └── desktop/              现有 Tauri 桌面壳，不产生新开发任务
+│   ├── web/                  React/Primer SPA、测试与已核对演示数据
+│   └── desktop/              休眠的 Tauri 桌面壳，仍参与 CI
 ├── crates/
-│   ├── api/                  HTTP API、发现与读取入口、接口导出
-│   ├── application/          应用业务逻辑
-│   ├── domain/               领域类型与规则
-│   └── db/                   数据库访问与迁移
-├── packages/api-client/      共享 TypeScript API 客户端与生成类型
-├── contracts/               生成并纳入版本管理的 OpenAPI 契约
+│   ├── api/                  Axum 路由、中间件、接口与 OpenAPI 导出
+│   ├── application/          发现与模拟整理用例
+│   ├── domain/               现有领域边界占位
+│   └── db/                   休眠的旧社区 migration；当前业务不使用
+├── packages/api-client/      生成的 TypeScript API 客户端
+├── contracts/               纳入版本管理的 OpenAPI 快照
 ├── docs/
-│   ├── product/             需求基线、产品决定、任务设计、UI 与隐私规则
-│   ├── architecture/        架构与接口说明
+│   ├── project/             软件工程导航、可行性、SRS、验收、进度、报告与手册
+│   ├── product/             需求、产品决定、任务设计、UI 与隐私
+│   ├── architecture/        当前概要设计、接口与后端说明
 │   ├── engineering/         开发、目录规则、质量门禁
 │   ├── constraints/         可复用参考、研究证据与详细约束
-│   ├── operations/          部署与安全说明
-│   ├── ai-log/              简短待办和已完成事实
-│   └── superpowers/         历史规格和计划，已排除于文档站
+│   ├── operations/          当前安全边界和带历史说明的运维材料
+│   ├── archive/             已废止社区、桌面、权限、旧 M 系列与过程规格
+│   └── ai-log/              简短待办和已完成事实
 ├── tools/
 │   ├── docs/                MkDocs 与 uv 配置
 │   ├── discovery/           可复用的采集批次校验工具
 │   ├── skills/              仓库内可显式调用的研究 skill
-│   └── prototypes/          保留供查阅的已整理文本样稿及说明
+│   ├── prototypes/          历史内容样稿与说明
+│   └── kimi/                本地 Kimi 工具及第三方 vendored skills（忽略、不入库）
 ├── scripts/                 可复用开发、构建与 CI 脚本
 ├── docker/                  容器配置
 ├── .github/                 CI 工作流

@@ -1,11 +1,12 @@
 # Privacy And Data Boundaries
 
-Last updated: 2026-10-27
+Last updated: 2026-10-29
 
-The current advisor-guide demo serves personal exploration, with public
-external discovery and saving in the current browser. It has no account,
-community publication or server-side exploration storage. The legacy community
-inventory and audit/deletion assumptions are not the current product policy.
+The mid-term demo serves personal opportunity exploration across all types,
+with public external discovery, browser-local sessions, and a clearly labelled
+simulated analysis service. It has no account, community publication,
+server-side exploration storage, or real-model integration. The legacy
+community inventory and audit/deletion assumptions are not current policy.
 
 ## Current Implementation
 
@@ -13,13 +14,17 @@ inventory and audit/deletion assumptions are not the current product policy.
 
 | Data | Purpose | Storage | Access |
 | --- | --- | --- | --- |
-| Topic name, question and preferences | Resume separate personal explorations | This browser/site's localStorage | This browser's user and scripts operating under the same origin |
+| Topic name, question, preferences, decisions, saved opportunities and candidate records (`campus-agora:explorations:v1`) | Resume separate personal explorations | This browser/site's localStorage | This browser's user and scripts operating under the same origin |
+| Last opened topic pointer (`campus-agora:last-topic:v1`) | Resume the last session | Same localStorage | Same browser/origin |
+| Color mode (`campus-agora.color-mode.v1`) | Restore light/dark choice | Same localStorage | Same browser/origin |
 | Candidate snapshots, saved source text, collection/publication labels and matching evidence | Reopen comparison without repeating discovery | Same localStorage, after user saves | Same browser/origin |
+| Planned session fields: `decision`, `lastComparison`, saved `analyses` | Resume processing decisions, the latest comparison and explicitly saved simulated results | Same localStorage; only written by explicit product actions | Same browser/origin |
 | Reviewed collected batch: professional names, source-backed summaries and reading context | Display existing information without student-side collection | Repository JSON, included in the Web bundle; optional copy to localStorage on save | Anyone receiving the built demo; no collector login or private topic notes included |
-| Private reasons and questions | Preserve the user's own judgments | Same localStorage | Same browser/origin; not sent to the discovery API |
+| Private reasons and questions | Preserve the user's own judgments | Same localStorage | Same browser/origin; not sent to discovery and sent to analysis only when individually checked |
 | Submitted public query | Run live discovery | API request; keywords also reach the search provider, while direct URLs go to the permitted source site; no project database persistence | API process; DuckDuckGo for keywords or the source site for direct URLs |
+| Simulated analysis request: question, public evidence and checked private fragments | Demonstrate organization, citations and delivery states without a real model | Processed transiently by `/api/v1/analyses`; no server persistence or body logging | Local API; no external model provider |
 | Allowed source hostnames | Resolve and fetch public pages | Network requests; fixed public DNS fallback in the special fake-IP case | Source site; dns.google when the fallback is needed |
-| Request metadata | Debug transport and failures | Current tracing output, under runtime log configuration | Operators; bodies/private exploration records are not logged by this implementation |
+| Request metadata | Debug transport and failures | Current tracing output, under runtime log configuration | Operators; bodies/private exploration records are not logged |
 
 ### Collection Principles
 
@@ -44,9 +49,12 @@ populate a public query or send topic conditions to any external service.
 
 Progress snapshots remain in the current discovery view's memory until replaced
 or unmounted; only an explicit source save copies evidence into localStorage.
-Stopping preserves already received evidence and invalidates late callbacks.
-It attempts transport cancellation, but cannot retract already sent public
-queries. No external-AI send path or delivery guarantee was added.
+Stopping discovery preserves received evidence, invalidates late callbacks and
+cannot retract sent public requests. The mid-term analysis path is a local
+simulated service: it receives only public evidence and private fragments
+selected in that confirmation, does not call a real model, and does not persist
+or log request text. Timeout still uses delivery-unknown wording because the
+browser cannot prove whether the local request completed.
 
 ### Retention
 
@@ -116,9 +124,9 @@ site's login or search context. This separate trial does not add an application
 browser connector, a user-key input, or an unattended collection service. See
 [the executed trial](advisor-task-design.md#82).
 
-## 已采纳的数据边界与后续AI集成要求
+## 已采纳的数据边界与中期模拟 AI
 
-以下承接2026-10-03已采纳要求，并与[需求主稿](requirements-handoff.md)及[任务设计v0.4](advisor-task-design.md)一致。上文描述当前实际运行；应用尚无外部AI调用、个人内容发送界面或发送状态实现，不能以固定摘要展示宣称这些检查已通过。
+以下与[需求主稿](requirements-handoff.md)、[前端设计 v1.1](frontend-design.md)和[概要设计](../architecture/overview.md)一致。中期连接的是明确标注的本地模拟整理服务；它用于验证请求构造和发送状态，不代表真实模型质量、供应商保留条件或外部删除能力。
 
 ### 公共资料与私人主题
 

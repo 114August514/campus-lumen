@@ -29,6 +29,9 @@ tools/docs/.venv/
 tmp/
 temp/
 
+# Local Kimi tooling with third-party vendored skills; not part of the repository.
+tools/kimi/
+
 # Intermediate work stays local; only its placement guide is shared.
 /work/*
 !/work/README.md

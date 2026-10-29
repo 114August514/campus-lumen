@@ -1,52 +1,54 @@
 # Campus Lumen
 
-Last updated: 2026-10-22
+Last updated: 2026-10-29
 
 帮大学生跨机构发现科研、实习、竞赛、交流等机会，看懂实际任务与条件，自主决定下一步。
 
-Campus Lumen（原 Campus Agora）是个人使用的机会探索与决策支持工具，初期服务科大学生。
-社区仅是可能的未来扩展，不属于当前范围或预定阶段。
+Campus Lumen（原 Campus Agora）是面向大学生个人的机会探索与决策支持工具。中期 demo 让所有机会类型共用“探索 → 发现 → 处理”流程；选导师是内容最深的示例，其他类型使用已有整理入口。AI 整理使用界面明确标注的本地模拟服务，不调用真实模型。
 
-当前处于 P2 任务设计与有限实现试验，首个完整交付场景为选导师指南 demo。
-具体范围、已实现能力和未完成项见[产品概览](docs/product/overview.md)及[里程碑](docs/product/milestones.md)。
+软件工程材料从[软件工程文档导航](docs/project/index.md)进入；产品范围见[需求分析](docs/product/requirements-handoff.md)，中期判定见[验收与测试计划](docs/project/acceptance.md)。
 
 Repository: [114August514/campus-lumen](https://github.com/114August514/campus-lumen).
 
 ## Repository Layout
 
-For the file tree and placement rules, see the
-[repository layout](docs/engineering/repository-layout.md).
-Use `work/` for local drafts, investigation notes and experiment outputs;
-only its [placement guide](work/README.md) is intended for version control.
-Keep short handoff summaries in `docs/ai-log/` and accepted decisions in the
-relevant formal documentation.
+目录职责与历史／现行边界见[仓库布局](docs/engineering/repository-layout.md)。临时调查、草稿和输出放在 `work/`；仅 `work/README.md` 纳入版本管理。已接受的需求、架构和数据边界应写入正式文档。
 
 ## Requirements
 
 - Bun
-- Rust stable with `rustfmt` and `clippy`
-- PostgreSQL 16 for migration and readiness checks
-- uv for MkDocs documentation builds
+- Rust stable（含 `rustfmt`、`clippy`）
+- PostgreSQL 16（当前只用于 readiness 与遗留 migration 检查）
+- uv（MkDocs）
 
-## Core Commands
+## Run The Demo
+
+在两个终端中运行：
 
 ```bash
 bun install
-bun run dev:web
-cargo run -p campus_agora_api
-bun run api:types
-bun run typecheck
-bun run lint
-bun run lint:styles
-bun run test
-bun run build
-bun run build:all
-cargo check --workspace --all-targets
-cargo clippy --workspace --all-targets -- -D warnings
-cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml
+bun run dev:api
 ```
 
-CI-parity scripts:
+```bash
+bun run dev:web
+```
+
+打开 `http://127.0.0.1:5173`。同一浏览器 profile 和同一 origin 才能恢复本地探索记录。完整说明见[用户手册](docs/project/user-guide.md)。
+
+## API
+
+当前 API 包括：
+
+- `GET /healthz`
+- `GET /readyz`
+- `GET /api/v1/meta`
+- `POST /api/v1/discoveries` — 有限公开搜索／官网直读，支持 NDJSON 进度
+- `POST /api/v1/analyses` — 中期模拟整理；明确标注模拟，不持久化个人内容
+
+接口字段以[API 契约](docs/architecture/api-contracts.md)和 `contracts/openapi.json` 为准。
+
+## Checks
 
 ```bash
 bun run ci:frontend
@@ -57,19 +59,4 @@ bun run ci:docs
 bun run ci:container
 ```
 
-Service and release checks:
-
-```bash
-cargo sqlx migrate run --source crates/db/migrations
-bun run docs:build
-bun run docker:api
-```
-
-Shared automation lives in `scripts/`. The CI workflow calls the same scripts so
-local failures can be reproduced without copying commands from YAML.
-
-The M0.1 API exposes:
-
-- `GET /healthz`
-- `GET /readyz`
-- `GET /api/v1/meta`
+API 变更运行 `bun run api:check`；详细质量门禁见[工程质量](docs/engineering/quality.md)。Tauri、旧社区 migration 和 PostgreSQL readiness 仍参与部分检查，但属于休眠／历史基础，不是中期产品运行路径。

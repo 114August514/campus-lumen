@@ -1,5 +1,9 @@
 # Deployment
 
+Last updated: 2026-10-29
+
+> **历史 / 未来部署参考：**以下 staging、production、migration 和 Tauri 顺序来自 M0.2，并非中期 demo 的部署现状。中期只支持本地 `bun run dev:api` + `bun run dev:web`，浏览器使用 `http://127.0.0.1:5173`；见[用户手册](../project/user-guide.md)。
+
 M0.2 does not define production hosting. It provides the API image, migration
 rules, release order, and rollback principles future environments should follow.
 
