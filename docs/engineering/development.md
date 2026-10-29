@@ -1,6 +1,6 @@
 # Development
 
-Last updated: 2026-10-27
+Last updated: 2026-10-29
 
 ## Requirements
 
@@ -9,49 +9,61 @@ Last updated: 2026-10-27
 - PostgreSQL 16 for migration smoke tests
 - uv for MkDocs
 
-## Local UI Workbench (Dev Only)
+## Frontend Structure
 
-For iterating on UI with real components, run `bun run dev:web` and open
-`http://127.0.0.1:5173/workbench.html`. This is a development tool, not a
-student-facing feature: the entry HTML files (`workbench.html`,
-`workbench-preview.html`) are served by Vite in dev only, are not listed in
-the production build inputs, and the product entry and navigation do not
-reference them.
+The mid-term demo frontend (`apps/web/src`) was rebuilt around one
+探索 → 发现 → 处理 flow shared by every opportunity type. The old Kimi
+workbench (`workbench.html`, `workbench-preview.html`, `src/workbench/`
+and its tests) has been removed; iterate on UI by running the product
+entry directly.
 
-The canvas composes the real explore home (`ExploreHome`), candidate detail
-(`AdvisorDetail`, shared with `App.tsx`) and comparison (`AdvisorComparison`)
-screens against the repository's built-in public sample candidates. Screen
-and content selection live in the shell; the same selection can be deep-linked
-through URL parameters (`?screen=detail&candidate=...&pair=...`).
+- `src/app/router.ts` — hash routes (`#/`, `#/explore/:sessionId?stage=`,
+  `#/library?q=&type=`, `#/item/:id`, `#/compare?ids=&p=`, `#/sessions`,
+  `#/demo`). `parseRoute` / `routeHref` round-trip every route, so back,
+  forward, reload and deep links work without a routing dependency.
+- `src/state/app-state.tsx` — React Context for the current session,
+  compare selection, demo (simulation) options and topic mutations.
+- `src/state/session-actions.ts` — session-level actions shared by pages.
+- `src/pages/` — route-level composition: `HomePage`, `ExplorePage`
+  (the three stages ① 探索 ② 发现 ③ 处理), `LibraryPage`, `ItemPage`,
+  `ComparePage`, `SessionsPage`, `DemoGuidePage`.
+- `src/components/` — `AppHeader`, `SessionNav`, `StageExplore`,
+  `StageDiscover`, `StageProcess`, `RunTimeline`, `CatalogRow`,
+  `ItemList`, `ItemSections`, `EvidenceDialog`, `AnalysisDialog`,
+  `AssociationNotice`, `PrivateNotes`, `SourceList`, `Disclosure`,
+  `TypeIcon`, status labels, and `components/ui/ThemeRoot.tsx`.
+- `src/lib/catalog.ts` — unified `CatalogItem` over advisors, internships
+  and entries; `searchCatalog`, `findItem`, `sessionRecords`,
+  `toSaveTarget`, `isSaved`, `typeCounts`.
+- `src/lib/compare.ts` — `buildCompareRows` per kind, `compareKind`,
+  `perspectives`, `followupQuery`, `supplementalSources`.
+- `src/lib/analysis.ts` — private-fragment selection, evidence building,
+  `createAnalysisRun` delivery state machine (`not_sent` → waiting →
+  `returned` | `service_error` | `unknown`), `toSavedAnalysis`.
+- `src/lib/profiles.ts` — structured per-advisor profiles (途径, 准备,
+  未知与冲突) bound to existing sources.
+- `src/lib/demo-replay.ts` — `classifyWarning` and the replay-runner
+  contract used by the demo route.
+- `src/lib/text-match.ts` — `matchTokens` / `matchScore` (CJK bigrams
+  minus function characters, ASCII words).
+- Existing libraries (`exploration-store`, `discovery-run`,
+  `collected-batch`, `advisors`, `opportunities`, `association-repair`,
+  `comparison-candidates`) are unchanged in scope.
 
-- Viewport: “桌面（当前窗口）” renders inline at the real window width; “窄屏
-  390px” renders the preview inside a 390px iframe, so media queries and
-  responsive component props evaluate against that true viewport. The frame
-  uses the native `frameBorder` attribute (no CSS) so its client width really
-  is 390px; once mounted its document stays stable and selection changes
-  arrive over postMessage instead of reloading the frame. “在新窗口打开窄屏预览”
-  opens the same canvas at 390×844 with the current selection in its URL for
-  real-window checks. Desktop mode renders inline at the current window width.
-  No CSS, style or sx is added for any of this.
-- Entries: the product entry and both workbench entries mount through the
-  single shared `src/components/ui/ThemeRoot.tsx` theme wrapper; the product
-  entry restores the PR #15 day/night toggle, the workbench stays on the
-  default light scheme.
-- Feedback hygiene: save/warning banners are cleared when the previewed
-  screen, candidate or comparison pair changes, so stale messages cannot
-  describe a different view.
-- Isolation: the preview saves through the real `createExplorationStore` code
-  backed by an in-memory shim (`createPreviewStorage()`), never localStorage;
-  the workbench key `campus-lumen:workbench-preview:v1` is distinct from the
-  product key and disappears on reload. The canvas deliberately excludes
-  `DiscoveryPanel`, so it never starts external discovery.
-- HMR: editing reused components under `src/` refreshes the shell, the iframe
-  canvas and any preview window through Vite HMR. There is no online code
-  editor, arbitrary HTML execution, drag-and-drop designer or backend.
-- Shell↔iframe sync uses a validated same-origin postMessage protocol in
-  `src/workbench/workbench-config.ts`; `tests/workbench-config.test.ts` and
-  `tests/workbench-preview.test.tsx` cover selection parsing, message
-  validation, storage isolation and the rendered screens.
+## Running the Demo
+
+```bash
+bun run dev:api   # terminal 1 — local API on :8080
+bun run dev:web   # terminal 2 — Vite on :5173, proxies /api
+```
+
+Open `http://127.0.0.1:5173`. Use only this origin; localStorage records
+are per-origin. The demo route `#/demo` can load or clear the two synthetic
+sessions (names end with “（合成示例）”), pick the simulated AI outcome
+(normal / 3 s delay / timeout / service error) and pick the discovery
+replay scenario (live, per-source arrival, partial-source failure,
+late-after-abort, cap-reached). Replay content is labelled 演示回放 and
+cannot be saved.
 
 ## Local API
 

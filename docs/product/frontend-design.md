@@ -81,15 +81,13 @@ flowchart LR
 - **问题**：`Textarea`，占位“例如：想找本科阶段能参与的 AI 系统方向短期科研”。
 - **类型**：复选组，默认不限；8 种类型，每种配 Octicon 与名称。
 - **条件与偏好**：各自可选，不填也能继续。
-  - 参与目的 `SegmentedControl`：不限 / 先了解 / 短期参与 / 长期投入；
-  - 时间与地点（文本）；
-  - 已有基础（文本）；
-  - 不考虑（文本）。
+  - 偏好（`preferences`，一个文本字段，自由填写参与目的、时间地点、已有基础、不考虑等）；
+  - 不单独提供“参与目的” `SegmentedControl`。
 - **发现计划**（只读预览）：
   - 将在已有资料中按问题匹配的类型与数量；
   - 联网时会发出的查询词，以及会发送到哪个服务。
 - **按钮**：“开始发现”（进入 ② 并在已有资料中匹配，不联网）、“保存为探索主题”（临时会话可用）。
-- **编辑**：修改问题或条件不会丢掉已存对象和私人记录，也不会自动发出查询（沿用 `TopicEditor` 的规则）。
+- **编辑**：修改问题或条件不会丢掉已存对象和私人记录，也不会自动发出查询（沿用 `TopicEditor` 的规则）。已保存会话的主题名也在 ① 探索 内编辑（“探索主题名称”字段），不显式引用独立的 `TopicEditor` 组件。
 
 ### 4.2 ② 发现：已有资料 + 联网查找
 
@@ -316,11 +314,16 @@ flowchart LR
 ```text
 apps/web/src/
   app/        App.tsx（外壳）、router.ts、theme.css
-  state/      sessions.tsx（存储、当前会话、继续指针）、compare.tsx、demo.tsx（模拟选项）
-  pages/      Home、Explore（会话三阶段）、Library、Item、Compare、Sessions、DemoGuide（按路由懒加载）
-  components/ AppHeader、SessionNav、StageExplore、StageDiscover、StageProcess、RunTimeline、
-              CatalogRow、ItemSections、EvidenceDialog、AnalysisDialog、AnalysisResult、TypeIcon、状态标签等
-  lib/        catalog、profiles、analysis-request、analysis-state、demo-replay，以及现有 lib
+  state/      app-state.tsx（存储、当前会话、继续指针、比较栏、demo 模拟选项）、session-actions.ts
+  pages/      HomePage、ExplorePage（会话三阶段 ①②③）、LibraryPage、ItemPage、ComparePage、
+              SessionsPage、DemoGuidePage（按路由懒加载）
+  components/ AppHeader、SessionNav、StageProcess、LiveDiscovery、RunTimeline（在 LiveDiscovery 内）、
+              CatalogRow（在 ItemList 内）、ItemSections、EvidenceDialog、AnalysisDialog、
+              AssociationNotice、PrivateNotes、SourceList、Disclosure、TypeIcon（在 meta.tsx 内）、
+              状态标签（在 meta.tsx 内）、components/ui/ThemeRoot.tsx
+  lib/        catalog、profiles、compare、analysis、demo-replay、text-match、exploration-store、
+              discovery-run、collected-batch、advisors、opportunities、association-repair、
+              comparison-candidates
 ```
 
 保留现有能力与契约：
