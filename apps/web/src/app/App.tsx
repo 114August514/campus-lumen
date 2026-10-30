@@ -21,6 +21,7 @@ import {
   AdvisorComparison,
   type ComparisonNotes,
 } from "../components/AdvisorComparison";
+import { AiAssistant } from "../components/AiAssistant";
 import { DiscoveryPanel } from "../components/DiscoveryPanel";
 import { ExploreHome } from "../components/ExploreHome";
 import { OpportunityBrowser } from "../components/OpportunityBrowser";
@@ -42,6 +43,7 @@ import {
   collectedBatches,
   sourceDate,
 } from "../lib/advisors";
+import type { PrivateRecordDestination } from "../lib/association-repair";
 import { comparisonCandidatesForTopic } from "../lib/comparison-candidates";
 import { getFollowupQuery, getSupplementalSources } from "../lib/comparison-followup";
 import {
@@ -75,7 +77,7 @@ export function App() {
   const [topics, setTopics] = useState(initial.topics);
   const [topicId, setTopicId] = useState(initial.topics[0]?.id ?? "");
   const [view, setView] = useState<
-    "home" | "explore" | "opportunities" | "saved" | "compare" | "followup"
+    "home" | "explore" | "opportunities" | "ai" | "saved" | "compare" | "followup"
   >("home");
   const [opportunityType, setOpportunityType] = useState<OpportunityType | "">("");
   const [followupCandidate, setFollowupCandidate] = useState<Advisor>();
@@ -293,6 +295,15 @@ export function App() {
               机会与入口
             </UnderlineNav.Item>
             <UnderlineNav.Item
+              aria-current={view === "ai" ? "page" : undefined}
+              onSelect={(event) => {
+                event.preventDefault();
+                setView("ai");
+              }}
+            >
+              AI助手
+            </UnderlineNav.Item>
+            <UnderlineNav.Item
               counter={comparisonIds.length}
               aria-current={
                 view === "compare" || view === "followup" ? "page" : undefined
@@ -369,7 +380,10 @@ export function App() {
                   const created = initial.store?.createTopic({
                     name: topicName,
                     question:
-                      view === "home" || view === "opportunities" || view === "saved"
+                      view === "home" ||
+                      view === "opportunities" ||
+                      view === "ai" ||
+                      view === "saved"
                         ? ""
                         : view === "compare"
                           ? `了解${comparisonCandidates.map((item) => item.name).join("、") || "候选"}的${perspective === "research" ? "研究内容" : perspective === "graduate" ? "读研参与途径" : perspective === "role" ? "业务职责" : perspective === "growth" ? "转正与成长途径" : "时间要求或参与途径"}`
@@ -422,6 +436,12 @@ export function App() {
               onTypeChange={setOpportunityType}
               canSave={Boolean(activeTopic && initial.store)}
               onSave={saveOpportunity}
+            />
+          ) : view === "ai" ? (
+            <AiAssistant
+              key={`ai:${topicId}`}
+              candidates={availableCandidates}
+              topic={activeTopic}
             />
           ) : view === "explore" ? (
             <>
@@ -663,6 +683,31 @@ export function App() {
                           setMessage("私人理由和疑问已保存。");
                         })
                       }
+                      onSplit={(routeId, destination) =>
+                        mutate(() => {
+                          initial.store?.splitCandidateParticipation(
+                            activeTopic.id,
+                            record.candidate.candidateId,
+                            routeId,
+                            destination,
+                          );
+                          if (destination === "move") {
+                            const oldKey = `${activeTopic.id}:${record.candidate.candidateId}`;
+                            const newKey = `${activeTopic.id}:${record.candidate.candidateId}--${routeId}`;
+                            setComparisonDrafts((drafts) => {
+                              const updated = { ...drafts };
+                              if (updated[oldKey]) {
+                                updated[newKey] = updated[oldKey];
+                                delete updated[oldKey];
+                              }
+                              return updated;
+                            });
+                          }
+                          setMessage(
+                            "已拆分参与途径；来源和私人记录按所选归属保留，其他主题未改变。",
+                          );
+                        })
+                      }
                       onRemove={() =>
                         mutate(() => {
                           initial.store?.removeCandidate(
@@ -779,12 +824,26 @@ function AdvisorDetail({
         {advisor.research}
       </Text>
       <Text as="p">{advisor.approach}</Text>
-      <Text as="p">
-        <Text weight="semibold">
-          {advisor.type === "internship" ? "入职与出勤要求：" : "参与途径："}
+      {advisor.participationRoutes?.length ? (
+        <Stack gap="condensed">
+          <Text weight="semibold">
+            {advisor.type === "internship" ? "入职与出勤要求：" : "参与途径："}
+          </Text>
+          {advisor.participationRoutes.map((route) => (
+            <Text as="p" key={route.routeId}>
+              <Text weight="semibold">{route.label}：</Text>
+              {route.details}
+            </Text>
+          ))}
+        </Stack>
+      ) : (
+        <Text as="p">
+          <Text weight="semibold">
+            {advisor.type === "internship" ? "入职与出勤要求：" : "参与途径："}
+          </Text>
+          {advisor.participation}
         </Text>
-        {advisor.participation}
-      </Text>
+      )}
       <Text as="p">
         <Text weight="semibold">仍待了解：</Text>
         {advisor.unknowns}
@@ -833,25 +892,40 @@ function SavedCandidate({
   onCompare,
   onUpdate,
   onRemove,
+  onSplit,
 }: {
   record: ExplorationTopic["candidates"][number];
   onCompare: () => void;
   onUpdate: (reason: string, questions: string[]) => void;
   onRemove: () => void;
+  onSplit: (routeId: string, destination: PrivateRecordDestination) => void;
 }) {
   const [reason, setReason] = useState(record.reason);
   const [question, setQuestion] = useState(record.questions.join("\n"));
+  const [splitOpen, setSplitOpen] = useState(false);
+  const [splitRouteId, setSplitRouteId] = useState("");
+  const [privateDestination, setPrivateDestination] =
+    useState<PrivateRecordDestination>("keep");
+  const routes = record.candidate.participationRoutes ?? [];
+  const dirty = reason !== record.reason || question !== record.questions.join("\n");
   return (
     <Stack as="section" gap="normal">
-      <Stack direction="horizontal" gap="condensed" align="center">
+      <Stack direction="horizontal" gap="condensed" align="center" wrap="wrap">
         <Heading as="h3" variant="small">
           {record.candidate.name} · {record.candidate.institution}
         </Heading>
         <Label variant={record.candidate.type === "internship" ? "primary" : "accent"}>
           {record.candidate.type === "internship" ? "实习岗位" : "导师"}
         </Label>
+        {record.candidate.title && <Label>{record.candidate.title}</Label>}
       </Stack>
       <Text as="p">{record.candidate.research}</Text>
+      {routes.map((route) => (
+        <Text as="p" key={route.routeId}>
+          <Text weight="semibold">{route.label}：</Text>
+          {route.details}
+        </Text>
+      ))}
       {record.candidate.sources.map((source, index) => (
         <SourceView
           key={`${source.url}-${source.collectedAt}-${index}`}
@@ -877,6 +951,66 @@ function SavedCandidate({
           rows={2}
         />
       </FormControl>
+      {routes.length > 1 && (
+        <Stack gap="condensed">
+          <Button
+            aria-expanded={splitOpen}
+            disabled={dirty}
+            onClick={() => setSplitOpen((open) => !open)}
+          >
+            {splitOpen ? "取消拆分参与途径" : "拆分参与途径"}
+          </Button>
+          {dirty && <Text size="small">请先保存当前私人记录，再拆分参与途径。</Text>}
+          {splitOpen && (
+            <>
+              <Text size="small">
+                只拆分当前主题中的这份快照，其他主题不变。来源随所选途径移动，共享来源保留在相关两侧；旧引用仍可在拆分后的记录中查看。
+              </Text>
+              <FormControl required>
+                <FormControl.Label>要拆出的参与途径</FormControl.Label>
+                <Select
+                  value={splitRouteId}
+                  onChange={(event) => setSplitRouteId(event.target.value)}
+                >
+                  <Select.Option value="">请选择途径</Select.Option>
+                  {routes.map((route) => (
+                    <Select.Option key={route.routeId} value={route.routeId}>
+                      {route.label}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl required>
+                <FormControl.Label>已保存的私人理由和待问项归属</FormControl.Label>
+                <Select
+                  value={privateDestination}
+                  onChange={(event) =>
+                    setPrivateDestination(
+                      event.target.value as PrivateRecordDestination,
+                    )
+                  }
+                >
+                  <Select.Option value="keep">保留在原记录</Select.Option>
+                  <Select.Option value="move">移动到拆出的记录</Select.Option>
+                </Select>
+                <FormControl.Caption>
+                  只保留在你选择的一侧，不复制到两份记录。
+                </FormControl.Caption>
+              </FormControl>
+              <Button
+                disabled={!splitRouteId}
+                onClick={() => {
+                  onSplit(splitRouteId, privateDestination);
+                  setSplitOpen(false);
+                  setSplitRouteId("");
+                }}
+              >
+                确认拆分所选途径
+              </Button>
+            </>
+          )}
+        </Stack>
+      )}
       <Stack direction="horizontal" wrap="wrap">
         <Button onClick={onCompare}>加入比较并查看</Button>
         <Button

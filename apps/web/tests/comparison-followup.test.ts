@@ -141,6 +141,7 @@ describe("comparison follow-up", () => {
     store.saveCandidate(topic.id, {
       ...jiang,
       candidateId: "another-person",
+      participationRoutes: undefined,
       sources: [newReading()],
     });
     expect(getSupplementalSources(jiang)).toEqual([]);

@@ -22,6 +22,18 @@ export interface SourceCollection {
   batchId: string;
 }
 
+import {
+  type PrivateRecordDestination,
+  splitParticipationRoute,
+} from "./association-repair";
+
+export interface ParticipationRoute {
+  routeId: string;
+  label: string;
+  details: string;
+  sourceUrls: string[];
+}
+
 export interface CandidateSnapshot {
   candidateId: string;
   name: string;
@@ -32,6 +44,11 @@ export interface CandidateSnapshot {
   title?: string;
   description?: string;
   metadata?: Record<string, string>;
+  approach?: string;
+  participation?: string;
+  unknowns?: string;
+  /** Optional for version-1 records saved before structured routes existed. */
+  participationRoutes?: ParticipationRoute[];
 }
 
 export interface TopicCandidate {
@@ -176,15 +193,45 @@ function isSourceCollection(value: unknown): value is SourceCollection {
   );
 }
 
-function isCandidate(value: unknown): value is CandidateSnapshot {
+function isParticipationRoute(value: unknown): value is ParticipationRoute {
+  return (
+    isObject(value) &&
+    isNonemptyText(value.routeId) &&
+    /^[a-z0-9][a-z0-9-]{0,79}$/.test(value.routeId) &&
+    isNonemptyText(value.label) &&
+    isNonemptyText(value.details) &&
+    Array.isArray(value.sourceUrls) &&
+    value.sourceUrls.length > 0 &&
+    value.sourceUrls.every(isWebUrl) &&
+    hasUniqueIds(value.sourceUrls)
+  );
+}
+
+function isCandidate(
+  value: unknown,
+  allowUnresolvedRouteSources = false,
+): value is CandidateSnapshot {
   return (
     isObject(value) &&
     isNonemptyText(value.candidateId) &&
     isNonemptyText(value.name) &&
     isNonemptyText(value.institution) &&
     isText(value.research) &&
+    (value.approach === undefined || isText(value.approach)) &&
+    (value.participation === undefined || isText(value.participation)) &&
+    (value.unknowns === undefined || isText(value.unknowns)) &&
     Array.isArray(value.sources) &&
-    value.sources.every(isSource)
+    value.sources.every(isSource) &&
+    (value.participationRoutes === undefined ||
+      (Array.isArray(value.participationRoutes) &&
+        value.participationRoutes.every(isParticipationRoute) &&
+        hasUniqueIds(value.participationRoutes.map((route) => route.routeId)) &&
+        (allowUnresolvedRouteSources ||
+          value.participationRoutes.every((route) =>
+            route.sourceUrls.every((url) =>
+              (value.sources as SourceSnapshot[]).some((source) => source.url === url),
+            ),
+          ))))
   );
 }
 
@@ -269,6 +316,21 @@ function cloneCandidate(candidate: CandidateSnapshot): CandidateSnapshot {
     ...(candidate.title ? { title: candidate.title } : {}),
     ...(candidate.description ? { description: candidate.description } : {}),
     ...(candidate.metadata ? { metadata: { ...candidate.metadata } } : {}),
+    ...(candidate.approach !== undefined ? { approach: candidate.approach } : {}),
+    ...(candidate.participation !== undefined
+      ? { participation: candidate.participation }
+      : {}),
+    ...(candidate.unknowns !== undefined ? { unknowns: candidate.unknowns } : {}),
+    ...(candidate.participationRoutes
+      ? {
+          participationRoutes: candidate.participationRoutes.map((route) => ({
+            routeId: route.routeId,
+            label: route.label,
+            details: route.details,
+            sourceUrls: [...route.sourceUrls],
+          })),
+        }
+      : {}),
     sources: candidate.sources.map((source) => ({
       url: source.url,
       ...(source.lookupUrl !== undefined ? { lookupUrl: source.lookupUrl } : {}),
@@ -442,7 +504,7 @@ export function createExplorationStore(
       candidate: CandidateSnapshot,
       privateRecord: PrivateRecordPatch = {},
     ) {
-      if (!isCandidate(candidate)) {
+      if (!isCandidate(candidate, true)) {
         throw new ExplorationStoreError("validation_failed", "候选或来源内容不完整。");
       }
       return mutateTopic(topicId, (topic) => {
@@ -452,6 +514,14 @@ export function createExplorationStore(
         const snapshot = cloneCandidate(candidate);
         if (existing) {
           snapshot.sources = mergeSources(existing.candidate.sources, snapshot.sources);
+        }
+        if (!isCandidate(snapshot)) {
+          throw new ExplorationStoreError(
+            "validation_failed",
+            "参与途径引用的来源不在候选记录中。",
+          );
+        }
+        if (existing) {
           existing.candidate = snapshot;
         } else {
           topic.candidates.push({
@@ -461,6 +531,59 @@ export function createExplorationStore(
             savedAt: new Date().toISOString(),
           });
         }
+      });
+    },
+    splitCandidateParticipation(
+      topicId: string,
+      candidateId: string,
+      routeId: string,
+      privateDestination: PrivateRecordDestination,
+    ) {
+      return mutateTopic(topicId, (topic) => {
+        const index = topic.candidates.findIndex(
+          (record) => record.candidate.candidateId === candidateId,
+        );
+        const original = topic.candidates[index];
+        if (!original) {
+          throw new ExplorationStoreError("not_found", "此候选已不在这个主题里。");
+        }
+        let remaining: CandidateSnapshot;
+        let split: CandidateSnapshot;
+        try {
+          ({ remaining, split } = splitParticipationRoute(original.candidate, routeId));
+        } catch (cause) {
+          throw new ExplorationStoreError(
+            "validation_failed",
+            cause instanceof Error ? cause.message : "参与途径无法拆分。",
+            { cause },
+          );
+        }
+        if (
+          topic.candidates.some(
+            (record) => record.candidate.candidateId === split.candidateId,
+          )
+        ) {
+          throw new ExplorationStoreError(
+            "validation_failed",
+            "拆分后的记录已经存在，请先核对现有参与途径。",
+          );
+        }
+        const privateRecord = {
+          reason: original.reason,
+          questions: [...original.questions],
+        };
+        topic.candidates[index] = {
+          ...original,
+          candidate: cloneCandidate(remaining),
+          reason: privateDestination === "keep" ? privateRecord.reason : "",
+          questions: privateDestination === "keep" ? privateRecord.questions : [],
+        };
+        topic.candidates.push({
+          candidate: cloneCandidate(split),
+          reason: privateDestination === "move" ? privateRecord.reason : "",
+          questions: privateDestination === "move" ? privateRecord.questions : [],
+          savedAt: new Date().toISOString(),
+        });
       });
     },
     updateCandidate(topicId: string, candidateId: string, patch: PrivateRecordPatch) {

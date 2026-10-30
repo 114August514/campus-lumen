@@ -108,4 +108,31 @@ describe("discovered candidates in comparison", () => {
     expect(cell.text).toContain("later capture");
     expect(saved.getTopic(topic.id)?.candidates[0].reason).toBe("keep this private");
   });
+
+  test("the active topic uses its repaired snapshot instead of the stale public routes", () => {
+    const saved = store();
+    const topic = saved.createTopic({ name: "route repair" });
+    const jiang = advisors.find((candidate) => candidate.candidateId === "zuming-jiang");
+    if (!jiang) throw new Error("Missing collected advisor: zuming-jiang");
+    saved.saveCandidate(topic.id, jiang);
+
+    saved.splitCandidateParticipation(topic.id, jiang.candidateId, "research-assistant", "keep");
+
+    const available = comparisonCandidatesForTopic(advisors, saved.getTopic(topic.id));
+    expect(
+      available
+        .find((candidate) => candidate.candidateId === "zuming-jiang")
+        ?.participationRoutes?.map((route) => route.routeId),
+    ).toEqual(["phd", "postdoc"]);
+    expect(
+      available
+        .find((candidate) => candidate.candidateId === "zuming-jiang--research-assistant")
+        ?.participationRoutes?.map((route) => route.routeId),
+    ).toEqual(["research-assistant"]);
+    expect(jiang.participationRoutes?.map((route) => route.routeId)).toEqual([
+      "phd",
+      "research-assistant",
+      "postdoc",
+    ]);
+  });
 });

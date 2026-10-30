@@ -1,6 +1,6 @@
 # Development
 
-Last updated: 2026-10-27
+Last updated: 2026-10-28
 
 ## Requirements
 
@@ -22,8 +22,46 @@ The API exposes:
 - `GET /readyz`
 - `GET /api/v1/meta`
 - `POST /api/v1/discoveries`
+- `GET /api/v1/ai/providers`
+- `POST /api/v1/ai/completions`
 
 `/readyz` checks PostgreSQL when `DATABASE_URL` is configured.
+
+## Optional AI Providers
+
+The AI assistant offers the school 词元计划 and a user-supplied
+OpenAI-compatible provider. Set `USTC_LLM_API_KEY` in the API process environment
+to enable the school option; never put it in the Web bundle or repository.
+`USTC_LLM_MODEL` defaults to `deepseek-v4-pro`, selected from the currently
+available school models as a strong general-purpose default, not a claim of
+same-task benchmark superiority. The school endpoint is fixed to
+`https://api.llm.ustc.edu.cn/v1/chat/completions` and follows the
+[school API guide](https://llm.ustc.edu.cn/guide/api/). An unconfigured school
+key disables school sending but leaves public browsing and custom AI available.
+
+Custom AI requires an HTTPS OpenAI-compatible base URL, model and API key on
+each request. The key stays in component memory and request handling, never in
+localStorage or the project database. The backend allows public DNS addresses
+on port 443 only, pins the resolved addresses, disables proxies/redirects, and
+bounds each non-streaming request to 60 seconds and 256,000 response bytes. Two
+AI calls may run concurrently per API process. These controls are not account
+authentication, per-user quotas, a production abuse policy, or proof of the
+upstream provider's data-retention behavior.
+
+The request builder reads only the submitted task, a public candidate summary
+when its checkbox is selected, and one explicitly selected saved private reason.
+It does not attach other topic conditions, notes, candidates, conversation
+history or another topic. The send preview exposes the actual selected text and
+recipient before submission. Custom credentials are included only for the
+custom provider. Results remain in page memory and are not automatically saved
+as user judgments or public facts. Abort/timeout stops waiting but cannot prove
+that an upstream request was not delivered.
+
+Focused checks live in `apps/web/tests/ai-request.test.ts`,
+`packages/api-client/tests/ai.test.ts`, and `crates/api/tests/ai.rs`. A real
+school/upstream completion requires a newly configured key and a separate live
+check; deterministic tests and browser layout walkthroughs do not establish
+that external generation succeeded.
 
 ## Local Advisor Demo
 
@@ -63,8 +101,8 @@ the development agent and corroborated against faculty/lab pages. They are store
 material when displayed, not a fresh search. Collection scope, partial reading,
 summary versus body, and original time are retained when saved to a topic.
 The application's public search uses literal matching and user-confirmed candidate
-association; it has no integrated model summary, autonomous advisor identification
-or current-intake verification.
+association; it does not automatically invoke the separate AI assistant, perform
+autonomous advisor identification or verify current intake.
 The October 5 choice-support slice is usable without the API: choose
 “比较本次采集的两名候选” or add Jiang/Song individually. Switch research,
 graduate or short-term perspectives, optionally change the research focus and

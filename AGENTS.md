@@ -1,6 +1,6 @@
 # Agent Notes
 
-Last updated: 2026-10-22
+Last updated: 2026-10-28
 
 This file is the project-level instruction sheet for AI agents and human
 collaborators. Follow it before making changes.
@@ -81,7 +81,10 @@ private reasons attached to their topic records. The user explicitly confirmed
 that external AI may receive only personal content the user explicitly selects;
 do not automatically attach other notes, topics or prior private context. Follow
 `docs/product/privacy.md` and the updated task design; this is a requirement,
-not evidence of implemented isolation or AI integration.
+not evidence by itself of implemented isolation or AI integration. The bounded
+2026-10-28 AI-provider slice now implements explicit selected-input requests;
+its verified scope and remaining live-upstream check are recorded in
+`docs/product/advisor-task-design.md` §8.8.
 
 The same day the user accepted cancellable discovery with declared per-run
 limits, correction of mistaken merges without losing private topic records,
@@ -89,8 +92,10 @@ and truthful external-AI send states. Timeout or cancellation is not proof that
 personal content was never sent; show delivery uncertainty when needed.
 Thresholds and mechanisms remain technical-design choices, not fixed budgets
 or evidence of implementation. These accepted requirements remain active in
-`docs/product/advisor-task-design.md` v0.4; the later experiments below do not
-establish that cancellation, mistaken-merge repair or external AI are implemented.
+`docs/product/advisor-task-design.md` v0.4. Bounded discovery cancellation,
+one-shot AI sending and active-topic structured route splitting now have separately
+verified implementations; same-name/global public-record repair and full
+real-provider/G5 acceptance remain uncompleted.
 
 On 2026-10-04 the user selected Xiaohongshu recruitment posts as the first
 browser-collection pilot, intending to reuse an available logged-in session.
@@ -138,8 +143,12 @@ the discovery endpoint can stream cumulative body snapshots, supports abort and
 declares server/run/read limits. Browser and controlled checks are recorded in
 `docs/product/advisor-task-design.md` §8.6. Query text remains the only discovery
 input; editing conditions does not send them. Cancellation does not retract
-already sent public requests. This does not complete mistaken-merge repair,
-external-AI delivery, optional preparation/resource entries or full demo acceptance.
+already sent public requests. This slice did not complete mistaken-merge repair,
+optional preparation/resource entries or full demo acceptance. On 2026-10-28 a
+separate slice added structured participation-route splitting for saved snapshots
+within the active topic, with source preservation and user-selected private-record
+ownership; see task design §8.9. It is not same-name person splitting or global
+public-file correction. The separate AI slice is described above and in §8.8.
 
 Before prioritizing prototype or implementation work, follow the eight-part
 analysis contract in `docs/product/requirements.md`: problem background, target

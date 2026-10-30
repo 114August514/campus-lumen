@@ -185,6 +185,39 @@ describe("collected batch", () => {
     expect(() => parseCollectedBatch(collection)).toThrow("批次标识");
   });
 
+  test("validates structured participation route ids and source references", () => {
+    const base = inputBatch();
+    const valid = {
+      ...base,
+      advisors: [
+        {
+          ...base.advisors[0],
+          participationRoutes: [
+            {
+              routeId: "phd",
+              label: "Doctoral application",
+              details: "A source-bound application route.",
+              sourceUrls: ["https://example.edu/research"],
+            },
+          ],
+        },
+      ],
+    };
+    expect(parseCollectedBatch(valid).advisors[0].participationRoutes).toHaveLength(1);
+
+    const missingSource = structuredClone(valid);
+    missingSource.advisors[0].participationRoutes[0].sourceUrls = [
+      "https://example.edu/missing",
+    ];
+    expect(() => parseCollectedBatch(missingSource)).toThrow("只能关联候选已有的来源");
+
+    const duplicate = structuredClone(valid);
+    duplicate.advisors[0].participationRoutes.push(
+      structuredClone(duplicate.advisors[0].participationRoutes[0]),
+    );
+    expect(() => parseCollectedBatch(duplicate)).toThrow("标识不能重复");
+  });
+
   test("private notes and unknown JSON fields cannot propagate into public advisors", () => {
     const input = inputBatch();
     expect(() => parseCollectedBatch({ ...input, topics: [] })).toThrow("未约定字段");

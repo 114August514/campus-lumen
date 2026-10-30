@@ -19,6 +19,26 @@
       "research": "研究 AI Agent 安全、强化学习和具身智能等方向。",
       "approach": "招生帖列出了安全评测、机器人学习、基础模型和多智能体等课题方向；具体研究工作仍需查看实验室项目和论文。",
       "participation": "帖中面向2027级硕博及科研实习，也欢迎本科生参与，提到编程基础和研究兴趣。具体途径、资格和名额需进一步确认。",
+      "participationRoutes": [
+        {
+          "routeId": "graduate",
+          "label": "2027级硕博申请",
+          "details": "招生帖面向2027级硕士和博士，提到编程基础和研究兴趣；资格与名额需进一步确认。",
+          "sourceUrls": ["https://www.xiaohongshu.com/explore/6a7574850000000024024a50"]
+        },
+        {
+          "routeId": "research-internship",
+          "label": "科研实习",
+          "details": "招生帖提到科研实习参与意向；具体安排、资格和名额尚未确认。",
+          "sourceUrls": ["https://www.xiaohongshu.com/explore/6a7574850000000024024a50"]
+        },
+        {
+          "routeId": "undergraduate-research",
+          "label": "本科科研",
+          "details": "招生帖欢迎本科生参与；具体课题与接收条件需进一步确认。",
+          "sourceUrls": ["https://www.xiaohongshu.com/explore/6a7574850000000024024a50"]
+        }
+      ],
       "unknowns": "当前剩余名额、具体课题、日常指导、学生体验及实习安排均未确认；自我介绍不是独立体验依据。",
       "sources": [
         {

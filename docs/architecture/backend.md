@@ -1,6 +1,6 @@
 # Backend Architecture
 
-Last updated: 2026-10-27
+Last updated: 2026-10-28
 
 The backend is a Rust API server. Handlers should stay thin; domain and
 application crates carry business rules.
@@ -60,6 +60,20 @@ The server does not persist explorations. Topics, candidates, saved sources,
 private reasons and questions use this browser's `localStorage`; their data
 boundary and deletion behavior are in [Privacy](../product/privacy.md).
 
+## Optional AI Completion
+
+`crates/api/src/ai.rs` owns provider configuration/DTOs and thin HTTP handling;
+`crates/application/src/ai.rs` owns validation and one-shot OpenAI-compatible
+transport. `GET /api/v1/ai/providers` exposes school availability without the
+secret. `POST /api/v1/ai/completions` forwards only the request's task and
+selected public/personal context. School credentials come from server
+`USTC_LLM_API_KEY`, with `USTC_LLM_MODEL` defaulting to `deepseek-v4-pro`;
+custom credentials remain request-scoped. No AI conversation, output or key is
+stored in PostgreSQL or browser localStorage. See
+[API Contracts](api-contracts.md#one-shot-ai-completion-2026-10-28),
+[Security](../operations/security.md#ai-provider-boundary), and
+[Privacy](../product/privacy.md) for the enforced limits and data boundary.
+
 ## Model Boundaries
 
 Use separate models for separate purposes:
@@ -111,6 +125,9 @@ Initialization supports:
   production.
 - `REQUEST_BODY_LIMIT_BYTES` as a positive integer request body limit.
 - `RUST_LOG` for tracing filter configuration.
+- Optional `USTC_LLM_API_KEY` for the school AI provider and `USTC_LLM_MODEL`,
+  defaulting to `deepseek-v4-pro`. Keep the key in environment/deployment
+  secrets, never in committed examples or the Web client.
 
 ## Observability
 

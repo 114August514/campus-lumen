@@ -1,6 +1,6 @@
 # AI Log Done
 
-Last updated: 2026-10-27
+Last updated: 2026-10-28
 
 This file records completed agent-visible work. Keep entries factual and link
 them to commits, files, and verification commands where possible.
@@ -18,6 +18,28 @@ them to commits, files, and verification commands where possible.
 ```
 
 ## Completed
+
+### 2026-10-28 - Fix AI assistant send-state and selection details
+
+- Result: Only errors raised before contacting a provider (`validation_failed`, `invalid_ai_provider`, `school_ai_not_configured`, `ai_busy`) or an explicit provider rejection show as definite failures; upstream 5xx, invalid responses, proxy/network errors and aborts show "发送状态未确认，可能已发送". Upstream 4xx (including a wrong model name) now maps to `ai_provider_rejected`. The public-material checkbox has a clickable label ahead of its selector, and the send preview is always visible, with the full public text collapsible.
+- Changed: `apps/web/src/lib/ai-request.ts` (`aiFailureState`), `apps/web/src/components/AiAssistant.tsx`, `crates/application/src/ai.rs` (`status_error`), `crates/api/src/ai.rs` messages, `apps/web/tests/ai-request.test.ts`.
+- Verification: `bun test tests/*.test.ts tests/*.test.tsx` (86 pass), `tsc --noEmit`, `bun run lint`, `bun run lint:styles`, `cargo test -p campus_agora_application -p campus_agora_api`, `cargo fmt --check`; browser check of label toggle, preview, local pre-send rejection, and stopped-API uncertain state. No real provider was called.
+- Follow-up: Real upstream generation still needs a server-side `USTC_LLM_API_KEY` (revoke the previously exposed key first).
+
+### 2026-10-28 - Split structured participation routes in saved topic snapshots
+
+- Result: Added source-linked structured routes for the three collected advisors and a Primer action that splits one route from an active topic's saved candidate. Selected/shared/general sources retain their stated associations; private reasons/questions stay only on the user-selected side. Current-topic comparison and AI candidates use the repaired snapshot; other topics and public batches remain unchanged.
+- Changed: `apps/web/src/lib/association-repair.ts`, exploration storage, batch parsing/merging, comparison/AI context, candidate UI and the two October recruitment batches. Added focused store/repair/parser/comparison tests; legacy plain-text snapshots remain readable but cannot be split until structured routes exist.
+- Verification: `bun --cwd apps/web typecheck`, lint, UI-source checks and 84 tests passed. All three existing batches passed `discovery:validate`; `bun run build` passed with the existing large-chunk warning. Real Chrome exercised two synthetic topics, keep/move ownership, two reloads, source/topic isolation and 390px layout; screenshot reviewed and temporary processes stopped. `git diff --check` passed.
+- Limits: This is active-topic saved-snapshot route repair only, not same-name person splitting, global public-file correction, merge undo or full G1/G5 acceptance. Strict `bun run ci:docs` was attempted with a work-local environment but the `six==1.17.0` dependency download failed with connection refused, so docs-build success is not claimed. Real upstream AI generation and student benefit remain separately unverified.
+
+### 2026-10-28 - Add school and custom OpenAI-compatible AI providers
+
+- Result: Added an AI assistant with school 词元计划 (`deepseek-v4-pro` default) and custom OpenAI-compatible provider options. School credentials stay server-side; custom key/model/base URL remain page/request scoped. Each request contains only the submitted task, explicitly checked public candidate material and at most one explicitly selected saved private reason, with no history or other-topic reads.
+- Behavior: Added recipient/content preview, idle/waiting/success/error/uncertain states, manual abort and non-automatic retry. One-shot transport enforces public HTTPS/443, DNS/address checks and pinning, no redirects/proxy, two concurrent API calls, 60 seconds and 256 KB responses. AI results stay in page memory and are not silently saved as public facts or private judgments.
+- Changed: `crates/application/src/ai.rs`, `crates/api/src/ai.rs` and routing/state, typed API client/OpenAPI, `apps/web/src/lib/ai-request.ts`, `components/AiAssistant.tsx`, `app/App.tsx`, focused tests and `.env.example`. No existing exploration-store schema or unrelated untracked `.claude/`/`tools/discovery-trial/` content changed.
+- Verification: Web lint/UI-source checks/types and 78 tests passed; API-client 19 tests passed. `cargo fmt --check`, focused clippy and `CARGO_INCREMENTAL=0 cargo test -p campus_agora_application -p campus_agora_api` passed. `bun run build` passed with the existing large-chunk warning. Repeated `CARGO_INCREMENTAL=0 bun run api:types` produced byte-identical generated snapshots; `bun run api:check` cannot be a clean-tree check while these intended contract changes are uncommitted. Headless Chromium checked both providers, preview isolation and no localStorage AI key at desktop/390px; screenshots were visually reviewed and temporary processes stopped.
+- Limits: No real school/custom upstream generation was run. The model is a strong available default, not a same-task measured 'strongest' result. The screenshot-exposed school key was neither used nor saved and must be revoked/replaced before the live follow-up in todo.md. Strict `bun run ci:docs` was attempted twice with a work-local environment but dependency downloads failed with connection refused (`pathspec`, then `python-dateutil`), so docs-build success is not claimed. `git diff --check` passed. This is not full G5 or student-benefit acceptance.
 
 ### 2026-10-27 - Publish high-priority demo branch to GitHub
 

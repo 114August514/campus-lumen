@@ -267,7 +267,11 @@ function evidenceCell(advisor: Advisor, field: string): ComparisonCell {
   } else if (field === "methods") {
     text = advisor.approach;
   } else if (field === "routes") {
-    text = advisor.participation;
+    text = advisor.participationRoutes?.length
+      ? advisor.participationRoutes
+          .map((route) => `${route.label}：${route.details}`)
+          .join("\n")
+      : advisor.participation;
   } else if (field === "unknowns") {
     text = [advisor.unknowns, ...sources.flatMap((source) => source.unknowns ?? [])]
       .filter((value, index, values) => value && values.indexOf(value) === index)

@@ -1,4 +1,5 @@
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 
 use axum::body::{to_bytes, Body};
@@ -22,12 +23,15 @@ const DEFAULT_CORS_ALLOWED_ORIGINS: &[&str] = &["http://127.0.0.1:5173", "http:/
 const REQUEST_ID_HEADER: &str = "x-request-id";
 static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(1);
 
+mod ai;
 mod discovery;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct ApiState {
     readiness: ReadinessProbe,
     capabilities: CapabilityFlags,
+    school_ai: Option<ai::SchoolAiConfig>,
+    ai_permits: Arc<tokio::sync::Semaphore>,
 }
 
 impl ApiState {
@@ -47,6 +51,8 @@ impl ApiState {
                 ai_archive_enabled: bool_env("AI_ARCHIVE_ENABLED", false),
                 attachments_enabled: bool_env("ATTACHMENTS_ENABLED", false),
             },
+            school_ai: ai::SchoolAiConfig::from_env(),
+            ai_permits: Arc::new(tokio::sync::Semaphore::new(2)),
         }
     }
 
@@ -62,6 +68,8 @@ impl ApiState {
                 ai_archive_enabled: false,
                 attachments_enabled: false,
             },
+            school_ai: None,
+            ai_permits: Arc::new(tokio::sync::Semaphore::new(2)),
         }
     }
 }
@@ -188,6 +196,8 @@ pub fn build_router_with_state_and_config(state: ApiState, config: ApiRuntimeCon
         .route("/readyz", get(readyz))
         .route("/api/v1/meta", get(meta))
         .route("/api/v1/discoveries", post(discovery::discover))
+        .route("/api/v1/ai/providers", get(ai::providers))
+        .route("/api/v1/ai/completions", post(ai::completions))
         .fallback(not_found)
         .with_state(state)
         .layer(cors_layer(&config))
@@ -365,6 +375,7 @@ pub fn openapi_document() -> Value {
         }
     });
     discovery::extend_contract(&mut document);
+    ai::extend_contract(&mut document);
     document
 }
 

@@ -1,6 +1,6 @@
 # API Contracts
 
-Last updated: 2026-10-27
+Last updated: 2026-10-28
 
 Campus Lumen uses `contracts/openapi.json` as the committed API contract
 snapshot. The Rust API crate is the source of this contract.
@@ -125,3 +125,26 @@ into another topic. Editing query text alone performs no request.
 
 The request remains exactly `{query}`. Topic conditions/private records are not
 added to it, and neither streaming nor progress creates server exploration storage.
+
+## One-shot AI Completion (2026-10-28)
+
+`GET /api/v1/ai/providers` is public (`security: []`) and returns school display
+metadata plus `configured`, never a credential. `POST /api/v1/ai/completions`
+is also public and accepts `provider` (`school` or `custom`), a nonempty `task`
+of at most 2,000 characters, optional `publicContext` of at most 24,000
+characters, and optional `personalContext` of at most 8,000 characters. The
+browser constructs the latter only from one explicitly selected saved reason;
+the API does not load a topic or conversation history.
+
+School requests use only server environment configuration. Custom requests
+additionally require `baseUrl`, `model` and `apiKey`; these are one-shot
+OpenAI-compatible connection inputs and are not returned or persisted. Success
+returns `provider`, `content` and the upstream-reported `model`. Relevant errors
+include `school_ai_not_configured` (503), `ai_busy` (429),
+`validation_failed`/`invalid_ai_provider` (422), and
+`ai_provider_rejected`/`ai_upstream_failed`/`ai_invalid_response` (502).
+Transport failures, cancellation and upstream errors can leave delivery
+uncertain; a 502 is not evidence that nothing was sent. There is no streaming,
+automatic retry, server conversation, output persistence or upstream deletion
+contract in this slice. Network limits are documented in
+[Security](../operations/security.md#ai-provider-boundary).

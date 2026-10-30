@@ -1,6 +1,6 @@
 # Privacy And Data Boundaries
 
-Last updated: 2026-10-27
+Last updated: 2026-10-28
 
 The current advisor-guide demo serves personal exploration, with public
 external discovery and saving in the current browser. It has no account,
@@ -16,7 +16,9 @@ inventory and audit/deletion assumptions are not the current product policy.
 | Topic name, question and preferences | Resume separate personal explorations | This browser/site's localStorage | This browser's user and scripts operating under the same origin |
 | Candidate snapshots, saved source text, collection/publication labels and matching evidence | Reopen comparison without repeating discovery | Same localStorage, after user saves | Same browser/origin |
 | Reviewed collected batch: professional names, source-backed summaries and reading context | Display existing information without student-side collection | Repository JSON, included in the Web bundle; optional copy to localStorage on save | Anyone receiving the built demo; no collector login or private topic notes included |
-| Private reasons and questions | Preserve the user's own judgments | Same localStorage | Same browser/origin; not sent to the discovery API |
+| Private reasons and questions | Preserve the user's own judgments | Same localStorage | Same browser/origin; not sent to discovery or AI unless one saved reason is explicitly selected for that AI request |
+| AI task, explicitly selected public candidate summary, and at most one explicitly selected private reason | Answer the current opportunity-exploration question | Current page memory and one API/upstream request; no project database persistence | API process, then the school or user-selected OpenAI-compatible provider shown before sending |
+| Custom AI base URL, model and API key | Connect the user's own OpenAI-compatible provider for one request | Current page memory and request handling only; not localStorage or the project database | API process and selected AI provider; not returned in provider status or AI responses |
 | Submitted public query | Run live discovery | API request; keywords also reach the search provider, while direct URLs go to the permitted source site; no project database persistence | API process; DuckDuckGo for keywords or the source site for direct URLs |
 | Allowed source hostnames | Resolve and fetch public pages | Network requests; fixed public DNS fallback in the special fake-IP case | Source site; dns.google when the fallback is needed |
 | Request metadata | Debug transport and failures | Current tracing output, under runtime log configuration | Operators; bodies/private exploration records are not logged by this implementation |
@@ -46,7 +48,8 @@ Progress snapshots remain in the current discovery view's memory until replaced
 or unmounted; only an explicit source save copies evidence into localStorage.
 Stopping preserves already received evidence and invalidates late callbacks.
 It attempts transport cancellation, but cannot retract already sent public
-queries. No external-AI send path or delivery guarantee was added.
+queries. The separate AI assistant described below has explicit send states but
+no delivery guarantee; cancellation cannot retract either kind of request.
 
 ### Retention
 
@@ -116,9 +119,9 @@ site's login or search context. This separate trial does not add an application
 browser connector, a user-key input, or an unattended collection service. See
 [the executed trial](advisor-task-design.md#82).
 
-## 已采纳的数据边界与后续AI集成要求
+## 已采纳的数据边界与AI集成要求
 
-以下承接2026-10-03已采纳要求，并与[需求主稿](requirements-handoff.md)及[任务设计v0.4](advisor-task-design.md)一致。上文描述当前实际运行；应用尚无外部AI调用、个人内容发送界面或发送状态实现，不能以固定摘要展示宣称这些检查已通过。
+以下承接2026-10-03已采纳要求，并与[需求主稿](requirements-handoff.md)及[任务设计v0.4](advisor-task-design.md)一致。2026-10-28已实现单次外部AI调用、个人内容选择与发送状态；实际提供方、传输和验证边界见上文及[任务设计8.8](advisor-task-design.md#88-双ai提供方与显式输入发送2026-10-28)。真实上游生成、服务方保留／删除条件及学生收益仍未验证，不能以固定摘要或合成检查冒充这些结果。
 
 ### 公共资料与私人主题
 

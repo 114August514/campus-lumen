@@ -17,6 +17,12 @@ export type {
   DiscoveryLimits,
   DiscoverySource,
   DiscoveryWarning,
+  AiChatRequest,
+  AiChatResponse,
+  AiProvidersResponse,
+  AiProviderStatus,
 } from "./generated";
 export { discoverSources, discoverSourcesProgress } from "./discovery";
 export type { DiscoveryStreamOptions } from "./discovery";
+export { createAiCompletion, getAiProviders } from "./ai";
+export type { AiRequestOptions } from "./ai";

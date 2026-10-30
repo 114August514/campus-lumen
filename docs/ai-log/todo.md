@@ -1,6 +1,6 @@
 # AI Log Todo
 
-Last updated: 2026-10-27
+Last updated: 2026-10-28
 
 This file records meaningful pending work for AI agents and collaborators.
 Keep entries short, dated, and actionable.
@@ -20,11 +20,18 @@ Keep entries short, dated, and actionable.
 
 ## Pending
 
+### 2026-10-28 - Verify real school AI completion after key rotation
+
+- Source: User requested school 词元计划 and custom OpenAI-compatible AI options.
+- Status: Both provider paths, explicit-input preview and truthful send states are implemented and developer-checked; no live model call was made because no new school key was configured.
+- Next: Revoke the key exposed in the supplied screenshot, configure a replacement only as API-process `USTC_LLM_API_KEY`, then run one synthetic school request and inspect recipient, returned model, result/error and no-secret storage/logging. Do not reuse or record the exposed key.
+- Acceptance: Actual school response is distinguished from deterministic transport/UI tests; custom-provider live generation remains separately unverified unless explicitly tested with a user-authorized key. Full demo/student-benefit acceptance remains separate.
+
 ### 2026-10-27 - Follow up after high-priority demo integration
 
 - Source: User-authorized implementation of the October 26 audit priorities; completed facts are in done.md.
 - Status: `codex/demo-high-priority` includes remote `a374ab0` plus the verified discovery-to-comparison and data corrections. Implementation published to GitHub as `968f691` on 2026-10-27; remote main integration remains separate.
-- Remaining: Mistaken-association repair preserving private records/original references; optional preparation/knowledgeable-participant/resource connections; then complete task-design §7/G5 walkthrough. No new broad research, maintenance or account gate. External model integration remains optional and must obey selected-input/send-state boundaries if adopted.
+- Remaining: Same-name person/global public-record association repair; optional preparation/knowledgeable-participant/resource connections; then complete task-design §7/G5 walkthrough. Active-topic structured route splitting is complete (task design §8.9). No new broad research, maintenance or account gate. Real upstream AI generation remains separately unverified and must obey selected-input/send-state boundaries.
 - Content: Old internship leads keep original timestamps/summaries but their unsupported conditions are explicitly unresolved. Obtain exact job-specific sources before restoring duration/location/mentoring/conversion claims; a different historical MSRA Shanghai job must remain a separate object.
 - Integration: Review this branch before main integration; older pending entries below are historical task sequencing, not evidence these high-priority features remain unimplemented. Publication verification compares the remote branch ref with local HEAD.
 
@@ -32,14 +39,14 @@ Keep entries short, dated, and actionable.
 
 - Source: User asked to advance the existing plan; implementation/verification facts are in done.md and advisor-task-design.md §8.6, on `feat/topic-edit-and-bounded-discovery` after preparatory commit `51e81dd`.
 - Status: Topic edits, streamed partial evidence, cancellation/late-run isolation and fixed run bounds are implemented and locally checked. Integration/remote CI remains distinct from the implementation result; no merge or complete P2/P3 acceptance is claimed.
-- Next: Proceed with optional preparation/knowledgeable-participant/resource entries and mistaken-association repair under the existing task design, then the complete G5 walkthrough. Do not reopen broad research or infer external-AI integration.
+- Next: Proceed with optional preparation/knowledgeable-participant/resource entries and same-name/global public-record repair under the existing task design, then the complete G5 walkthrough. Active-topic route splitting is recorded in §8.9. Do not reopen broad research or infer real upstream AI generation from the implemented provider paths.
 
 ### 2026-10-12 - Continue after verified comparison follow-up
 
 - Source: User-authorized comparison follow-up; execution facts moved to done.md and advisor-task-design.md §8.5.
 - Milestone: P2.
 - Status: Relevant official-page read/save/return/reopen flow verified and published in [PR #14](https://github.com/114August514/campus-agora/pull/14). PR #13 merged the prior follow-up at main 258cc69; the new direct-read changes are isolated on feat/direct-source-read from that base. Review/integration remains separate from the implementation result.
-- Next: The October 22 slice now supplies editable topic conditions and cancellable/bounded discovery; continue optional preparation/contact/resource entries and complete demo/association-repair checks. Take one outcome group at a time; no new broad research or maintenance gate.
+- Next: Continue optional preparation/contact/resource entries, remaining association-repair scenarios and the complete demo walkthrough. Take one outcome group at a time; no new broad research or maintenance gate.
 - Dependencies: Existing browser topic store and public HTML API. External model integration remains optional and must preserve explicitly selected personal inputs and truthful send states.
 
 ### 2026-10-06 - Define subsequent implementation work after PR #12

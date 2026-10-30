@@ -47,7 +47,17 @@ export function mergeCollectedAdvisors(
       ]);
       sources.set(key, { ...sources.get(key), ...source });
     }
-    candidates.set(advisor.candidateId, { ...advisor, sources: [...sources.values()] });
+    const routes = new Map(
+      (existing?.participationRoutes ?? []).map((route) => [route.routeId, route]),
+    );
+    for (const route of advisor.participationRoutes ?? []) {
+      routes.set(route.routeId, route);
+    }
+    candidates.set(advisor.candidateId, {
+      ...advisor,
+      ...(routes.size ? { participationRoutes: [...routes.values()] } : {}),
+      sources: [...sources.values()],
+    });
   }
   return [...candidates.values()];
 }
@@ -198,6 +208,31 @@ function source(value: unknown, batchId: string, query: string): SourceSnapshot 
   };
 }
 
+function participationRoute(value: unknown) {
+  const route = object(
+    value,
+    ["routeId", "label", "details", "sourceUrls"],
+    "参与途径",
+  );
+  const routeId = text(route.routeId, "途径标识");
+  if (!/^[a-z0-9][a-z0-9-]{0,79}$/.test(routeId)) {
+    throw new Error("参与途径标识只接受小写字母、数字和连字符。");
+  }
+  if (!Array.isArray(route.sourceUrls) || !route.sourceUrls.length) {
+    throw new Error("每条参与途径至少需要一个来源URL。");
+  }
+  const sourceUrls = route.sourceUrls.map((url) => sourceUrl(url));
+  if (new Set(sourceUrls).size !== sourceUrls.length) {
+    throw new Error("同一条参与途径的来源URL不能重复。");
+  }
+  return {
+    routeId,
+    label: text(route.label, "途径名称"),
+    details: text(route.details, "途径说明"),
+    sourceUrls,
+  };
+}
+
 /** Parses public batch data only; never accepts private exploration records. */
 export function parseCollectedBatch(input: unknown): CollectedBatch {
   const record = object(
@@ -239,6 +274,7 @@ export function parseCollectedBatch(input: unknown): CollectedBatch {
         "research",
         "approach",
         "participation",
+        "participationRoutes",
         "unknowns",
         "sources",
         "type",
@@ -254,6 +290,23 @@ export function parseCollectedBatch(input: unknown): CollectedBatch {
     if (!Array.isArray(advisor.sources) || !advisor.sources.length) {
       throw new Error("预采集候选至少需要一个已取得内容的来源。");
     }
+    const sources = advisor.sources.map((value) => source(value, batchId, query));
+    const routes = Array.isArray(advisor.participationRoutes)
+      ? advisor.participationRoutes.map(participationRoute)
+      : undefined;
+    if (
+      routes &&
+      new Set(routes.map((route) => route.routeId)).size !== routes.length
+    ) {
+      throw new Error("同一候选的参与途径标识不能重复。");
+    }
+    if (
+      routes?.some((route) =>
+        route.sourceUrls.some((url) => !sources.some((source) => source.url === url)),
+      )
+    ) {
+      throw new Error("参与途径只能关联候选已有的来源URL。");
+    }
     return {
       candidateId,
       name: text(advisor.name, "候选姓名"),
@@ -262,6 +315,7 @@ export function parseCollectedBatch(input: unknown): CollectedBatch {
       approach: text(advisor.approach, "工作说明", true),
       participation: text(advisor.participation, "参与说明", true),
       unknowns: text(advisor.unknowns, "候选未知事项", true),
+      ...(routes ? { participationRoutes: routes } : {}),
       ...(advisor.type ? { type: text(advisor.type, "候选类型") } : {}),
       ...(advisor.title ? { title: text(advisor.title, "标题") } : {}),
       ...(advisor.description
@@ -270,7 +324,7 @@ export function parseCollectedBatch(input: unknown): CollectedBatch {
       ...(advisor.metadata && typeof advisor.metadata === "object"
         ? { metadata: advisor.metadata as Record<string, string> }
         : {}),
-      sources: advisor.sources.map((value) => source(value, batchId, query)),
+      sources,
     };
   });
   return {

@@ -1,6 +1,6 @@
 # Security
 
-Last updated: 2026-10-27
+Last updated: 2026-10-28
 
 The current demo supports bounded public discovery and private browser-local
 explorations. Controls for identity, shared content, uploads and moderation
@@ -49,10 +49,34 @@ bounds are not per-user/IP rate limiting or a production traffic policy.
 
 Only static UTF-8 HTML is processed; no webpage code or instructions are
 executed, and PDF, login-only and JavaScript-rendered content are unsupported.
-The service uses no model or paid API key. It does not store private reasons,
-topics or fetched pages in the backend. Public query terms may reach the
+The public discovery service itself uses no model or paid API key; the separate
+opt-in AI assistant is documented below. Discovery does not store private
+reasons, topics or fetched pages in the backend. Public query terms may reach the
 search provider, and lookup hostnames may reach `dns.google`; see
 [Privacy](../product/privacy.md).
+
+## AI Provider Boundary
+
+`GET /api/v1/ai/providers` exposes only school-provider display name, model and
+configured status, never its key. `POST /api/v1/ai/completions` accepts the
+current task and explicitly selected context without conversation persistence.
+The school key comes only from `USTC_LLM_API_KEY`; its destination and default
+model are server-controlled. Custom provider credentials arrive in that request
+and are not persisted by the application.
+
+Outbound model calls require HTTPS on port 443 without URL credentials, query
+or fragment. Hostnames must resolve to public addresses, which are pinned for
+the connection; proxies and redirects are disabled. Each API process permits
+two concurrent calls, with a 60-second timeout and 256,000-byte response cap.
+Custom providers intentionally allow user-selected public OpenAI-compatible
+services rather than a school-only host allowlist. These are transport bounds,
+not user authentication, per-user rate limits or a production cost-control
+policy; those remain necessary before an unauthenticated public deployment.
+
+Do not log request bodies, selected personal context, API keys or bearer tokens.
+Cancellation and timeout do not prove non-delivery or revoke provider-side
+processing. Provider retention/deletion terms must be checked separately; local
+deletion makes no claim about copies already sent upstream.
 
 ## Secrets
 
@@ -147,7 +171,7 @@ update both privacy and operations docs.
 | Request logs | Keep for a short debugging and abuse-response window. Logs must include request IDs but avoid raw tokens, cookies, and raw campus identity assertions. |
 | Backups | Define per environment before deployment. Backups need owner, rotation, restore test cadence, and deletion behavior. |
 | Attachments | Retain no longer than the owning content unless legal, abuse-response, or safety review requires a hold. Object lifecycle rules must match product deletion semantics. |
-| AI generated output | Retain according to the source draft, archive entry, or review task it supports. AI output must remain review-visible when it influences published knowledge. |
+| AI generated output | The current AI assistant keeps answers only in page memory; it does not automatically save them to localStorage or the backend. Any later saved draft, archive entry or review task needs its own documented retention and review visibility. |
 
 Exact day counts are a production policy decision. They must be added before
 collecting real campus identity data, accepting uploads, or enabling public
