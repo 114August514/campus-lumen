@@ -1,6 +1,6 @@
 # Security
 
-Last updated: 2026-10-12
+Last updated: 2026-10-29
 
 The current demo supports bounded public discovery and private browser-local
 explorations. Controls for identity, shared content, uploads and moderation
@@ -10,25 +10,39 @@ create current community or desktop tasks.
 ## Public Discovery Boundary
 
 The discovery endpoint accepts public interest terms or a single public
-academic HTTP(S) URL in `query`. Keywords are sent to the fixed DuckDuckGo HTML
+academic or supported recruitment HTTP(S) URL in `query`. Keywords are sent to the fixed DuckDuckGo HTML
 search endpoint; direct URLs are validated and read without sending them to the
 search provider or falling back to other pages. Retrieved page
 hosts must fall under `edu.cn`, `ac.cn`, `cas.cn`, `edu`, `edu.hk`, `ac.uk`, or
 `edu.sg`, or equal one of the checked academic hosts `tqchen.com`,
 `xiangwang1223.github.io`, `xiongyingfei.github.io`, `cse.ust.hk`, `www.cs.hku.hk`,
-`cs.hku.hk`, `jzuming.github.io`, and `songzhuoran.github.io`. The latter HKU and
-personal-page hosts support the October 5 source-checked candidates. A permitted
-hostname is a reading boundary, not an endorsement of its claims.
+`cs.hku.hk`, `jzuming.github.io`, `songzhuoran.github.io`, `www.cis.mpg.de`, or
+`phd.ista.ac.at`. These are exact-host entries: subdomains such as
+`evil.cis.mpg.de` and names with appended suffixes are not accepted. The HKU,
+personal-page, Max Planck, and ISTA hosts support source-checked demo candidates.
+A permitted hostname is a reading boundary, not an endorsement of its claims.
+
+Supported opportunity paths also include exact hosts `www.microsoft.com`
+(`/en-us/research/opportunity` and `/en-us/research/lab/microsoft-research-asia/careers`),
+`www.shlab.org.cn` (`/joinus`, legacy `/careers/intern`), `jobs.bytedance.com`
+and legacy `job.bytedance.com` (`/campus/position`), and `github.com`
+(`/open-compass/opencompass`). A prefix matches only itself or slash-delimited
+children, not neighboring paths or other repositories. These destinations are
+included in keyword search filtering as well as direct reading. No login,
+corporate account, arbitrary GitHub repository or browser-session access is added.
 
 Every redirect is checked again. HTTP(S) only, allowed ports 80/443, and no URL
-credentials are accepted. Resolved private, loopback, link-local and other
-blocked addresses are rejected; accepted addresses are pinned for the actual
-connection, with environment proxies disabled. When local DNS returns only
-synthetic `198.18.0.0/15` addresses, the service asks the fixed HTTPS endpoint
-`https://dns.google/resolve` for public A records of the already-allowed host.
-Returned addresses must pass the same public-address checks and are pinned;
-the synthetic/private addresses are never page-fetch destinations. Other
-private DNS answers remain blocked.
+credentials are accepted. Query and fragment credential-key checks reject the
+existing token, auth, session, password, credential and API-key forms, plus
+`secret`, `client_secret`, `sig`, `signature`, and `jwt` (case-insensitive, with
+hyphen/underscore normalization). Resolved private, loopback, link-local and
+other blocked addresses are rejected; accepted addresses are pinned for the
+actual connection, with environment proxies disabled. When local DNS returns
+only synthetic `198.18.0.0/15` addresses, the service asks the fixed HTTPS
+endpoint `https://dns.google/resolve` for public A records of the already-allowed
+host. Returned addresses must pass the same public-address checks and are pinned;
+the synthetic/private addresses are never page-fetch destinations. Other private
+DNS answers remain blocked.
 
 There are two concurrent discovery permits per process, at most five fetched
 search-result pages, a 1,000,000-byte page cap, and a 14-second bound per
@@ -44,6 +58,23 @@ The service uses no model or paid API key. It does not store private reasons,
 topics or fetched pages in the backend. Public query terms may reach the
 search provider, and lookup hostnames may reach `dns.google`; see
 [Privacy](../product/privacy.md).
+
+## Analysis Privacy Boundary
+
+The public `POST /api/v1/analyses` endpoint receives private reasons or
+questions only in `selectedPrivateFragments`, populated from explicit per-item
+selection. The default simulated provider makes no outbound request. When the
+user chooses `school`, the backend forwards only the request's question,
+subjects, public evidence, and selected fragments to the fixed HTTPS
+`api.llm.ustc.edu.cn:443` endpoint. DNS results must be public and are pinned;
+redirects and proxies are disabled, and connection, total-time, and response-size
+limits apply.
+
+The USTC key stays in server memory and is never returned or logged. Application
+logs contain request ID, provider ID, and item counts, never submitted text.
+The backend persists neither requests nor responses. School-provider retention is
+unverified. Cancellation or timeout cannot prove whether content already reached
+the platform, so clients must present delivery as unknown rather than retracted.
 
 ## Secrets
 
@@ -102,7 +133,7 @@ Desktop permissions must stay minimal:
 - No long-lived token in WebView localStorage.
 - No unsigned auto-update process.
 
-Capability changes must update `docs/architecture/desktop.md`.
+Capability changes must update `docs/archive/architecture/desktop.md`.
 
 ## Audit And Data Protection
 

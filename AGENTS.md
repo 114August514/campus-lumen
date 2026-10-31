@@ -1,11 +1,17 @@
 # Agent Notes
 
-Last updated: 2026-10-06
+Last updated: 2026-10-31
 
 This file is the project-level instruction sheet for AI agents and human
 collaborators. Follow it before making changes.
 
 ## Project Context
+
+The project is named **Campus Lumen** (renamed from Campus Agora on 2026-10-22),
+with repository `114August514/campus-lumen`. Its description is:
+帮大学生跨机构发现科研、实习、竞赛、交流等机会，看懂实际任务与条件，自主决定下一步。
+Historical records and compatibility identifiers may retain the previous name;
+this rename does not change product scope or authorize a data migration.
 
 Read `docs/product/requirements-handoff.md` for the consolidated requirements
 analysis v1.0. `docs/product/overview.md` summarizes decisions and
@@ -13,19 +19,21 @@ analysis v1.0. `docs/product/overview.md` summarizes decisions and
 and actionable guidance across institutions and disciplines, initially serving
 USTC students. The initial product is exclusively a personal-use tool; community
 features are a possible future extension, not current scope or a scheduled phase.
-Current planning stage: P2 task design and bounded implementation experiments,
-following the requirements v1.0 baseline. The product
-deliverable is a reusable discovery-to-action workflow. The user's AIDS mentor
-search is its first real pilot, not a standalone advisor-list delivery goal or
-the boundary of needs research. P1 explores product-wide users and opportunities
-(research, study, internships, competitions, exchange, activities/notices); keep
-research scope separate from the first implementation slice. On 2026-09-29
-the user confirmed the first version is an advisor-selection guide (选导师指南)
-that does not distinguish home-campus from external advisors, plus lightweight
-entry/resource lookups; other opportunity types are not first-version scope.
+Current delivery is the mid-term demo on `feat/midterm-demo`. All opportunity
+types share one frontend workflow: 探索 → 发现 → 处理. Advisor selection remains
+the deepest content example; other types use existing curated entries, without
+claiming equal evidence depth or authorizing new research. The product
+deliverable is a reusable discovery-to-action workflow, initially for personal
+use by USTC students.
+
+On 2026-10-29 the user assigned frontend design and implementation to the
+coordinating agent (Claude). As of 2026-10-31, mid-term AI organization defaults
+to the clearly labelled local simulated service and optionally uses USTC
+词元计划 through a server-held key chosen per send; simulation remains the
+fallback. Acceptance is maintained in `docs/project/acceptance.md`.
 
 The user authorized a product reset on 2026-09-22. The initialization spec at
-`docs/superpowers/specs/2026-07-06-campus-agora-init-design.md` and the old M-series
+`docs/archive/superpowers/specs/2026-07-06-campus-agora-init-design.md` and the old M-series
 community roadmap are historical, not active feature requirements. Do not revive
 discussion, archival, campus-auth or desktop tasks merely because code or docs
 already exist. Evaluate reuse against the new requirements. Existing engineering
@@ -126,6 +134,15 @@ subsequent work. See advisor-task-design.md v0.4 §8.4.
 
 ## Requirements Analysis Work Order
 
+On 2026-10-22 the topic-condition and bounded-discovery slice was implemented:
+explicit topic name/question/preference editing preserves saved/private records;
+the discovery endpoint can stream cumulative body snapshots, supports abort and
+declares server/run/read limits. Browser and controlled checks are recorded in
+`docs/product/advisor-task-design.md` §8.6. Query text remains the only discovery
+input; editing conditions does not send them. Cancellation does not retract
+already sent public requests. This does not complete mistaken-merge repair,
+external-AI delivery, optional preparation/resource entries or full demo acceptance.
+
 Before prioritizing prototype or implementation work, follow the eight-part
 analysis contract in `docs/product/requirements.md`: problem background, target
 users/tasks, existing solutions, unmet needs/causes, value/positioning,
@@ -190,10 +207,25 @@ credits/GPA and other recognition; only applicable rules support eligibility.
 
 ## UI Rules
 
-Follow `docs/product/ui-system.md` before any UI or prototype work. Use only Primer React Product UI + Primer Primitives + Octicons. No Tailwind, handwritten CSS/CSS Modules, inline style, sx or CSS-in-JS. Use library layouts and one declarative theme configuration. Fix light neutral palette with Primer blue interaction, system sans-serif and normal letter spacing. Ban emoji icons, eyebrows, subtitles/taglines, gradients, bordered content cards, display monospace and tracking. Keep necessary field borders and keyboard focus. The current Web app uses Primer; the historical HTML prototype remains superseded and is not a compliant template. Reference sites inform interaction only; they cannot override these rules.
+Follow `docs/product/ui-system.md` before any UI or prototype work. Use only Primer React Product UI + Primer Primitives + Octicons. No Tailwind, handwritten component CSS/CSS Modules, inline style, sx or CSS-in-JS. Use library layouts and one declarative theme configuration; the sole document mapping is `apps/web/src/app/theme.css`. Following the user's 2026-10-23 choice, PR #15 is the visual starting point, with its open-compass brand mark and a toggle between locked Primer light/dark schemes (light by default). Keep Primer blue interaction, system sans-serif and normal letter spacing. Ban emoji icons, eyebrows, subtitles/taglines, gradients, bordered content cards, display monospace and tracking. Keep necessary field borders and keyboard focus. The brand SVG is distinct from Octicons functional icons. The historical standalone HTML prototype remains superseded and is not a compliant template. Reference sites inform interaction only; they cannot override these rules or the user's latest design direction.
 
 ## Collaboration Rules
 
+- User direction (2026-10-29): the coordinating agent (Claude) owns frontend
+  design and implementation. The 2026-10-23/24 Kimi-only provider rule and the
+  instruction that the coordinator must not preselect layout are superseded.
+  Historical note: Kimi drafts, PR #15 and the Qwen/OpenHarness analogies remain
+  optional design references, not active ownership or provider requirements.
+- Preserve the Primer UI rules above, the public/private data boundary, truthful
+  live/simulated labels, and actual-source evidence limits regardless of which
+  agent implements the frontend. Do not send private topic records or unrelated
+  personal context to any model or tool.
+- Mid-term decisions (2026-10-29, updated 2026-10-31): every opportunity type
+  uses one 探索 → 发现 → 处理 flow; advisor selection remains the deepest content;
+  other types use existing curated entries. AI organization defaults to the
+  clearly labelled local simulated service and optionally uses USTC 词元计划
+  through a server-held key chosen per send; simulation remains the fallback.
+  The acceptance source of truth is `docs/project/acceptance.md`.
 - Read the relevant local context before editing: this file, the active spec,
   applicable docs, package scripts, and nearby source files. Reuse context
   already read in the session; reread when it changes or is no longer reliable.
@@ -230,6 +262,16 @@ iteration guidance in `docs/engineering/development.md` proportionally:
 
 Use `docs/ai-log/` for low-friction task memory. It complements issues,
 milestones, commit history, and PRs; it does not replace them.
+
+Put intermediate drafts, investigation notes, temporary scripts, screenshots and
+raw non-sensitive experiment output in `work/YYYY-MM-DD-task/`, not in source or
+formal documentation folders. See `docs/engineering/repository-layout.md` and
+`work/README.md`. Only `work/README.md` is intended for version control; other
+contents are ignored by default and are not a durable handoff. Do not force-add
+them or make production code depend on them. Keep AI Log entries to short pending
+items and completed facts; promote accepted decisions, reusable tools and reviewed
+data into their proper maintained locations. Local-only storage is not permission
+to retain secrets, credentials, authentication screens or private student data.
 
 For non-trivial agent work:
 

@@ -1,4 +1,4 @@
-//! Bounded live discovery: public-index search or one allowed academic HTML URL.
+//! Bounded live discovery: public-index search or one allowed academic/recruitment HTML URL.
 //! Source text is untrusted evidence, never executable instructions.
 use std::collections::HashSet;
 use std::net::{IpAddr, SocketAddr};
@@ -8,11 +8,15 @@ use chrono::{SecondsFormat, Utc};
 use reqwest::{redirect::Policy, Url};
 use scraper::{Html, Selector};
 use tokio::net::lookup_host;
+use tokio::sync::mpsc::UnboundedSender;
 use tokio::task::JoinSet;
 use tokio::time::timeout;
 
-const MAX_PAGE_BYTES: usize = 1_000_000;
-const MAX_SOURCES: usize = 5;
+pub const MAX_PAGE_BYTES: usize = 1_000_000;
+pub const MAX_SOURCES: usize = 5;
+pub const MAX_SECONDS: u64 = 30;
+pub const MAX_READS: usize = 6;
+pub const MAX_HTTP_REQUESTS: usize = 48;
 const SEARCH_HOST: &str = "html.duckduckgo.com";
 const SUFFIXES: &[&str] = &[
     "edu.cn", "ac.cn", "cas.cn", "edu", "edu.hk", "ac.uk", "edu.sg",
@@ -26,8 +30,24 @@ const PERSONAL_HOSTS: &[&str] = &[
     "www.cs.hku.hk",
     "jzuming.github.io",
     "songzhuoran.github.io",
+    "www.cis.mpg.de",
+    "phd.ista.ac.at",
 ];
-pub const DISCOVERY_SCOPE: &str = "DuckDuckGo公开索引中的高校与研究所网站（edu.cn、ac.cn、cas.cn、edu、edu.hk、ac.uk、edu.sg），及已核对的学术主页tqchen.com、xiangwang1223.github.io、xiongyingfei.github.io、cse.ust.hk、cs.hku.hk、www.cs.hku.hk、jzuming.github.io、songzhuoran.github.io；最多读取5个公开HTML页面，不覆盖全网、私域、PDF或需登录页面。";
+// Exact hosts and path prefixes only; do not allow arbitrary corporate/profile pages.
+const OPPORTUNITY_PATHS: &[(&str, &[&str])] = &[
+    (
+        "www.microsoft.com",
+        &[
+            "/en-us/research/opportunity",
+            "/en-us/research/lab/microsoft-research-asia/careers",
+        ],
+    ),
+    ("www.shlab.org.cn", &["/joinus", "/careers/intern"]),
+    ("jobs.bytedance.com", &["/campus/position"]),
+    ("job.bytedance.com", &["/campus/position"]),
+    ("github.com", &["/open-compass/opencompass"]),
+];
+pub const DISCOVERY_SCOPE: &str = "DuckDuckGo公开索引中的高校、研究所和已核对学术主页，以及限定路径内的微软研究招聘、上海AI实验室招聘、字节校园职位页和OpenCompass仓库。最多读取5个公开HTML页面；不覆盖全网、私域、PDF、需登录或必须运行JavaScript的页面。";
 pub const DIRECT_URL_SCOPE: &str = "仅直接读取所提交的一个范围内公开HTML页面（含通过相同校验的重定向），不使用搜索索引或备用目录；最多1,000,000字节、14秒，提取正文最多16,000字。未判断该页是否回答当前疑问，请阅读正文并核对对象；完整内容请到原站查看。";
 pub const DIRECTORY_SCOPE: &str = "公开索引本次不可用，改为实时读取并匹配两个有限公开目录：Stanford AI Laboratory导师目录（ai.stanford.edu/faculty/）、CMU Machine Learning导师目录（ml.cmu.edu/people/core-faculty）。仅返回目录正文命中，不是全网搜索或个人推荐；不代表当前招生。";
 const DIRECTORIES: &[(&str, &str)] = &[
@@ -41,9 +61,13 @@ const DIRECTORIES: &[(&str, &str)] = &[
     ),
 ];
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct DiscoveryResult {
     pub query: String,
+    pub finished: bool,
+    pub stop_reason: &'static str,
+    pub started_reads: usize,
+    pub completed_reads: usize,
     pub provider: &'static str,
     pub scope: &'static str,
     pub collected_at: String,
@@ -52,7 +76,7 @@ pub struct DiscoveryResult {
     pub warnings: Vec<DiscoveryWarning>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct DiscoveredSource {
     pub url: String,
     pub title: String,
@@ -65,7 +89,7 @@ pub struct DiscoveredSource {
     pub unknowns: Vec<String>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct DiscoveryWarning {
     pub code: &'static str,
     pub message: String,
@@ -133,43 +157,105 @@ fn direct_url(query: &str) -> Result<Option<Url>, &'static str> {
     Ok(Some(url))
 }
 
-pub async fn discover(query: String) -> DiscoveryResult {
-    let collected_at = now();
-    let mut result = DiscoveryResult {
-        query: query.clone(),
+type Progress = Option<UnboundedSender<DiscoveryResult>>;
+type SourceTask = (usize, String, Result<DiscoveredSource, &'static str>);
+
+fn initial_result(query: String) -> DiscoveryResult {
+    DiscoveryResult {
+        query,
+        finished: false,
+        stop_reason: "",
+        started_reads: 0,
+        completed_reads: 0,
         provider: "duckduckgo_html",
         scope: DISCOVERY_SCOPE,
-        collected_at,
-        status: "complete",
+        collected_at: now(),
+        status: "partial",
         sources: Vec::new(),
         warnings: Vec::new(),
+    }
+}
+
+fn report(result: &DiscoveryResult, progress: &Progress) {
+    if let Some(progress) = progress {
+        // At most an initial snapshot, six read completions and a final snapshot.
+        let _ = progress.send(result.clone());
+    }
+}
+
+pub async fn discover(query: String) -> DiscoveryResult {
+    discover_with_progress(query, None).await
+}
+
+pub async fn discover_with_progress(query: String, progress: Progress) -> DiscoveryResult {
+    let mut result = initial_result(query);
+    if matches!(direct_url(&result.query), Ok(Some(_))) {
+        result.provider = "direct_url";
+        result.scope = DIRECT_URL_SCOPE;
+    }
+    report(&result, &progress);
+    if timeout(
+        Duration::from_secs(MAX_SECONDS),
+        discover_steps(&mut result, &progress),
+    )
+    .await
+    .is_err()
+    {
+        // Dropping discover_steps also drops its JoinSet, aborting pending reads.
+        result.stop_reason = "time_limit";
+        result.warnings.push(DiscoveryWarning {
+            code: "time_limit_reached",
+            message: "已达到本轮30秒上限，停止后续读取；已取得的正文保留，可自行决定是否另开一轮。"
+                .into(),
+            url: None,
+        });
+    }
+    result.finished = true;
+    result.status = if result.warnings.is_empty() {
+        "complete"
+    } else if result.sources.is_empty() {
+        "failed"
+    } else {
+        "partial"
     };
-    match direct_url(&query) {
-        Ok(Some(url)) => return discover_url(result, url).await,
+    report(&result, &progress);
+    result
+}
+
+async fn discover_steps(result: &mut DiscoveryResult, progress: &Progress) {
+    match direct_url(&result.query) {
+        Ok(Some(url)) => {
+            discover_url(result, url, progress).await;
+            return;
+        }
         Ok(None) => {}
         Err(message) => {
             result.provider = "direct_url";
             result.scope = DIRECT_URL_SCOPE;
-            result.status = "failed";
             result.warnings.push(DiscoveryWarning {
                 code: "invalid_source",
                 message: message.into(),
                 url: None,
             });
-            return result;
+            return;
         }
     }
     let mut search_url = Url::parse("https://html.duckduckgo.com/html/").expect("fixed search URL");
     let filter = SUFFIXES
         .iter()
         .chain(PERSONAL_HOSTS)
+        .chain(OPPORTUNITY_PATHS.iter().map(|(host, _)| host))
         .map(|suffix| format!("site:{suffix}"))
         .collect::<Vec<_>>()
         .join(" OR ");
     search_url
         .query_pairs_mut()
-        .append_pair("q", &format!("{query} ({filter})"));
-    let search_html = match bounded_get(search_url, true).await {
+        .append_pair("q", &format!("{} ({filter})", result.query));
+    result.started_reads += 1;
+    let search = bounded_get(search_url, true).await;
+    result.completed_reads += 1;
+    report(result, progress);
+    let search_html = match search {
         Ok((_, html)) => html,
         Err(code) => {
             result.warnings.push(DiscoveryWarning {
@@ -177,7 +263,8 @@ pub async fn discover(query: String) -> DiscoveryResult {
                 message: "公开搜索服务暂时不可用；改用明确限定的官方公开目录实时匹配，没有用演示样本替代。".into(),
                 url: None,
             });
-            return discover_directories(result).await;
+            discover_directories(result, progress).await;
+            return;
         }
     };
     let hits = match parse_search(&search_html) {
@@ -189,7 +276,8 @@ pub async fn discover(query: String) -> DiscoveryResult {
                     .into(),
                 url: None,
             });
-            return discover_directories(result).await;
+            discover_directories(result, progress).await;
+            return;
         }
     };
     if hits.is_empty() {
@@ -199,24 +287,91 @@ pub async fn discover(query: String) -> DiscoveryResult {
                 .into(),
             url: None,
         });
-        return result;
+        return;
+    }
+    if hits.len() > MAX_SOURCES {
+        result.stop_reason = "source_limit";
+        result.warnings.push(DiscoveryWarning {
+            code: "source_limit_reached",
+            message: "本轮只读取前5个范围内页面，其余结果未读取；如有需要可调整查询后再查。".into(),
+            url: None,
+        });
     }
     let mut tasks = JoinSet::new();
     for (index, hit) in hits.into_iter().take(MAX_SOURCES).enumerate() {
-        let query = query.clone();
+        let query = result.query.clone();
+        result.started_reads += 1;
         tasks.spawn(async move {
-            let original_url = hit.url.to_string();
-            let source = read_source(hit, &query).await;
-            (index, original_url, source)
+            let url = hit.url.to_string();
+            (index, url, read_source(hit, &query).await)
         });
     }
+    collect_sources(result, tasks, false, progress).await;
+}
+
+async fn discover_url(result: &mut DiscoveryResult, url: Url, progress: &Progress) {
+    result.provider = "direct_url";
+    result.scope = DIRECT_URL_SCOPE;
+    let original_url = url.to_string();
+    let hit = SearchHit {
+        title: original_url.clone(),
+        url,
+        snippet: String::new(),
+    };
+    result.started_reads += 1;
+    match read_source(hit, "").await {
+        Ok(mut source) => {
+            source.unknowns.push("本次按链接读取，没有关键词相关性判断；是否回答疑问及是否属于该候选需要核对。完整正文请查看原站。".into());
+            result.sources.push(source);
+        }
+        Err(code) => result.warnings.push(DiscoveryWarning {
+            code,
+            message: "该链接本次未取得可用HTML正文；没有改用搜索索引、其他目录或演示样本。".into(),
+            url: Some(original_url),
+        }),
+    }
+    result.completed_reads += 1;
+    report(result, progress);
+}
+
+async fn discover_directories(result: &mut DiscoveryResult, progress: &Progress) {
+    result.provider = "official_directory";
+    result.scope = DIRECTORY_SCOPE;
+    let mut tasks = JoinSet::new();
+    for (index, (url, title)) in DIRECTORIES.iter().enumerate() {
+        let query = result.query.clone();
+        let url_string = (*url).to_owned();
+        let hit = SearchHit {
+            url: Url::parse(url).expect("fixed directory URL"),
+            title: (*title).into(),
+            snippet: String::new(),
+        };
+        result.started_reads += 1;
+        tasks.spawn(async move { (index, url_string, read_source(hit, &query).await) });
+    }
+    collect_sources(result, tasks, true, progress).await;
+}
+
+async fn collect_sources(
+    result: &mut DiscoveryResult,
+    mut tasks: JoinSet<SourceTask>,
+    only_matches: bool,
+    progress: &Progress,
+) {
     let mut sources = Vec::new();
+    let mut readable = 0;
     while let Some(task) = tasks.join_next().await {
+        result.completed_reads += 1;
         match task {
-            Ok((index, _, Ok(source))) => sources.push((index, source)),
+            Ok((index, _, Ok(source))) => {
+                readable += 1;
+                if !only_matches || !source.relevance_evidence.is_empty() {
+                    sources.push((index, source));
+                }
+            }
             Ok((_, url, Err(code))) => result.warnings.push(DiscoveryWarning {
                 code,
-                message: "搜索找到该页面，但本次未取得可用HTML正文；未把搜索摘要当作已读正文。"
+                message: "该公开页面本次未取得可用HTML正文；未把搜索摘要或演示样本当作已读正文。"
                     .into(),
                 url: Some(url),
             }),
@@ -226,86 +381,11 @@ pub async fn discover(query: String) -> DiscoveryResult {
                 url: None,
             }),
         }
+        sources.sort_by_key(|(index, _)| *index);
+        result.sources = sources.iter().map(|(_, source)| source.clone()).collect();
+        report(result, progress);
     }
-    sources.sort_by_key(|(index, _)| *index);
-    result.sources = sources.into_iter().map(|(_, source)| source).collect();
-    if !result.warnings.is_empty() {
-        result.status = if result.sources.is_empty() {
-            "failed"
-        } else {
-            "partial"
-        };
-    }
-    result
-}
-
-async fn discover_url(mut result: DiscoveryResult, url: Url) -> DiscoveryResult {
-    result.provider = "direct_url";
-    result.scope = DIRECT_URL_SCOPE;
-    let original_url = url.to_string();
-    let hit = SearchHit {
-        title: original_url.clone(),
-        url,
-        snippet: String::new(),
-    };
-    // An address is not a research question. Leave relevance evidence empty.
-    match read_source(hit, "").await {
-        Ok(mut source) => {
-            source.unknowns.push("本次按链接读取，没有关键词相关性判断；是否回答疑问及是否属于该候选需要核对。完整正文请查看原站。".into());
-            result.sources.push(source);
-        }
-        Err(code) => {
-            result.status = "failed";
-            result.warnings.push(DiscoveryWarning {
-                code,
-                message: "该链接本次未取得可用HTML正文；没有改用搜索索引、其他目录或演示样本。"
-                    .into(),
-                url: Some(original_url),
-            });
-        }
-    }
-    result
-}
-
-async fn discover_directories(mut result: DiscoveryResult) -> DiscoveryResult {
-    result.provider = "official_directory";
-    result.scope = DIRECTORY_SCOPE;
-    let mut tasks = JoinSet::new();
-    for (index, (url, title)) in DIRECTORIES.iter().enumerate() {
-        let query = result.query.clone();
-        let hit = SearchHit {
-            url: Url::parse(url).expect("fixed directory URL"),
-            title: (*title).into(),
-            snippet: String::new(),
-        };
-        tasks.spawn(async move { (index, *url, read_source(hit, &query).await) });
-    }
-    let mut sources = Vec::new();
-    let mut readable = 0;
-    while let Some(task) = tasks.join_next().await {
-        match task {
-            Ok((index, _, Ok(source))) => {
-                readable += 1;
-                if !source.relevance_evidence.is_empty() {
-                    sources.push((index, source));
-                }
-            }
-            Ok((_, url, Err(code))) => result.warnings.push(DiscoveryWarning {
-                code,
-                message: "备用公开目录本次未取得可用正文。".into(),
-                url: Some(url.into()),
-            }),
-            Err(_) => result.warnings.push(DiscoveryWarning {
-                code: "read_failed",
-                message: "备用目录读取任务未完成。".into(),
-                url: None,
-            }),
-        }
-    }
-    sources.sort_by_key(|(index, _)| *index);
-    result.sources = sources.into_iter().map(|(_, source)| source).collect();
-    result.status = if readable == 0 { "failed" } else { "partial" };
-    if result.sources.is_empty() && readable > 0 {
+    if only_matches && readable > 0 && result.sources.is_empty() {
         result.warnings.push(DiscoveryWarning {
             code: "directory_no_matches",
             message: "已实时读取限定目录，但正文没有匹配当前关键词；不代表其他机构没有相关导师。"
@@ -313,7 +393,6 @@ async fn discover_directories(mut result: DiscoveryResult) -> DiscoveryResult {
             url: None,
         });
     }
-    result
 }
 
 fn query_terms(query: &str) -> Vec<String> {
@@ -562,7 +641,7 @@ async fn safe_get(mut url: Url, search: bool) -> Result<(Url, String), &'static 
             .no_proxy()
             .connect_timeout(Duration::from_secs(5))
             .timeout(Duration::from_secs(10))
-            .user_agent("CampusAgoraDemo/0.1 (public academic discovery)")
+            .user_agent("CampusLumenDemo/0.1 (public opportunity discovery)")
             .resolve_to_addrs(host, &addresses)
             .build()
             .map_err(|_| "client_failed")?;
@@ -613,7 +692,10 @@ async fn safe_get(mut url: Url, search: bool) -> Result<(Url, String), &'static 
     Err("too_many_redirects")
 }
 
-async fn public_addresses(host: &str, port: u16) -> Result<Vec<SocketAddr>, &'static str> {
+pub(crate) async fn public_addresses(
+    host: &str,
+    port: u16,
+) -> Result<Vec<SocketAddr>, &'static str> {
     let addresses: Vec<SocketAddr> = lookup_host((host, port))
         .await
         .map_err(|_| "dns_failed")?
@@ -663,11 +745,39 @@ async fn public_addresses(host: &str, port: u16) -> Result<Vec<SocketAddr>, &'st
     Ok(addresses)
 }
 
+fn credential_key(key: &str) -> bool {
+    let key = key.to_ascii_lowercase();
+    let normalized = key.replace('-', "_");
+    normalized.split('_').any(|part| {
+        matches!(
+            part,
+            "token"
+                | "auth"
+                | "authorization"
+                | "session"
+                | "sessionid"
+                | "password"
+                | "credential"
+                | "apikey"
+                | "secret"
+                | "sig"
+                | "signature"
+                | "jwt"
+        )
+    }) || matches!(normalized.as_str(), "api_key" | "client_secret")
+}
+
 fn allowed_url(url: &Url, search: bool) -> bool {
     if !matches!(url.scheme(), "http" | "https")
         || !url.username().is_empty()
         || url.password().is_some()
         || !matches!(url.port_or_known_default(), Some(80 | 443))
+        || url.query_pairs().any(|(key, _)| credential_key(&key))
+        || url.fragment().is_some_and(|fragment| {
+            fragment
+                .split('&')
+                .any(|part| credential_key(part.split('=').next().unwrap_or_default()))
+        })
     {
         return false;
     }
@@ -678,6 +788,12 @@ fn allowed_url(url: &Url, search: bool) -> bool {
         return host == SEARCH_HOST && url.scheme() == "https";
     }
     PERSONAL_HOSTS.contains(&host)
+        || OPPORTUNITY_PATHS.iter().any(|(allowed_host, prefixes)| {
+            host == *allowed_host
+                && prefixes.iter().any(|prefix| {
+                    url.path() == *prefix || url.path().starts_with(&format!("{prefix}/"))
+                })
+        })
         || SUFFIXES
             .iter()
             .any(|suffix| host == *suffix || host.ends_with(&format!(".{suffix}")))
@@ -727,6 +843,45 @@ fn normalize(text: &str) -> String {
 mod tests {
     use super::*;
 
+    #[tokio::test]
+    async fn a_deadline_retains_completed_sources_and_aborts_pending_reads() {
+        use std::sync::{
+            atomic::{AtomicBool, Ordering},
+            Arc,
+        };
+        struct Dropped(Arc<AtomicBool>);
+        impl Drop for Dropped {
+            fn drop(&mut self) {
+                self.0.store(true, Ordering::SeqCst);
+            }
+        }
+        let dropped = Arc::new(AtomicBool::new(false));
+        let signal = dropped.clone();
+        let mut tasks: JoinSet<SourceTask> = JoinSet::new();
+        tasks.spawn(async move {
+            let _guard = Dropped(signal);
+            std::future::pending::<SourceTask>().await
+        });
+        let url = Url::parse("https://example.edu/research").unwrap();
+        let source=source_from_page(SearchHit{url:url.clone(),title:"Synthetic research".into(),snippet:String::new()},url,
+            "<main><p>This synthetic research group studies software verification and systems. This is a deterministic local fixture with no external requests or recruitment claim.</p></main>","software").unwrap();
+        tasks.spawn(async move { (0, "https://example.edu/research".into(), Ok(source)) });
+        let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel();
+        let mut result = initial_result("software".into());
+        result.started_reads = 2;
+        assert!(timeout(
+            Duration::from_millis(20),
+            collect_sources(&mut result, tasks, false, &Some(sender))
+        )
+        .await
+        .is_err());
+        assert_eq!(result.sources.len(), 1);
+        assert_eq!(result.completed_reads, 1);
+        assert_eq!(receiver.try_recv().unwrap().sources.len(), 1);
+        tokio::task::yield_now().await;
+        assert!(dropped.load(Ordering::SeqCst));
+    }
+
     #[test]
     fn only_institutional_public_targets_are_allowed() {
         for url in [
@@ -737,12 +892,16 @@ mod tests {
             "https://cs.hku.hk/",
             "https://jzuming.github.io/",
             "https://songzhuoran.github.io/",
+            "https://www.cis.mpg.de/departments/",
+            "https://phd.ista.ac.at/apply/",
         ] {
             assert!(allowed_url(&Url::parse(url).unwrap(), false));
         }
         for url in [
             "http://127.0.0.1/",
             "https://cs.ustc.edu.cn.evil.example/",
+            "https://evil.cis.mpg.de/",
+            "https://phd.ista.ac.at.evil.example/",
             "https://user:password@cs.ustc.edu.cn/",
             "https://cs.ustc.edu.cn:9000/",
         ] {
@@ -760,6 +919,48 @@ mod tests {
             assert!(!public_ip(ip.parse().unwrap()));
         }
         assert!(public_ip("8.8.8.8".parse().unwrap()));
+    }
+
+    #[test]
+    fn opportunity_scope_accepts_exact_public_paths_and_rejects_neighbors() {
+        for url in [
+            "https://www.microsoft.com/en-us/research/opportunity/research-intern-for-system-group-shanghai/?lang=zh-cn",
+            "https://www.microsoft.com/en-us/research/lab/microsoft-research-asia/careers/",
+            "https://www.shlab.org.cn/joinus/detail/123?mode=campus",
+            "https://jobs.bytedance.com/campus/position/123",
+            "https://job.bytedance.com/campus/position",
+            "https://github.com/open-compass/opencompass/blob/main/README.md",
+        ] {
+            assert!(validate_query(url).is_ok(), "rejected {url}");
+        }
+        for url in [
+            "https://www.microsoft.com/account/",
+            "https://www.microsoft.com/en-us/research/opportunity-elsewhere/",
+            "https://www.shlab.org.cn/joinus-admin/",
+            "https://jobs.bytedance.com/login",
+            "https://nested.jobs.bytedance.com/campus/position",
+            "https://jobs.bytedance.com.evil.example/campus/position",
+            "https://github.com/someone/other-repo",
+            "https://github.com/open-compass/opencompass-private",
+            "https://github.com/open-compass/opencompass?access_token=private",
+            "https://jobs.bytedance.com/campus/position#session_id=private",
+            "https://jobs.bytedance.com/campus/position?api_key=private",
+        ] {
+            assert!(validate_query(url).is_err(), "accepted {url}");
+        }
+    }
+
+    #[test]
+    fn credential_keys_are_rejected_in_queries_and_fragments() {
+        for key in ["secret", "client_secret", "sig", "signature", "jwt"] {
+            let query = format!("https://www.cis.mpg.de/?{key}=private");
+            let fragment = format!("https://phd.ista.ac.at/#other=ok&{key}=private");
+            assert!(validate_query(&query).is_err(), "accepted query key {key}");
+            assert!(
+                validate_query(&fragment).is_err(),
+                "accepted fragment key {key}"
+            );
+        }
     }
 
     #[test]
@@ -819,22 +1020,10 @@ mod tests {
     async fn direct_read_failure_preserves_failed_url_without_fallback() {
         // Exercise the read-failure path without DNS or external HTTP requests.
         let url = Url::parse("http://127.0.0.1/").unwrap();
-        let result = discover_url(
-            DiscoveryResult {
-                query: url.to_string(),
-                provider: "duckduckgo_html",
-                scope: DISCOVERY_SCOPE,
-                collected_at: now(),
-                status: "complete",
-                sources: Vec::new(),
-                warnings: Vec::new(),
-            },
-            url.clone(),
-        )
-        .await;
+        let mut result = initial_result(url.to_string());
+        discover_url(&mut result, url.clone(), &None).await;
         assert_eq!(result.provider, "direct_url");
         assert_eq!(result.scope, DIRECT_URL_SCOPE);
-        assert_eq!(result.status, "failed");
         assert!(result.sources.is_empty());
         assert_eq!(result.warnings.len(), 1);
         assert_eq!(result.warnings[0].code, "source_out_of_scope");

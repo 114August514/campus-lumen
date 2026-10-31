@@ -1,6 +1,6 @@
 # Development
 
-Last updated: 2026-10-12
+Last updated: 2026-10-29
 
 ## Requirements
 
@@ -8,6 +8,62 @@ Last updated: 2026-10-12
 - Rust stable with `rustfmt` and `clippy`
 - PostgreSQL 16 for migration smoke tests
 - uv for MkDocs
+
+## Frontend Structure
+
+The mid-term demo frontend (`apps/web/src`) was rebuilt around one
+探索 → 发现 → 处理 flow shared by every opportunity type. The old Kimi
+workbench (`workbench.html`, `workbench-preview.html`, `src/workbench/`
+and its tests) has been removed; iterate on UI by running the product
+entry directly.
+
+- `src/app/router.ts` — hash routes (`#/`, `#/explore/:sessionId?stage=`,
+  `#/library?q=&type=`, `#/item/:id`, `#/compare?ids=&p=`, `#/sessions`,
+  `#/demo`). `parseRoute` / `routeHref` round-trip every route, so back,
+  forward, reload and deep links work without a routing dependency.
+- `src/state/app-state.tsx` — React Context for the current session,
+  compare selection, demo (simulation) options and topic mutations.
+- `src/state/session-actions.ts` — session-level actions shared by pages.
+- `src/pages/` — route-level composition: `HomePage`, `ExplorePage`
+  (the three stages ① 探索 ② 发现 ③ 处理), `LibraryPage`, `ItemPage`,
+  `ComparePage`, `SessionsPage`, `DemoGuidePage`.
+- `src/components/` — `AppHeader`, `SessionNav`, `StageExplore`,
+  `StageDiscover`, `StageProcess`, `RunTimeline`, `CatalogRow`,
+  `ItemList`, `ItemSections`, `EvidenceDialog`, `AnalysisDialog`,
+  `AssociationNotice`, `PrivateNotes`, `SourceList`, `Disclosure`,
+  `TypeIcon`, status labels, and `components/ui/ThemeRoot.tsx`.
+- `src/lib/catalog.ts` — unified `CatalogItem` over advisors, internships
+  and entries; `searchCatalog`, `findItem`, `sessionRecords`,
+  `toSaveTarget`, `isSaved`, `typeCounts`.
+- `src/lib/compare.ts` — `buildCompareRows` per kind, `compareKind`,
+  `perspectives`, `followupQuery`, `supplementalSources`.
+- `src/lib/analysis.ts` — private-fragment selection, evidence building,
+  `createAnalysisRun` delivery state machine (`not_sent` → waiting →
+  `returned` | `service_error` | `unknown`), `toSavedAnalysis`.
+- `src/lib/profiles.ts` — structured per-advisor profiles (途径, 准备,
+  未知与冲突) bound to existing sources.
+- `src/lib/demo-replay.ts` — `classifyWarning` and the replay-runner
+  contract used by the demo route.
+- `src/lib/text-match.ts` — `matchTokens` / `matchScore` (CJK bigrams
+  minus function characters, ASCII words).
+- Existing libraries (`exploration-store`, `discovery-run`,
+  `collected-batch`, `advisors`, `opportunities`, `association-repair`,
+  `comparison-candidates`) are unchanged in scope.
+
+## Running the Demo
+
+```bash
+bun run dev:api   # terminal 1 — local API on :8080
+bun run dev:web   # terminal 2 — Vite on :5173, proxies /api
+```
+
+Open `http://127.0.0.1:5173`. Use only this origin; localStorage records
+are per-origin. The demo route `#/demo` can load or clear the two synthetic
+sessions (names end with “（合成示例）”), pick the simulated AI outcome
+(normal / 3 s delay / timeout / service error) and pick the discovery
+replay scenario (live, per-source arrival, partial-source failure,
+late-after-abort, cap-reached). Replay content is labelled 演示回放 and
+cannot be saved.
 
 ## Local API
 
@@ -34,7 +90,7 @@ local while testing; the current two-request concurrency limit is not public
 service rate limiting.
 
 Try the public query `机器学习`. The API first attempts DuckDuckGo search and
-actual academic HTML reading. If the index is unavailable, it reads and matches
+actual academic or supported recruitment/project HTML reading. If the index is unavailable, it reads and matches
 the explicitly named Stanford AI and CMU ML directories. The page shows that
 limited scope and any failures; an empty match is not proof that no advisors
 exist. Search text is sent to DuckDuckGo; private topic notes are not. See
@@ -42,7 +98,7 @@ exist. Search text is sent to DuckDuckGo; private topic notes are not. See
 
 For candidate-specific follow-up when search is unavailable, select an already
 collected academic page in the follow-up view, then choose “读取原站正文”. You can
-also enter a public academic URL directly in the same query field. The API reads
+also enter a public academic or supported recruitment/project URL directly in the same query field. The API reads
 one allowed page, identifies `provider: direct_url`, and keeps its actual body,
 capture time and unknowns. It does not send that URL to the search engine.
 Only pages already collected with `web_read` appear in the candidate shortcut;
@@ -85,6 +141,30 @@ does not remove a saved candidate. Unsaved edits disappear on refresh. New topic
 created during a comparison record that question. Preparation/resources and
 complete demo walkthroughs remain later slices under
 [task design](../product/advisor-task-design.md#84).
+
+## Topic Conditions and Bounded Reading
+
+Choose an existing topic and use “编辑主题条件” to change its name, current question
+and optional preferences. Save explicitly. Closing a dirty dialog offers save,
+discard or continue; browser reload warns about unsaved edits. Storage failure
+keeps the draft. The saved view shows current conditions, and candidate/source/
+private records remain unchanged. Conditions never automatically become a query.
+
+Discovery now consumes cumulative NDJSON snapshots from the existing endpoint.
+Limits are declared before starting: 30 server seconds, five source pages, six
+logical reads including the index, and at most 48 outbound HTTP requests including
+redirects and fixed DNS fallback; each read retains 14 seconds / 1 MB. The browser
+stops waiting after 35 seconds. Use “中止本轮查找” to abort; already received bodies
+remain readable/saveable, and no automatic retry starts. A revised query requires
+explicit submission. Topic/candidate/scenario changes and unmount invalidate the
+run before aborting, so stale callbacks cannot affect the next context.
+
+`apps/web/tests/discovery-run.test.ts` uses controlled transports for partial
+results, cancel/restart/late-response isolation, deadlines, failure and disposal.
+API-client tests exercise chunked UTF-8, missing final snapshots and abort while
+buffered data remains. Rust tests check preserved completed sources when pending
+reads are dropped and concurrency-permit release when a response body is dropped.
+These deterministic tests are separate from actual external-source walkthroughs.
 
 ## Browser Collection and Precollected Batches
 
@@ -147,6 +227,29 @@ The current webpage's search button still calls the public HTML discovery API;
 it does not invoke Xiaohongshu. A browser collector adapter remains a next step if
 the repeated workflow warrants it. Tool comparisons and the executed trial are
 in [reuse research §9](../constraints/open-source-reuse-reference.md#9-skill).
+
+### 2026-10-27 discovery-to-comparison integration
+
+All saved candidate identities in the active topic can enter comparison, including
+manually confirmed new external objects. The selector combines public candidates
+with that topic only; private reasons/questions are read separately, never used
+as public query input. Removing an item from comparison does not delete its saved
+record. Switching topic resolves external candidate IDs again against that topic.
+
+For new objects, comparison shows retained body excerpts with source/time and
+labels user-entered descriptions as unverified. It does not synthesize eligibility
+or silently replace the curated Jiang/Song interpretations. Later source captures
+remain distinct evidence; explicitly saved snapshots and private notes survive
+reload. The generic internship comparison and opportunity entry now reuse the
+same corrected candidate fields, avoiding separate conflicting conditions.
+
+The October 16 internship batch keeps its original capture date and summaries,
+but the October 26 audit marks unsupported job-specific details as unresolved.
+The old MSRA three/six-month conflict is not resolved by borrowing another job's
+terms: the newly read [Shanghai system-group notice](https://www.microsoft.com/en-us/research/opportunity/research-intern-for-system-group-shanghai/?lang=zh-cn)
+is dated 2024-09-24 and cannot establish the identity or current conditions of
+the old distributed-training lead. Generic recruitment pages are entry points,
+not proof of current openings or job-specific mentoring/conversion promises.
 
 ## API Client
 

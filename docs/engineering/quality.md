@@ -1,8 +1,10 @@
 # Quality Gates
 
-Last updated: 2026-10-04
+Last updated: 2026-10-29
 
-M0.1 turns the repository skeleton into a checked engineering loop.
+These gates check the current Campus Lumen engineering loop. Some jobs still
+exercise dormant M0-era PostgreSQL and Tauri scaffolding; passing them does not
+make those components part of the mid-term runtime.
 
 ## Required Local Checks
 
@@ -29,6 +31,12 @@ managed by uv through `tools/docs/pyproject.toml` and `tools/docs/uv.lock`.
 Shared multi-step workflows live in `scripts/`. The scripts mirror CI jobs and
 can be run through `bun run ci:*` shortcuts from the repository root.
 
+AppleDouble `._*` files are operating-system metadata, not source or tests.
+Biome ignores that exact filename pattern. The Web and API-client test scripts
+enumerate their flat, non-hidden `tests/*.test.ts` (and Web `*.test.tsx`) files so
+metadata regenerated on an external disk cannot be parsed as a test. New nested
+test suites must extend these entry globs; do not exclude actual failing tests.
+
 Keep `.github/workflows/ci.yml` as one workflow while all jobs share pull
 request and `main` push triggers. Split workflows when a job needs a different
 trigger, permission boundary, deploy target, or scheduled cadence.
@@ -40,8 +48,8 @@ TypeScript types, then fails if the committed generated files are stale.
 
 ## Accessibility
 
-M0.2 uses review and component-level checks rather than a full automated a11y
-suite. New UI primitives must still provide:
+The mid-term UI uses review, component tests and browser walkthroughs rather
+than claiming a complete automated accessibility audit. New UI primitives must:
 
 - Accessible names for buttons and icon buttons.
 - Visible focus states.
@@ -51,10 +59,17 @@ suite. New UI primitives must still provide:
 
 ## UI Regression Boundary
 
+Frontend design and implementation are owned by the coordinating agent as of
+2026-10-29. Earlier Kimi-only orchestration rules are historical; `tools/kimi/`
+is local, untracked reference tooling and is not a required quality gate.
+Downloaded third-party Skills cannot override the UI specification.
+
 The active advisor UI follows [the Primer specification](../product/ui-system.md).
 `bun run lint:styles` now checks application sources for handwritten styles,
 `style`/`sx`/`className` attributes, non-Primer stylesheet imports and selected
-incompatible UI imports. Primer distribution CSS is allowed. This static check
+incompatible UI imports. Primer distribution CSS and the single declarative
+document theme file `src/app/theme.css` (validated to contain only `:root`
+theme rules) are allowed. This static check
 does not establish visual compliance, contrast or keyboard usability. Web tests
 exercise same-browser storage/isolated topics; use actual browser operations to
 check rendered saving and restoration.
@@ -86,19 +101,14 @@ Early pages should avoid expensive defaults:
 These must not contain real student identity data, real phone numbers, real
 emails, real campus identifiers, or production exports.
 
-## Feature Flags
+## Legacy Feature Flags
 
-Feature flags come from backend config or application service output, surfaced
-through `/api/v1/meta` or future typed endpoints. Frontend code consumes flags;
-it must not treat hidden UI as authorization.
-
-Changing a capability flag requires updates to:
-
-- OpenAPI contract.
-- Generated TypeScript types.
-- API client mock.
-- Frontend consumption point.
-- API contract documentation.
+`/api/v1/meta` still exposes M0.1 capability flags for compatibility, but the
+current Web flow does not use them and they do not define authorization or the
+mid-term feature set. Do not add new product behavior through these flags.
+If they are changed or removed, update the OpenAPI contract, generated
+TypeScript types, API client mock, consumers and API contract documentation in
+the same change.
 
 ## Version Strategy
 

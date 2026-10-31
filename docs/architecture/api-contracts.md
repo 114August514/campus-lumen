@@ -1,9 +1,14 @@
 # API Contracts
 
-Last updated: 2026-10-12
+Last updated: 2026-10-29
 
-Campus Agora uses `contracts/openapi.json` as the committed API contract
+Campus Lumen uses `contracts/openapi.json` as the committed API contract
 snapshot. The Rust API crate is the source of this contract.
+
+After the 2026-10-22 project rename, metadata `appName` is `Campus Lumen` and
+the OpenAPI title is `Campus Lumen API`. Regenerate both contract snapshots
+from the Rust source. Endpoint paths, internal crate/package names and browser
+storage identifiers retain compatibility.
 
 ## Generate
 
@@ -49,8 +54,10 @@ regenerate the contract and review the diff before committing.
 
 `POST /api/v1/discoveries` is public (`security: []`). Its JSON body contains
 only `query`, a nonempty public query of at most 200 characters. It accepts
-either keywords or a single public HTTP(S) academic URL, subject to the same
-source restrictions as search results. There is no separate URL field and no
+either keywords or a single public HTTP(S) academic/supported recruitment URL, subject to the same
+host-and-path restrictions as search results. Exact opportunity destinations are
+listed in [Security](../operations/security.md#public-discovery-boundary); redirects,
+private-address checks and run bounds apply to every new host as well. There is no separate URL field and no
 browser-private reasons/preferences in the request.
 
 ```json
@@ -88,3 +95,70 @@ discovery request returns 429 `discovery_busy`; the existing request-body
 limit returns 413 `request_body_too_large`. These use `ApiErrorResponse` and
 the request ID. Reading limits and allowed destinations are documented in
 [Backend](backend.md) and [Security](../operations/security.md).
+
+## Bounded progress and cancellation (2026-10-22)
+
+The same public `POST /api/v1/discoveries` accepts `Accept: application/x-ndjson`
+for progressive reading. Each newline contains a cumulative `DiscoveryResponse`,
+with `finished: false` until the final snapshot has `finished: true`. JSON clients
+retain the existing single-response path. Both paths return `limits`,
+`startedReads`, `completedReads` and `stopReason` (`""`, `time_limit`, or
+`source_limit`). While running, `status: partial` is provisional; only a final
+snapshot establishes the completed attempt's status. EOF without a final snapshot
+is an interrupted run, not successful completion.
+
+The current fixed bounds are 30 server seconds, five source pages and six logical
+reads including the search index. A read retains the existing 14-second / 1 MB
+cap and at most four HTTP attempts including redirects. Including one possible
+HTTP DNS fallback per attempt, the whole run is bounded by 48 outbound HTTP
+requests. These are upper bounds, not a promise to use every allowance. No paid
+model or search API is integrated. The browser adds a 35-second total waiting
+limit and never retries automatically.
+
+Dropping a streamed response aborts its server worker and pending read tasks,
+releasing its concurrency permit. Completed snapshots already received by the
+browser remain usable. Cancellation cannot recall a public request already sent;
+proxies may delay disconnect propagation, so the browser also invalidates the run
+before aborting and ignores late data. Changing topic/candidate/scenario or leaving
+the discovery view cancels its mounted controller; results cannot save themselves
+into another topic. Editing query text alone performs no request.
+
+The request remains exactly `{query}`. Topic conditions/private records are not
+added to it, and neither streaming nor progress creates server exploration storage.
+
+## Analysis Providers
+
+`POST /api/v1/analyses` is public (`security: []`) and organizes only the
+material in its request. `provider` is optional and defaults to `simulated`.
+The simulated provider is deterministic, runs in-process, makes no network or
+model call, stores nothing, and identifies itself as `simulated-organizer`.
+The `school` provider sends the question, listed subjects and evidence, and
+only the explicitly selected private fragments to 中国科大大模型公共服务平台（词元计划）.
+The backend does not persist either provider's request or response text and logs
+only request ID, provider ID, and item counts.
+
+The camelCase `AnalysisRequest` contains:
+
+- `operation`: `compare` or `shortlist`;
+- optional `provider`: `simulated` or `school`;
+- `question`: 1–300 characters after trimming;
+- 1–8 unique `subjects`; comparison requires at least two;
+- up to 60 public `evidence` items with source metadata;
+- up to 10 explicitly selected private fragments;
+- optional `simulation`, which applies only to `simulated` and is ignored for
+  `school`.
+
+Every request object rejects unknown fields. Invalid requests return HTTP 422
+`validation_failed`. School-provider errors distinguish not configured (503,
+before forwarding), concurrency busy (429, before forwarding), provider
+rejection, upstream failure, and invalid response (502). A semaphore permits at
+most two concurrent school-provider calls.
+
+`GET /api/v1/analyses/providers` returns whether the server-side school key is
+configured plus the provider label and configured model. It never exposes the
+key. The default model is `deepseek-v4-flash-ascend`.
+
+`AnalysisResponse` echoes exact received IDs and identifies the actual provider.
+School output is parsed into cited sections; model citations are retained only
+when they refer to evidence or private fragments in the request. School
+retention is declared `unverified`; simulated retention is `none`.

@@ -34,11 +34,38 @@ export interface CandidateSnapshot {
   metadata?: Record<string, string>;
 }
 
+/** Identity fields of a public object, without its sources. */
+export interface CandidateIdentity {
+  candidateId: string;
+  name: string;
+  institution: string;
+  research: string;
+}
+
+/**
+ * Set when a public split affected this record. `previous` keeps the identity the
+ * user originally saved; `pending` means the user still has to choose the object.
+ */
+export interface AssociationNote {
+  correctionId: string;
+  status: "relinked" | "pending" | "chosen";
+  previous: Omit<CandidateIdentity, "research">;
+  options: Omit<CandidateIdentity, "research">[];
+  updatedAt: string;
+}
+
+/** The user's own triage decision for a saved object; only within one topic. */
+export type Decision = "keep" | "maybe" | "exclude";
+
+export const decisions: Decision[] = ["keep", "maybe", "exclude"];
+
 export interface TopicCandidate {
   candidate: CandidateSnapshot;
   reason: string;
   questions: string[];
   savedAt: string;
+  association?: AssociationNote;
+  decision?: Decision;
 }
 
 /** Public opportunity fields copied at save time, so a topic survives data changes. */
@@ -57,6 +84,48 @@ export interface TopicOpportunity {
   reason: string;
   questions: string[];
   savedAt: string;
+  decision?: Decision;
+  /** Pages the user read for this entry and chose to keep in this topic. */
+  sources?: SourceSnapshot[];
+}
+
+export type SessionStage = "explore" | "discover" | "process";
+
+/** The last comparison the user chose to keep, so the session can resume it. */
+export interface LastComparison {
+  question: string;
+  ids: string[];
+  perspective: string;
+  at: string;
+}
+
+export interface SavedAnalysisPoint {
+  text: string;
+  evidenceRefs: string[];
+  privateFragmentIds: string[];
+}
+
+/**
+ * A privately saved AI organization result. It keeps which personal fragments were
+ * sent (ids only) and the public evidence it cited, never other topics' content.
+ */
+export interface SavedAnalysis {
+  id: string;
+  question: string;
+  createdAt: string;
+  providerLabel: string;
+  simulated: boolean;
+  subjects: { id: string; name: string }[];
+  evidence: {
+    ref: string;
+    subjectId: string;
+    aspect: string;
+    sourceTitle?: string;
+    sourceUrl?: string;
+  }[];
+  sentFragmentIds: string[];
+  sections: { kind: string; title: string; points: SavedAnalysisPoint[] }[];
+  caveats: string[];
 }
 
 export interface ExplorationTopic {
@@ -69,6 +138,13 @@ export interface ExplorationTopic {
   candidates: TopicCandidate[];
   /** Optional so version-1 records saved before opportunities existed stay valid. */
   opportunities?: TopicOpportunity[];
+  /** Opportunity types the exploration covers; absent or empty means all types. */
+  types?: string[];
+  stage?: SessionStage;
+  lastComparison?: LastComparison;
+  analyses?: SavedAnalysis[];
+  /** A private note left when the user pauses this exploration. */
+  pausedNote?: string;
 }
 
 export type ExplorationStoreErrorCode =
@@ -188,6 +264,29 @@ function isCandidate(value: unknown): value is CandidateSnapshot {
   );
 }
 
+function isIdentity(value: unknown): value is Omit<CandidateIdentity, "research"> {
+  return (
+    isObject(value) &&
+    isNonemptyText(value.candidateId) &&
+    isNonemptyText(value.name) &&
+    isNonemptyText(value.institution)
+  );
+}
+
+function isAssociation(value: unknown): value is AssociationNote {
+  return (
+    isObject(value) &&
+    isNonemptyText(value.correctionId) &&
+    (value.status === "relinked" ||
+      value.status === "pending" ||
+      value.status === "chosen") &&
+    isIdentity(value.previous) &&
+    Array.isArray(value.options) &&
+    value.options.every(isIdentity) &&
+    isDate(value.updatedAt)
+  );
+}
+
 function isTopicCandidate(value: unknown): value is TopicCandidate {
   return (
     isObject(value) &&
@@ -195,8 +294,18 @@ function isTopicCandidate(value: unknown): value is TopicCandidate {
     isText(value.reason) &&
     Array.isArray(value.questions) &&
     value.questions.every(isText) &&
-    isDate(value.savedAt)
+    isDate(value.savedAt) &&
+    (value.association === undefined || isAssociation(value.association)) &&
+    (value.decision === undefined || isDecision(value.decision))
   );
+}
+
+function plainIdentity(item: CandidateIdentity | Omit<CandidateIdentity, "research">) {
+  return {
+    candidateId: item.candidateId,
+    name: item.name,
+    institution: item.institution,
+  };
 }
 
 function isOpportunity(value: unknown): value is OpportunitySnapshot {
@@ -220,7 +329,77 @@ function isTopicOpportunity(value: unknown): value is TopicOpportunity {
     isText(value.reason) &&
     Array.isArray(value.questions) &&
     value.questions.every(isText) &&
-    isDate(value.savedAt)
+    isDate(value.savedAt) &&
+    (value.decision === undefined || isDecision(value.decision)) &&
+    (value.sources === undefined ||
+      (Array.isArray(value.sources) && value.sources.every(isSource)))
+  );
+}
+
+function isDecision(value: unknown): value is Decision {
+  return decisions.includes(value as Decision);
+}
+
+function isStage(value: unknown): value is SessionStage {
+  return value === "explore" || value === "discover" || value === "process";
+}
+
+function isTextList(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(isNonemptyText);
+}
+
+function isLastComparison(value: unknown): value is LastComparison {
+  return (
+    isObject(value) &&
+    isText(value.question) &&
+    isTextList(value.ids) &&
+    isText(value.perspective) &&
+    isDate(value.at)
+  );
+}
+
+function isSavedAnalysis(value: unknown): value is SavedAnalysis {
+  return (
+    isObject(value) &&
+    isNonemptyText(value.id) &&
+    isText(value.question) &&
+    isDate(value.createdAt) &&
+    isNonemptyText(value.providerLabel) &&
+    typeof value.simulated === "boolean" &&
+    Array.isArray(value.subjects) &&
+    value.subjects.every(
+      (item) => isObject(item) && isNonemptyText(item.id) && isNonemptyText(item.name),
+    ) &&
+    Array.isArray(value.evidence) &&
+    value.evidence.every(
+      (item) =>
+        isObject(item) &&
+        isNonemptyText(item.ref) &&
+        isNonemptyText(item.subjectId) &&
+        isText(item.aspect) &&
+        (item.sourceTitle === undefined || isText(item.sourceTitle)) &&
+        (item.sourceUrl === undefined || isWebUrl(item.sourceUrl)),
+    ) &&
+    isTextList(value.sentFragmentIds) &&
+    Array.isArray(value.sections) &&
+    value.sections.every(
+      (section) =>
+        isObject(section) &&
+        isText(section.kind) &&
+        isText(section.title) &&
+        Array.isArray(section.points) &&
+        section.points.every(
+          (point) =>
+            isObject(point) &&
+            isText(point.text) &&
+            Array.isArray(point.evidenceRefs) &&
+            point.evidenceRefs.every(isText) &&
+            Array.isArray(point.privateFragmentIds) &&
+            point.privateFragmentIds.every(isText),
+        ),
+    ) &&
+    Array.isArray(value.caveats) &&
+    value.caveats.every(isText)
   );
 }
 
@@ -245,7 +424,15 @@ function isTopic(value: unknown): value is ExplorationTopic {
         value.opportunities.every(isTopicOpportunity) &&
         hasUniqueIds(
           value.opportunities.map((entry) => entry.opportunity.opportunityId),
-        )))
+        ))) &&
+    (value.types === undefined || isTextList(value.types)) &&
+    (value.stage === undefined || isStage(value.stage)) &&
+    (value.lastComparison === undefined || isLastComparison(value.lastComparison)) &&
+    (value.analyses === undefined ||
+      (Array.isArray(value.analyses) &&
+        value.analyses.every(isSavedAnalysis) &&
+        hasUniqueIds(value.analyses.map((entry) => entry.id)))) &&
+    (value.pausedNote === undefined || isText(value.pausedNote))
   );
 }
 
@@ -259,6 +446,35 @@ function isStoredExplorations(value: unknown): value is StoredExplorations {
   );
 }
 
+function cloneSource(source: SourceSnapshot): SourceSnapshot {
+  return {
+    url: source.url,
+    ...(source.lookupUrl !== undefined ? { lookupUrl: source.lookupUrl } : {}),
+    ...(source.accessNote !== undefined ? { accessNote: source.accessNote } : {}),
+    title: source.title,
+    content: source.content,
+    collectedAt: source.collectedAt,
+    ...(source.kind !== undefined ? { kind: source.kind } : {}),
+    ...(source.publishedAt !== undefined ? { publishedAt: source.publishedAt } : {}),
+    ...(source.query !== undefined ? { query: source.query } : {}),
+    ...(source.relevanceEvidence !== undefined
+      ? { relevanceEvidence: [...source.relevanceEvidence] }
+      : {}),
+    ...(source.unknowns !== undefined ? { unknowns: [...source.unknowns] } : {}),
+    ...(source.collection !== undefined
+      ? {
+          collection: {
+            method: source.collection.method,
+            contentKind: source.collection.contentKind,
+            readStatus: source.collection.readStatus,
+            scope: source.collection.scope,
+            batchId: source.collection.batchId,
+          },
+        }
+      : {}),
+  };
+}
+
 function cloneCandidate(candidate: CandidateSnapshot): CandidateSnapshot {
   return {
     candidateId: candidate.candidateId,
@@ -269,32 +485,7 @@ function cloneCandidate(candidate: CandidateSnapshot): CandidateSnapshot {
     ...(candidate.title ? { title: candidate.title } : {}),
     ...(candidate.description ? { description: candidate.description } : {}),
     ...(candidate.metadata ? { metadata: { ...candidate.metadata } } : {}),
-    sources: candidate.sources.map((source) => ({
-      url: source.url,
-      ...(source.lookupUrl !== undefined ? { lookupUrl: source.lookupUrl } : {}),
-      ...(source.accessNote !== undefined ? { accessNote: source.accessNote } : {}),
-      title: source.title,
-      content: source.content,
-      collectedAt: source.collectedAt,
-      ...(source.kind !== undefined ? { kind: source.kind } : {}),
-      ...(source.publishedAt !== undefined ? { publishedAt: source.publishedAt } : {}),
-      ...(source.query !== undefined ? { query: source.query } : {}),
-      ...(source.relevanceEvidence !== undefined
-        ? { relevanceEvidence: [...source.relevanceEvidence] }
-        : {}),
-      ...(source.unknowns !== undefined ? { unknowns: [...source.unknowns] } : {}),
-      ...(source.collection !== undefined
-        ? {
-            collection: {
-              method: source.collection.method,
-              contentKind: source.collection.contentKind,
-              readStatus: source.collection.readStatus,
-              scope: source.collection.scope,
-              batchId: source.collection.batchId,
-            },
-          }
-        : {}),
-    })),
+    sources: candidate.sources.map(cloneSource),
   };
 }
 
@@ -391,6 +582,7 @@ export function createExplorationStore(
   function mutateTopic(
     id: string,
     change: (topic: ExplorationTopic) => void,
+    options: { touch?: boolean } = {},
   ): ExplorationTopic {
     const data = read();
     const topic = data.topics.find((entry) => entry.id === id);
@@ -398,7 +590,8 @@ export function createExplorationStore(
       throw new ExplorationStoreError("not_found", "这个探索主题已不存在。");
     }
     change(topic);
-    topic.updatedAt = new Date().toISOString();
+    // Navigation-only changes (like the current stage) do not count as activity.
+    if (options.touch !== false) topic.updatedAt = new Date().toISOString();
     write(data);
     return topic;
   }
@@ -429,12 +622,76 @@ export function createExplorationStore(
     },
     updateTopic(
       id: string,
-      patch: Partial<Pick<ExplorationTopic, "name" | "question" | "preferences">>,
+      patch: Partial<
+        Pick<
+          ExplorationTopic,
+          "name" | "question" | "preferences" | "types" | "pausedNote"
+        >
+      >,
     ) {
       return mutateTopic(id, (topic) => {
         if (patch.name !== undefined) topic.name = patch.name;
         if (patch.question !== undefined) topic.question = patch.question;
         if (patch.preferences !== undefined) topic.preferences = patch.preferences;
+        if (patch.types !== undefined) topic.types = [...patch.types];
+        if (patch.pausedNote !== undefined) topic.pausedNote = patch.pausedNote;
+      });
+    },
+    /** Remember where the user was in this session; not an activity update. */
+    setStage(id: string, stage: SessionStage) {
+      return mutateTopic(
+        id,
+        (topic) => {
+          topic.stage = stage;
+        },
+        { touch: false },
+      );
+    },
+    /** Set or clear the user's triage decision on one saved object of this topic. */
+    setDecision(
+      topicId: string,
+      target: { kind: "candidate" | "opportunity"; id: string },
+      decision: Decision | null,
+    ) {
+      return mutateTopic(topicId, (topic) => {
+        const record =
+          target.kind === "candidate"
+            ? topic.candidates.find((item) => item.candidate.candidateId === target.id)
+            : topic.opportunities?.find(
+                (item) => item.opportunity.opportunityId === target.id,
+              );
+        if (!record) {
+          throw new ExplorationStoreError("not_found", "这条记录已不在这个主题里。");
+        }
+        // undefined is dropped when the document is serialized.
+        record.decision = decision ?? undefined;
+      });
+    },
+    saveComparison(topicId: string, comparison: Omit<LastComparison, "at">) {
+      return mutateTopic(topicId, (topic) => {
+        topic.lastComparison = {
+          question: comparison.question,
+          ids: [...comparison.ids],
+          perspective: comparison.perspective,
+          at: new Date().toISOString(),
+        };
+      });
+    },
+    /** Newest first; keeps at most 20 saved results per topic. */
+    saveAnalysis(topicId: string, analysis: SavedAnalysis) {
+      if (!isSavedAnalysis(analysis)) {
+        throw new ExplorationStoreError("validation_failed", "整理结果内容不完整。");
+      }
+      return mutateTopic(topicId, (topic) => {
+        const others = (topic.analyses ?? []).filter((item) => item.id !== analysis.id);
+        topic.analyses = [structuredClone(analysis), ...others].slice(0, 20);
+      });
+    },
+    removeAnalysis(topicId: string, analysisId: string) {
+      return mutateTopic(topicId, (topic) => {
+        topic.analyses = (topic.analyses ?? []).filter(
+          (item) => item.id !== analysisId,
+        );
       });
     },
     saveCandidate(
@@ -525,11 +782,158 @@ export function createExplorationStore(
         if (patch.questions !== undefined) entry.questions = [...patch.questions];
       });
     },
+    /** Keep pages read for an entry; saves the entry first when it is new here. */
+    saveOpportunityEvidence(
+      topicId: string,
+      opportunity: OpportunitySnapshot,
+      sources: SourceSnapshot[],
+    ) {
+      if (!isOpportunity(opportunity) || !sources.every(isSource)) {
+        throw new ExplorationStoreError("validation_failed", "机会或来源内容不完整。");
+      }
+      return mutateTopic(topicId, (topic) => {
+        const records = topic.opportunities ?? [];
+        let record = records.find(
+          (entry) => entry.opportunity.opportunityId === opportunity.opportunityId,
+        );
+        if (!record) {
+          record = {
+            opportunity: cloneOpportunity(opportunity),
+            reason: "",
+            questions: [],
+            savedAt: new Date().toISOString(),
+          };
+          records.push(record);
+        }
+        record.sources = mergeSources(record.sources ?? [], sources.map(cloneSource));
+        topic.opportunities = records;
+      });
+    },
     removeOpportunity(topicId: string, opportunityId: string) {
       return mutateTopic(topicId, (topic) => {
         topic.opportunities = (topic.opportunities ?? []).filter(
           (entry) => entry.opportunity.opportunityId !== opportunityId,
         );
+      });
+    },
+    /**
+     * Apply planned association repairs in one write. A relink changes only the
+     * record's identity; its saved sources, reason and questions stay as they were.
+     */
+    repairAssociations(
+      repairs: (
+        | {
+            kind: "relink";
+            topicId: string;
+            fromCandidateId: string;
+            correctionId: string;
+            target: CandidateIdentity;
+          }
+        | {
+            kind: "pending";
+            topicId: string;
+            fromCandidateId: string;
+            correctionId: string;
+            options: CandidateIdentity[];
+          }
+      )[],
+    ): number {
+      if (repairs.length === 0) return 0;
+      const data = read();
+      const now = new Date().toISOString();
+      let applied = 0;
+      for (const repair of repairs) {
+        const topic = data.topics.find((item) => item.id === repair.topicId);
+        const record = topic?.candidates.find(
+          (item) => item.candidate.candidateId === repair.fromCandidateId,
+        );
+        if (!topic || !record) continue;
+        const previous = plainIdentity(record.candidate);
+        if (repair.kind === "relink") {
+          if (
+            topic.candidates.some(
+              (item) =>
+                item !== record &&
+                item.candidate.candidateId === repair.target.candidateId,
+            )
+          ) {
+            continue;
+          }
+          record.candidate = {
+            ...record.candidate,
+            candidateId: repair.target.candidateId,
+            name: repair.target.name,
+            institution: repair.target.institution,
+            research: repair.target.research,
+          };
+          record.association = {
+            correctionId: repair.correctionId,
+            status: "relinked",
+            previous,
+            options: [plainIdentity(repair.target)],
+            updatedAt: now,
+          };
+        } else {
+          record.association = {
+            correctionId: repair.correctionId,
+            status: "pending",
+            previous,
+            options: repair.options.map(plainIdentity),
+            updatedAt: now,
+          };
+        }
+        topic.updatedAt = now;
+        applied += 1;
+      }
+      if (applied > 0) write(data);
+      return applied;
+    },
+    /** The user picks which split object a pending record refers to. */
+    resolveAssociation(
+      topicId: string,
+      candidateId: string,
+      target: CandidateIdentity,
+    ) {
+      return mutateTopic(topicId, (topic) => {
+        const record = topic.candidates.find(
+          (item) => item.candidate.candidateId === candidateId,
+        );
+        if (!record?.association || record.association.status !== "pending") {
+          throw new ExplorationStoreError("not_found", "这条记录没有待确认的关联。");
+        }
+        if (
+          !record.association.options.some(
+            (item) => item.candidateId === target.candidateId,
+          )
+        ) {
+          throw new ExplorationStoreError(
+            "validation_failed",
+            "只能从拆分后的对象中选择。",
+          );
+        }
+        if (
+          topic.candidates.some(
+            (item) =>
+              item !== record && item.candidate.candidateId === target.candidateId,
+          )
+        ) {
+          throw new ExplorationStoreError(
+            "validation_failed",
+            "这个主题已有该对象的记录；两条记录的理由不会自动合并，可先移除其中一条再选择。",
+          );
+        }
+        record.candidate = {
+          ...record.candidate,
+          candidateId: target.candidateId,
+          name: target.name,
+          institution: target.institution,
+          research: target.research,
+        };
+        record.association = {
+          ...record.association,
+          status: "chosen",
+          updatedAt: new Date().toISOString(),
+        };
       });
     },
     deleteTopic(id: string) {
@@ -542,3 +946,6 @@ export function createExplorationStore(
     },
   };
 }
+
+/** The store API returned by createExplorationStore. */
+export type ExplorationStore = ReturnType<typeof createExplorationStore>;

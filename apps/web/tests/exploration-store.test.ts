@@ -101,6 +101,64 @@ describe("exploration store", () => {
     expect(publicCandidate).toEqual(candidate());
   });
 
+  test("editing and clearing topic conditions survives reopening without changing records or another topic", () => {
+    const storage = new MemoryStorage();
+    const store = createExplorationStore(storage);
+    const first = store.createTopic({
+      name: "old",
+      question: "old question",
+      preferences: "old preference",
+    });
+    const second = store.createTopic({
+      name: "another",
+      question: "private B",
+      preferences: "B only",
+    });
+    store.saveCandidate(first.id, candidate(), {
+      reason: "private A",
+      questions: ["keep this"],
+    });
+    store.saveCandidate(second.id, candidate(), { reason: "private B" });
+    const beforeFirst = store.getTopic(first.id);
+    const beforeSecond = store.getTopic(second.id);
+    store.updateTopic(first.id, {
+      name: "renamed",
+      question: "new question",
+      preferences: "new preference",
+    });
+    const reopened = createExplorationStore(storage);
+    expect(reopened.getTopic(first.id)).toMatchObject({
+      name: "renamed",
+      question: "new question",
+      preferences: "new preference",
+      candidates: beforeFirst?.candidates,
+    });
+    expect(reopened.getTopic(second.id)).toEqual(beforeSecond);
+    store.updateTopic(first.id, { question: "", preferences: "" });
+    expect(createExplorationStore(storage).getTopic(first.id)).toMatchObject({
+      question: "",
+      preferences: "",
+      candidates: beforeFirst?.candidates,
+    });
+  });
+
+  test("a failed conditions save leaves stored content intact and can be retried", () => {
+    const storage = new MemoryStorage();
+    const store = createExplorationStore(storage);
+    const topic = store.createTopic({ name: "before", question: "keep" });
+    const raw = storage.getItem(EXPLORATION_STORAGE_KEY);
+    storage.failWrite = true;
+    expect(() =>
+      store.updateTopic(topic.id, { name: "draft", preferences: "draft preference" }),
+    ).toThrow();
+    expect(storage.getItem(EXPLORATION_STORAGE_KEY)).toBe(raw);
+    storage.failWrite = false;
+    store.updateTopic(topic.id, { name: "draft", preferences: "draft preference" });
+    expect(createExplorationStore(storage).getTopic(topic.id)?.name).toBe("draft");
+    expect(() => store.updateTopic(topic.id, { name: "  " })).toThrow();
+    expect(store.getTopic(topic.id)?.name).toBe("draft");
+  });
+
   test("saving again adds evidence while preserving private reasons and old snapshots", () => {
     const storage = new MemoryStorage();
     const store = createExplorationStore(storage);
@@ -386,7 +444,220 @@ describe("exploration store", () => {
     expect(saved?.candidate.metadata?.location).toBe("上海徐汇");
     expect(saved?.reason).toBe("方向很契合");
   });
+
+  test("setStage changes the stage without touching updatedAt", () => {
+    const storage = new MemoryStorage();
+    const store = createExplorationStore(storage);
+    const topic = store.createTopic({ name: "探索" });
+    // Pin updatedAt to a fixed past value so same-millisecond runs stay distinguishable.
+    const raw = JSON.parse(storage.getItem(EXPLORATION_STORAGE_KEY) ?? "{}");
+    raw.topics[0].updatedAt = "2026-10-01T00:00:00.000Z";
+    storage.setItem(EXPLORATION_STORAGE_KEY, JSON.stringify(raw));
+    const before = store.getTopic(topic.id)?.updatedAt;
+    store.setStage(topic.id, "discover");
+    const after = store.getTopic(topic.id);
+    expect(after?.stage).toBe("discover");
+    expect(after?.updatedAt).toBe(before);
+    store.setStage(topic.id, "process");
+    expect(store.getTopic(topic.id)?.stage).toBe("process");
+    expect(store.getTopic(topic.id)?.updatedAt).toBe(before);
+    // Other activity still bumps updatedAt.
+    store.updateTopic(topic.id, { question: "新问题" });
+    expect(store.getTopic(topic.id)?.updatedAt).not.toBe(before);
+  });
+
+  test("setDecision sets and clears a decision that survives reopening", () => {
+    const storage = new MemoryStorage();
+    const store = createExplorationStore(storage);
+    const topic = store.createTopic({ name: "探索" });
+    store.saveCandidate(topic.id, candidate(), { reason: "理由" });
+    store.saveOpportunity(topic.id, opportunity());
+
+    store.setDecision(topic.id, { kind: "candidate", id: "advisor-one" }, "keep");
+    store.setDecision(
+      topic.id,
+      { kind: "opportunity", id: "physics-experiment" },
+      "exclude",
+    );
+    let reopened = createExplorationStore(storage);
+    expect(reopened.getTopic(topic.id)?.candidates[0]?.decision).toBe("keep");
+    expect(reopened.getTopic(topic.id)?.opportunities?.[0]?.decision).toBe("exclude");
+
+    // Clearing persists as absent, not as a stale value.
+    store.setDecision(topic.id, { kind: "candidate", id: "advisor-one" }, null);
+    reopened = createExplorationStore(storage);
+    expect(reopened.getTopic(topic.id)?.candidates[0]?.decision).toBeUndefined();
+    expect(reopened.getTopic(topic.id)?.opportunities?.[0]?.decision).toBe("exclude");
+
+    // A decision on a record that is not in this topic fails loudly.
+    expect(() =>
+      store.setDecision(topic.id, { kind: "candidate", id: "missing" }, "maybe"),
+    ).toThrow("不在这个主题");
+  });
+
+  test("saveAnalysis keeps newest first, caps at 20 and rejects malformed input", () => {
+    const storage = new MemoryStorage();
+    const store = createExplorationStore(storage);
+    const topic = store.createTopic({ name: "探索" });
+    for (let index = 0; index < 22; index += 1) {
+      store.saveAnalysis(topic.id, savedAnalysis(`analysis-${index}`));
+    }
+    const analyses = store.getTopic(topic.id)?.analyses;
+    expect(analyses).toHaveLength(20);
+    // Newest save first; the two oldest were dropped.
+    expect(analyses?.[0]?.id).toBe("analysis-21");
+    expect(analyses?.map((entry) => entry.id)).not.toContain("analysis-0");
+    expect(analyses?.map((entry) => entry.id)).not.toContain("analysis-1");
+    expect(analyses?.[19]?.id).toBe("analysis-2");
+
+    // Re-saving the same id replaces in place instead of duplicating.
+    store.saveAnalysis(topic.id, savedAnalysis("analysis-21"));
+    expect(store.getTopic(topic.id)?.analyses).toHaveLength(20);
+
+    // Malformed analyses are rejected before anything is written.
+    const persisted = storage.getItem(EXPLORATION_STORAGE_KEY);
+    expect(() =>
+      store.saveAnalysis(topic.id, {
+        ...savedAnalysis("broken"),
+        id: "  ",
+      }),
+    ).toThrow(ExplorationStoreError);
+    expect(storage.getItem(EXPLORATION_STORAGE_KEY)).toBe(persisted);
+
+    store.removeAnalysis(topic.id, "analysis-21");
+    expect(store.getTopic(topic.id)?.analyses?.[0]?.id).toBe("analysis-20");
+  });
+
+  test("saveOpportunityEvidence creates the record and dedups repeated saves", () => {
+    const storage = new MemoryStorage();
+    const store = createExplorationStore(storage);
+    const topic = store.createTopic({ name: "探索" });
+    const source = {
+      url: "https://example.org/read-page",
+      title: "读到的页面",
+      content: "页面正文内容。",
+      collectedAt: "2026-10-05T10:00:00.000Z",
+      kind: "live" as const,
+    };
+
+    // First save creates the opportunity record with its evidence.
+    store.saveOpportunityEvidence(topic.id, opportunity(), [source]);
+    let record = createExplorationStore(storage).getTopic(topic.id)?.opportunities?.[0];
+    expect(record?.opportunity.opportunityId).toBe("physics-experiment");
+    expect(record?.sources).toHaveLength(1);
+
+    // Saving the same source again does not duplicate it.
+    store.saveOpportunityEvidence(topic.id, opportunity(), [source]);
+    record = createExplorationStore(storage).getTopic(topic.id)?.opportunities?.[0];
+    expect(record?.sources).toHaveLength(1);
+
+    // A new source for the same entry is merged, not appended as a second record.
+    const secondSource = {
+      ...source,
+      url: "https://example.org/another-page",
+      title: "另一页面",
+    };
+    store.saveOpportunityEvidence(topic.id, opportunity(), [secondSource]);
+    const topicAfter = createExplorationStore(storage).getTopic(topic.id);
+    expect(topicAfter?.opportunities).toHaveLength(1);
+    expect(topicAfter?.opportunities?.[0]?.sources).toHaveLength(2);
+
+    // Invalid evidence is rejected and leaves the record intact.
+    const persisted = storage.getItem(EXPLORATION_STORAGE_KEY);
+    expect(() =>
+      store.saveOpportunityEvidence(topic.id, opportunity(), [
+        { ...source, url: "javascript:alert(1)" },
+      ]),
+    ).toThrow(ExplorationStoreError);
+    expect(storage.getItem(EXPLORATION_STORAGE_KEY)).toBe(persisted);
+  });
+
+  test("a v1 document without the new fields still loads and accepts new data", () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      EXPLORATION_STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        topics: [
+          {
+            id: "legacy-v1",
+            name: "旧主题",
+            question: "旧问题",
+            preferences: "",
+            createdAt: "2026-10-01T00:00:00.000Z",
+            updatedAt: "2026-10-01T00:00:00.000Z",
+            candidates: [
+              {
+                candidate: candidate(),
+                reason: "旧理由",
+                questions: [],
+                savedAt: "2026-10-01T00:00:00.000Z",
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    const store = createExplorationStore(storage);
+    const legacy = store.getTopic("legacy-v1");
+    expect(legacy?.candidates[0]?.reason).toBe("旧理由");
+    expect(legacy?.opportunities).toBeUndefined();
+    expect(legacy?.stage).toBeUndefined();
+    expect(legacy?.analyses).toBeUndefined();
+    expect(legacy?.lastComparison).toBeUndefined();
+    expect(legacy?.pausedNote).toBeUndefined();
+
+    // The loaded document accepts every new field without a migration.
+    store.setStage("legacy-v1", "process");
+    store.saveOpportunity("legacy-v1", opportunity());
+    store.saveAnalysis("legacy-v1", savedAnalysis("analysis-legacy"));
+    store.saveComparison("legacy-v1", {
+      question: "比较问题",
+      ids: ["advisor-one"],
+      perspective: "research",
+    });
+    store.updateTopic("legacy-v1", { pausedNote: "暂停一下" });
+
+    const reopened = createExplorationStore(storage);
+    const updated = reopened.getTopic("legacy-v1");
+    expect(updated?.stage).toBe("process");
+    expect(updated?.opportunities).toHaveLength(1);
+    expect(updated?.analyses?.[0]?.id).toBe("analysis-legacy");
+    expect(updated?.lastComparison).toMatchObject({ perspective: "research" });
+    expect(updated?.pausedNote).toBe("暂停一下");
+    // Original candidate record untouched.
+    expect(updated?.candidates[0]?.reason).toBe("旧理由");
+  });
 });
+
+function savedAnalysis(id: string) {
+  return {
+    id,
+    question: "整理问题",
+    createdAt: "2026-10-20T00:00:00.000Z",
+    providerLabel: "模拟整理服务",
+    simulated: true,
+    subjects: [{ id: "advisor-one", name: "Example Researcher" }],
+    evidence: [
+      {
+        ref: "e1",
+        subjectId: "advisor-one",
+        aspect: "研究什么",
+        sourceTitle: "来源",
+        sourceUrl: "https://example.org/research",
+      },
+    ],
+    sentFragmentIds: ["advisor-one#reason"],
+    sections: [
+      {
+        kind: "differences",
+        title: "差异",
+        points: [{ text: "要点", evidenceRefs: ["e1"], privateFragmentIds: [] }],
+      },
+    ],
+    caveats: ["模拟结果"],
+  };
+}
 
 function opportunity(): OpportunitySnapshot {
   return {

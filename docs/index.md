@@ -1,38 +1,31 @@
-# Campus Agora 文档
+# Campus Lumen 文档
 
-Last updated: 2026-10-01
+Last updated: 2026-10-29
 
-Campus Agora 当前规划为面向大学生个人使用的机会发现与行动指导工具，内容覆盖跨校、跨学科的科研、导师、实习与竞赛。需求分析已形成v1.0基线，接续同伴评审与任务设计，当前交付为选导师指南比赛demo。初版仅包含个人使用体验，社区只是可能的未来扩展，没有预设开发阶段。
-
-旧社区产品路线已废止；现有工程代码保留待评估，新产品尚未实现。产品范围与执行顺序以产品概览和里程碑为准。旧认证、隐私、社区治理与桌面端文档不自动构成新增功能任务，实施相关能力前需按新需求更新；可适用的工程与数据保护要求仍需遵循。
+Campus Lumen 帮大学生跨机构发现、理解和处理机会。中期 demo 让所有机会类型共用“探索 → 发现 → 处理”流程；导师是内容最深的示例，AI 整理使用明确标注的模拟服务。社区、账号、真实模型、跨设备同步和生产部署不在中期范围。
 
 ## 快速入口
 
-同伴请先读[需求分析 v1.0](product/requirements-handoff.md)：包含八部分需求论证、已确定范围与demo验收，第10节提供研究附件索引。文档定版不表示产品效果已经验证。
-
-- 产品范围：[产品 / 概览](product/overview.md)
-- 隐私：[产品 / 隐私](product/privacy.md)
-- 里程碑：[产品 / 里程碑](product/milestones.md)
-- 架构概览：[架构 / 概览](architecture/overview.md)
-- API 契约：[架构 / API 契约](architecture/api-contracts.md)
-- 认证与权限：[架构 / 认证与权限](architecture/auth-permissions.md)
+- 中期总入口：[软件工程文档导航](project/index.md)
+- 需求分析：[需求分析 v1.0](product/requirements-handoff.md)
+- 需求规格：[中期需求规格](project/requirements-spec.md)
+- 概要设计：[当前运行架构](architecture/overview.md)
+- 前端设计：[前端设计 v1.1](product/frontend-design.md)
+- 验收：[中期验收与测试计划](project/acceptance.md)
+- 测试结果：[中期测试报告](project/test-report.md)
+- 进度：[项目计划与进度](project/progress.md)
+- 演示：[用户手册与演示脚本](project/user-guide.md)
+- 隐私：[隐私与数据边界](product/privacy.md)
+- UI：[Primer UI 规范](product/ui-system.md)
+- API：[API 契约](architecture/api-contracts.md)
 - 本地开发：[工程 / 开发](engineering/development.md)
-- 质量门禁：[工程 / 质量门禁](engineering/quality.md)
-- 约束参考：[约束 / 阅读地图](constraints/index.md)
-- 运维：[运维 / 概览](operations/overview.md)
-- 安全：[运维 / 安全](operations/security.md)
-- Agent 任务记忆：[AI Log / Todo](ai-log/todo.md)
+- 质量门禁：[工程 / 质量](engineering/quality.md)
+- 历史材料：[历史归档](archive/legacy-m-series.md)
 
-## 本地检查
+正式文档中的“待执行”与“待验证”不表示通过。实时、已有资料、模拟和合成内容必须分开；执行证据写入测试报告。
+
+## 本地文档检查
 
 ```bash
-bun install --frozen-lockfile
-bun run api:types
-bun run typecheck
-bun run lint
-bun run lint:styles
-bun run test
-bun run build
-cargo clippy --workspace --all-targets -- -D warnings
 bun run ci:docs
 ```
