@@ -3,10 +3,10 @@
 Last updated: 2026-10-29
 
 The mid-term demo serves personal opportunity exploration across all types,
-with public external discovery, browser-local sessions, and a clearly labelled
-simulated analysis service. It has no account, community publication,
-server-side exploration storage, or real-model integration. The legacy
-community inventory and audit/deletion assumptions are not current policy.
+with public external discovery, browser-local sessions, and a choice between a
+clearly labelled simulated organizer and the USTC 词元计划 platform. It has no
+account, community publication, or server-side exploration/analysis storage.
+The legacy community inventory and audit/deletion assumptions are not current policy.
 
 ## Current Implementation
 
@@ -22,8 +22,8 @@ community inventory and audit/deletion assumptions are not current policy.
 | Reviewed collected batch: professional names, source-backed summaries and reading context | Display existing information without student-side collection | Repository JSON, included in the Web bundle; optional copy to localStorage on save | Anyone receiving the built demo; no collector login or private topic notes included |
 | Private reasons and questions | Preserve the user's own judgments | Same localStorage | Same browser/origin; not sent to discovery and sent to analysis only when individually checked |
 | Submitted public query | Run live discovery | API request; keywords also reach the search provider, while direct URLs go to the permitted source site; no project database persistence | API process; DuckDuckGo for keywords or the source site for direct URLs |
-| Simulated analysis request: question, public evidence and checked private fragments | Demonstrate organization, citations and delivery states without a real model | Processed transiently by `/api/v1/analyses`; no server persistence or body logging | Local API; no external model provider |
-| Allowed source hostnames | Resolve and fetch public pages | Network requests; fixed public DNS fallback in the special fake-IP case | Source site; dns.google when the fallback is needed |
+| Analysis request: question, public evidence and checked private fragments | Organize only the confirmed material | Processed transiently by `/api/v1/analyses`; no server persistence or body logging | Local API; additionally the USTC 词元计划 platform only when the user chooses `school` |
+| Analysis provider configuration | Enable the server-side school transport | API key and model in server environment only | API process; the providers endpoint exposes availability, label, and model, never the key |
 | Request metadata | Debug transport and failures | Current tracing output, under runtime log configuration | Operators; bodies/private exploration records are not logged |
 
 ### Collection Principles
@@ -50,11 +50,12 @@ populate a public query or send topic conditions to any external service.
 Progress snapshots remain in the current discovery view's memory until replaced
 or unmounted; only an explicit source save copies evidence into localStorage.
 Stopping discovery preserves received evidence, invalidates late callbacks and
-cannot retract sent public requests. The mid-term analysis path is a local
-simulated service: it receives only public evidence and private fragments
-selected in that confirmation, does not call a real model, and does not persist
-or log request text. Timeout still uses delivery-unknown wording because the
-browser cannot prove whether the local request completed.
+cannot retract sent public requests. Analysis receives only public evidence and
+private fragments selected in that confirmation and does not persist or log
+request text. The simulated provider makes no external call; the school provider
+forwards the confirmed payload to USTC 词元计划. Timeout still uses
+delivery-unknown wording because the browser cannot prove whether a dispatched
+request reached or completed at the selected service.
 
 ### Retention
 
@@ -92,7 +93,10 @@ The backend fetches eligible pages, whose sites receive normal page requests;
 they do not receive the browser's saved reasons or questions. Only when local
 DNS returns synthetic `198.18.0.0/15` addresses does the backend send the
 already-allowed hostname to the fixed `https://dns.google/resolve` endpoint for
-public A records. Provider-side handling is outside the browser-local store.
+public A records. When the user explicitly chooses the school analysis provider,
+`api.llm.ustc.edu.cn` receives the question, listed public evidence and only the
+checked private fragments. Its logging, retention and deletion rules are
+unverified. Provider-side handling is outside the browser-local store.
 
 If the index fails, the backend performs live body matching only against
 Stanford AI Laboratory and CMU Machine Learning faculty directories. Their
@@ -124,9 +128,9 @@ site's login or search context. This separate trial does not add an application
 browser connector, a user-key input, or an unattended collection service. See
 [the executed trial](advisor-task-design.md#82).
 
-## 已采纳的数据边界与中期模拟 AI
+## 已采纳的数据边界与中期 AI
 
-以下与[需求主稿](requirements-handoff.md)、[前端设计 v1.1](frontend-design.md)和[概要设计](../architecture/overview.md)一致。中期连接的是明确标注的本地模拟整理服务；它用于验证请求构造和发送状态，不代表真实模型质量、供应商保留条件或外部删除能力。
+以下数据选择边界继续有效。当前中期演示默认使用明确标注的本地模拟整理服务；用户也可在发送前明确选择中国科大词元计划。外部平台的保留与删除条件尚未核实。
 
 ### 公共资料与私人主题
 
@@ -150,7 +154,7 @@ browser connector, a user-key input, or an unattended collection service. See
 
 当前保存、重开及删除范围见上文Current Implementation。多个主题和各自私人记录分别恢复；删除一主题不影响另一主题或公共来源。误合并的公共对象可拆分并修复关联，保留私人理由、待问项和原引用；原关联不明时交由用户确认，不自动复制到所有拆出对象。维护者修复公共关联不要求查看私人理由原文，也不因此取得额外访问权限。
 
-后续AI、同步或其他服务采用前，明确实际发送内容、服务方保留与删除条件。本地删除、取消选择只描述本产品实际能够完成的行为，不宣称外部服务已删除先前收到的内容。无已核对服务方案时不承诺外部删除期限或不保留数据。
+当前词元计划仅接收本次确认的内容，且标注保留规则未核实；本地删除、取消选择不表示外部服务已删除先前收到的内容。采用其他AI、同步或服务前仍须明确实际发送内容、保留与删除条件。
 
 ### 验证要求
 

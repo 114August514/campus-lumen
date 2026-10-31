@@ -1,7 +1,10 @@
-import type {
-  AnalysisEvidence,
-  AnalysisRequest,
-  AnalysisSimulation,
+import {
+  type AnalysisEvidence,
+  type AnalysisProviderChoice,
+  type AnalysisRequest,
+  type AnalysisSimulation,
+  type SchoolProviderStatus,
+  getAnalysisProviders,
 } from "@campus-agora/api-client";
 import { LinkExternalIcon } from "@primer/octicons-react";
 import {
@@ -14,6 +17,8 @@ import {
   Heading,
   Label,
   Link,
+  Radio,
+  RadioGroup,
   Spinner,
   Stack,
   Text,
@@ -69,7 +74,7 @@ export function AnalysisResult({
     <Stack gap="normal">
       <Stack direction="horizontal" gap="condensed" align="center" wrap="wrap">
         <Label variant="done">
-          {analysis.simulated ? "模拟服务输出" : analysis.providerLabel}
+          {analysis.simulated ? "模拟服务输出" : `AI 生成：${analysis.providerLabel}`}
         </Label>
         <Text size="small">请对照来源核实 · 问题：“{analysis.question}”</Text>
       </Stack>
@@ -155,8 +160,22 @@ export function AnalysisDialog({
     stoppedByUser: false,
   });
   const [savedId, setSavedId] = useState("");
+  const [provider, setProvider] = useState<AnalysisProviderChoice>("simulated");
+  const [school, setSchool] = useState<SchoolProviderStatus | null>(null);
+  const [schoolError, setSchoolError] = useState("");
   const run = useMemo(() => createAnalysisRun(setState), []);
   useEffect(() => () => run.dispose(), [run]);
+  // Ask the local API whether the campus model is configured; the key never reaches the page.
+  useEffect(() => {
+    const controller = new AbortController();
+    getAnalysisProviders({ signal: controller.signal })
+      .then((response) => setSchool(response.school))
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setSchoolError("暂时无法确认词元计划是否可用。");
+      });
+    return () => controller.abort();
+  }, []);
   const fragments = useMemo(() => privateFragmentOptions(topic, items), [topic, items]);
   const fragmentLabels = Object.fromEntries(
     fragments.map((fragment) => [
@@ -172,6 +191,7 @@ export function AnalysisDialog({
     fragments,
     selected,
     simulation: simulationFor(demo.analysisOutcome),
+    provider,
   });
   const sentAtLeastOnce = state.delivery !== "not_sent" || Boolean(state.request);
   const busy = state.delivery === "waiting";
@@ -194,13 +214,57 @@ export function AnalysisDialog({
   }
 
   return (
-    <Dialog title="按问题整理（模拟服务）" width="xlarge" onClose={onClose}>
+    <Dialog
+      title={
+        provider === "school" ? "按问题整理（词元计划）" : "按问题整理（模拟服务）"
+      }
+      width="xlarge"
+      onClose={onClose}
+    >
       <Stack gap="normal">
+        <RadioGroup name="analysis-provider" disabled={busy}>
+          <RadioGroup.Label>接收服务</RadioGroup.Label>
+          <FormControl>
+            <Radio
+              value="simulated"
+              checked={provider === "simulated"}
+              onChange={() => setProvider("simulated")}
+            />
+            <FormControl.Label>模拟整理服务（本地）</FormControl.Label>
+            <FormControl.Caption>
+              不调用外部模型，不保存内容；只把依据按维度并列，用来演示流程。
+            </FormControl.Caption>
+          </FormControl>
+          <FormControl disabled={!school?.available}>
+            <Radio
+              value="school"
+              checked={provider === "school"}
+              onChange={() => setProvider("school")}
+            />
+            <FormControl.Label>
+              {school?.label ?? "中国科大大模型公共服务平台（词元计划）"}
+              {school?.model ? ` · ${school.model}` : ""}
+            </FormControl.Label>
+            <FormControl.Caption>
+              {school?.available
+                ? "由本项目后端用服务端 Key 转发给校内平台，约 15–30 秒返回；平台的日志与保留规则尚未核实。"
+                : schoolError || "服务端没有配置词元计划 Key，当前不可用。"}
+            </FormControl.Caption>
+          </FormControl>
+        </RadioGroup>
         <Banner
-          variant="info"
+          variant={provider === "school" ? "warning" : "info"}
           layout="compact"
-          title="接收服务：模拟整理服务（本地，不调用外部模型，不保存内容）"
-          description="用途：按你的问题整理差异与待确认事项。发送前可以查看全部内容；真实模型接入后，这一步的确认方式不变。"
+          title={
+            provider === "school"
+              ? "接收服务：中国科大大模型公共服务平台（经本项目后端转发）"
+              : "接收服务：模拟整理服务（本地，不调用外部模型，不保存内容）"
+          }
+          description={
+            provider === "school"
+              ? "用途：按你的问题整理差异与待确认事项。只发送下面列出的公开依据和你勾选的个人内容；回答由模型生成，可能有误。"
+              : "用途：按你的问题整理差异与待确认事项。发送前可以查看全部内容。"
+          }
         />
         <FormControl disabled={busy}>
           <FormControl.Label>本次问题</FormControl.Label>
@@ -261,7 +325,7 @@ export function AnalysisDialog({
             将发送：公开依据 {request.evidence.length} 条，个人内容{" "}
             {request.selectedPrivateFragments.length} 条
           </Text>
-          {demo.analysisOutcome !== "ok" && (
+          {provider === "simulated" && demo.analysisOutcome !== "ok" && (
             <Label variant="attention">
               演示设置：{outcomeText[demo.analysisOutcome]}
             </Label>

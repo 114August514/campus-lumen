@@ -1,6 +1,6 @@
 # AI Log Done
 
-Last updated: 2026-10-29
+Last updated: 2026-10-31
 
 This file records completed agent-visible work. Keep entries factual and link
 them to commits, files, and verification commands where possible.
@@ -18,6 +18,14 @@ them to commits, files, and verification commands where possible.
 ```
 
 ## Completed
+
+### 2026-10-31 - Connect AI organization to USTC 词元计划
+
+- Source: User chose to integrate the teammate's verified school transport before the mid-term demo (option A); simulated organizer stays default and fallback.
+- Result: `/api/v1/analyses` accepts `provider: "school"`; the server forwards the confirmed payload to `api.llm.ustc.edu.cn` with a key from `USTC_LLM_API_KEY` (model `USTC_LLM_MODEL`, default `deepseek-v4-flash-ascend`). Transport `crates/application/src/ai.rs` ported from jasonxu-cell `14b0ba6`; `GET /api/v1/analyses/providers` reports availability without the key. Model output is parsed into the existing sections; citations are validated against what was sent. AnalysisDialog lets the user choose the receiving service per send, waits 75 s for the school provider, labels results "AI 生成:平台 · 模型" and saves `providerLabel`/`simulated`. Teammate's AiAssistant UI, `/ai/completions` endpoint and route split were not merged (18-file conflict on an older base).
+- Verification: Browser call with synthetic topic, 12 public items + 1 synthetic private reason: 58 s, then 35 s after shortening the prompt and max tokens 1,000; saved record `simulated: false`, other topic unchanged; 390px overflow 0. `bun test tests` 126 pass; biome, tsc, `lint:styles`; cargo fmt/clippy/test; api-client tests; strict docs build.
+- Decisions: Student keys get 403 for `deepseek-v4-pro`, so flash is the default. The key never reaches the browser or the repository. Platform retention terms are shown as unverified.
+- Follow-up: Platform terms, quota attribution and team-key policy after login; output quality not measured.
 
 ### 2026-10-29 - Add USTC 词元计划 to the feasibility analysis
 

@@ -4,6 +4,7 @@
 // once fetch is called, a timeout or a stop can no longer prove nothing was sent.
 import {
   type AnalysisEvidence,
+  type AnalysisProviderChoice,
   type AnalysisRequest,
   type AnalysisResponse,
   type AnalysisSimulation,
@@ -144,6 +145,7 @@ export function buildAnalysisRequest(input: {
   fragments: PrivateFragmentOption[];
   selected: ReadonlySet<string>;
   simulation?: AnalysisSimulation;
+  provider?: AnalysisProviderChoice;
 }): AnalysisRequest {
   return {
     operation: input.operation,
@@ -163,7 +165,11 @@ export function buildAnalysisRequest(input: {
         subjectId: fragment.subjectId,
         text: fragment.text,
       })),
-    ...(input.simulation ? { simulation: input.simulation } : {}),
+    ...(input.provider === "school"
+      ? { provider: "school" as const }
+      : input.simulation
+        ? { simulation: input.simulation }
+        : {}),
   };
 }
 
@@ -189,6 +195,12 @@ type Sender = (
 ) => Promise<AnalysisResponse>;
 
 export const ANALYSIS_WAIT_MS = 12_000;
+/** The campus model takes 15–30 s; the backend gives up at 60 s. */
+export const SCHOOL_ANALYSIS_WAIT_MS = 75_000;
+
+export function waitFor(request: AnalysisRequest): number {
+  return request.provider === "school" ? SCHOOL_ANALYSIS_WAIT_MS : ANALYSIS_WAIT_MS;
+}
 
 /** One request at a time; a superseded or stopped request never updates the state. */
 export function createAnalysisRun(
@@ -262,7 +274,7 @@ export function createAnalysisRun(
         if (current === sequence) {
           interrupt("等待超时，未收到服务回应。请求已发出，服务可能已经收到。", false);
         }
-      }, options.timeoutMs ?? ANALYSIS_WAIT_MS);
+      }, options.timeoutMs ?? waitFor(request));
       try {
         const response = await (options.send ?? requestAnalysis)(request, {
           signal: controller.signal,
@@ -312,7 +324,9 @@ export function toSavedAnalysis(
     id: response.analysisId,
     question: response.question,
     createdAt: response.createdAt,
-    providerLabel: response.provider.label,
+    providerLabel: response.provider.model
+      ? `${response.provider.label} · ${response.provider.model}`
+      : response.provider.label,
     simulated: response.provider.simulated,
     subjects: request.subjects.map((subject) => ({
       id: subject.id,

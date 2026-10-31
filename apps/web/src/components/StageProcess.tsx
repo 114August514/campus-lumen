@@ -316,7 +316,7 @@ export function StageProcess({
             disabled={!analysable.length}
             onClick={() => setAnalysisOpen(true)}
           >
-            按问题整理当前视图（模拟）
+            按问题整理当前视图（AI）
           </Button>
           {topic.lastComparison && (
             <Button

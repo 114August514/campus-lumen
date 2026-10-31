@@ -84,19 +84,26 @@
         "additionalProperties": false,
         "properties": {
           "id": {
-            "const": "simulated-organizer",
+            "enum": [
+              "simulated-organizer",
+              "ustc-llm"
+            ],
             "type": "string"
           },
           "label": {
-            "const": "模拟整理服务",
+            "type": "string"
+          },
+          "model": {
             "type": "string"
           },
           "retention": {
-            "const": "none",
+            "enum": [
+              "none",
+              "unverified"
+            ],
             "type": "string"
           },
           "simulated": {
-            "const": true,
             "type": "boolean"
           }
         },
@@ -105,6 +112,25 @@
           "label",
           "simulated",
           "retention"
+        ],
+        "type": "object"
+      },
+      "AnalysisProviderChoice": {
+        "enum": [
+          "simulated",
+          "school"
+        ],
+        "type": "string"
+      },
+      "AnalysisProvidersResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "school": {
+            "$ref": "#/components/schemas/SchoolProviderStatus"
+          }
+        },
+        "required": [
+          "school"
         ],
         "type": "object"
       },
@@ -150,6 +176,10 @@
           "operation": {
             "$ref": "#/components/schemas/AnalysisOperation"
           },
+          "provider": {
+            "$ref": "#/components/schemas/AnalysisProviderChoice",
+            "default": "simulated"
+          },
           "question": {
             "maxLength": 300,
             "minLength": 1,
@@ -163,7 +193,8 @@
             "type": "array"
           },
           "simulation": {
-            "$ref": "#/components/schemas/AnalysisSimulation"
+            "$ref": "#/components/schemas/AnalysisSimulation",
+            "description": "Applies only to the simulated provider and is ignored for school."
           },
           "subjects": {
             "items": {
@@ -621,6 +652,26 @@
         ],
         "type": "object"
       },
+      "SchoolProviderStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "available",
+          "label",
+          "model"
+        ],
+        "type": "object"
+      },
       "SelectedPrivateFragment": {
         "additionalProperties": false,
         "properties": {
@@ -660,7 +711,7 @@
   "paths": {
     "/api/v1/analyses": {
       "post": {
-        "description": "No model or external network is used. Private fragments are accepted only when explicitly selected, are never logged as text, and are not retained.",
+        "description": "The simulated provider is deterministic and uses no external network. The school provider forwards only the listed public evidence and explicitly selected private fragments to the campus model platform. Submitted text is never logged or retained by this backend.",
         "operationId": "requestAnalysis",
         "requestBody": {
           "content": {
@@ -681,7 +732,7 @@
                 }
               }
             },
-            "description": "Deterministic simulated organization"
+            "description": "Organized analysis"
           },
           "413": {
             "content": {
@@ -703,6 +754,26 @@
             },
             "description": "Invalid request with field-specific details"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "School AI concurrency limit reached before forwarding"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "School AI rejected, failed, or returned an invalid response"
+          },
           "503": {
             "content": {
               "application/json": {
@@ -711,11 +782,30 @@
                 }
               }
             },
-            "description": "Requested simulated failure"
+            "description": "Provider unavailable or requested simulated failure"
           }
         },
         "security": [],
-        "summary": "Organize explicitly selected evidence and private fragments with a deterministic simulated service"
+        "summary": "Organize explicitly selected evidence and private fragments"
+      }
+    },
+    "/api/v1/analyses/providers": {
+      "get": {
+        "operationId": "getAnalysisProviders",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisProvidersResponse"
+                }
+              }
+            },
+            "description": "Analysis provider availability without credentials"
+          }
+        },
+        "security": [],
+        "summary": "Report whether the school AI provider is configured"
       }
     },
     "/api/v1/discoveries": {

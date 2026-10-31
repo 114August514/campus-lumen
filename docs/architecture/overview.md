@@ -1,6 +1,6 @@
 # 概要设计
 
-Last updated: 2026-10-29
+Last updated: 2026-10-31
 
 本文描述中期 demo 的实际运行架构。产品和页面行为分别见[需求规格](../project/requirements-spec.md)与[前端设计](../product/frontend-design.md)；接口字段以[API 契约](api-contracts.md)和生成的 OpenAPI 为准。
 
@@ -8,7 +8,7 @@ Last updated: 2026-10-29
 
 - 一套前端支持所有机会类型的“探索 → 发现 → 处理”流程，选导师仅是内容最深的示例。
 - 公共资料、实时发现与私人会话分开；来源、时间、未知、模拟状态可追溯。
-- 中期 AI 整理使用本地模拟服务，不调用真实模型。
+- AI 整理默认使用本地模拟服务；服务端配置后，用户可在每次发送前改选中国科大词元计划。
 - 演示以本地 Web + API 为唯一部署目标，不声明生产、账号或跨设备能力。
 
 ## 2. 运行模块
@@ -23,8 +23,8 @@ flowchart LR
   C --> A[Rust Axum API]
   A --> D[公开发现用例]
   D --> X[搜索入口 / 允许的公开网页]
-  A --> M[模拟整理用例]
-  A --> H[health / ready / meta]
+  A --> M[整理用例：默认模拟 / 可选 school]
+  M -->|仅 school| T[中国科大词元计划]
   O[OpenAPI 快照] --> C
   A --> O
 ```
@@ -41,11 +41,12 @@ flowchart LR
 
 ### 2.3 Rust API
 
-`crates/api` 提供 Axum 路由、中间件、DTO、错误与 OpenAPI 导出；`crates/application` 承担发现和模拟整理用例。中期业务端点：
+`crates/api` 提供 Axum 路由、中间件、DTO、错误与 OpenAPI 导出；`crates/application` 承担发现、模拟整理、模型 prompt／解析和词元计划 transport。中期业务端点：
 
 - `GET /healthz`、`GET /readyz`、`GET /api/v1/meta`；
 - `POST /api/v1/discoveries`：无状态公开搜索／官网直读，JSON 或 NDJSON；
-- `POST /api/v1/analyses`：无状态模拟整理，校验输入、延迟后回显接收范围并返回带来源引用的模拟结构。
+- `POST /api/v1/analyses`：无状态整理，`provider` 缺省为 `simulated`，也可选择 `school`；
+- `GET /api/v1/analyses/providers`：返回 school provider 的可用性、标签与模型，不返回 Key。
 
 API 不保存探索会话或私人片段；请求处理完即结束。发现只访问允许的公开来源，限制见[安全文档](../operations/security.md)。
 
@@ -75,27 +76,32 @@ sequenceDiagram
 sequenceDiagram
   actor User as 用户
   participant Web as Web SPA
-  participant API as 模拟整理 API
+  participant API as 整理 API
+  participant School as 词元计划（仅 school）
   participant Store as 当前会话 localStorage
   Web->>Store: 读取当前对象、公开依据及可选私人片段
   Web-->>User: 展示问题、依据、接收服务与逐条 Checkbox
-  User->>Web: 明确勾选并发送
+  User->>Web: 按次选择 provider、明确勾选并发送
   Web->>API: POST /api/v1/analyses
   Note over Web,API: 仅公开依据 + 本次勾选的私人片段
-  API-->>Web: 模拟结果 / 错误 / 超时
-  Web-->>User: 标注“模拟”，显示返回或送达不明
+  opt provider = school
+    API->>School: 固定 HTTPS transport
+    School-->>API: 模型输出 / 错误 / 超时
+  end
+  API-->>Web: 整理结果 / 错误 / 超时
+  Web-->>User: 显示模拟标签或实际平台 · 模型，以及返回或送达不明
   User->>Web: 可选：主动保存到当前会话
   Web->>Store: 仅在主动保存时写入
 ```
 
-隐私边界：个人片段默认不选；其他会话不进入选择列表；服务端不记录正文或私人文本；超时和停止等待显示“可能已发送”，不宣称撤回。模拟服务只能验证流程，不能代表真实模型质量或数据处理承诺。
+隐私边界：个人片段默认不选；其他会话不进入选择列表；本项目服务端不记录或持久化正文与私人文本；school Key 只在服务端内存。超时和停止等待显示“可能已发送”，不宣称撤回。模拟服务只能验证流程；词元计划已实际走通一次，但输出质量、平台日志／保留／删除条款、额度归属和团队 Key 政策仍未验证。
 
 ## 5. 关键数据关系
 
 - **公共对象**：导师、实习、项目、竞赛、交流、活动、升学、资源、规则等，关联来源与时间。
 - **参与途径／条件**：同一对象可有多条途径；硬要求、优先和建议分开；历史、未知、当前有依据分开。
 - **探索会话**：问题、条件、保存对象、证据引用、决定和私人记录；同一公共对象在不同会话中有独立私人判断。
-- **分析结果**：一次模拟整理的状态、问题、所用公开依据和已选择私人片段标识；只有用户主动保存才进入当前会话。
+- **分析结果**：一次整理的状态、问题、provider 标签／模型、所用公开依据和已选择私人片段标识；只有用户主动保存才进入当前会话。
 
 详细字段以[前端设计](../product/frontend-design.md)和 OpenAPI 为准。
 
@@ -112,6 +118,6 @@ sequenceDiagram
 
 这些遗留组件是否删除或恢复须另作范围决定，不得因目录仍存在而推断产品依赖它们。
 
-## 8. 2026-10-29 设计决定
+## 8. 2026-10-29—31 设计决定
 
-2026-10-15 用户纠正了“其他类型不进首版”的旧口径；2026-10-29 明确所有类型在前端共用统一流程，导师保持最深内容，其他类型使用现有整理入口。中期 AI 整理必须连接明确标注的模拟服务，真实模型后置。这两项决定取代旧架构中“仅导师 UI”和“外部 AI 若采用”的歧义。
+2026-10-15 用户纠正了“其他类型不进首版”的旧口径；2026-10-29 明确所有类型在前端共用统一流程，导师保持最深内容，其他类型使用现有整理入口。2026-10-31 在同一个 analyses 契约中增加词元计划第二 provider：默认和回退仍为明确标注的模拟服务，school 由用户按次选择并使用服务端持有的 Key。该 transport 来源为 jasonxu-cell 的 `14b0ba6`；未并入其独立 AI UI、completions 端点或 participation 路由拆分。

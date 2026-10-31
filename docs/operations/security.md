@@ -59,17 +59,22 @@ topics or fetched pages in the backend. Public query terms may reach the
 search provider, and lookup hostnames may reach `dns.google`; see
 [Privacy](../product/privacy.md).
 
-## Simulated Analysis Privacy Boundary
+## Analysis Privacy Boundary
 
-The public `POST /api/v1/analyses` demo endpoint makes no outbound request and
-has no persistence. It receives private reasons or questions only in
-`selectedPrivateFragments`, which the browser must populate from the user's
-explicit per-item selection. Application logs record request ID and counts of
-subjects, evidence, and selected private fragments only; they never record the
-question, evidence text, or private-fragment text. Responses declare the
-simulated provider and `retention: none`. Cancellation or client timeout cannot
-prove whether a dispatched request reached the service, so clients must present
-that state as delivery unknown rather than as retracted.
+The public `POST /api/v1/analyses` endpoint receives private reasons or
+questions only in `selectedPrivateFragments`, populated from explicit per-item
+selection. The default simulated provider makes no outbound request. When the
+user chooses `school`, the backend forwards only the request's question,
+subjects, public evidence, and selected fragments to the fixed HTTPS
+`api.llm.ustc.edu.cn:443` endpoint. DNS results must be public and are pinned;
+redirects and proxies are disabled, and connection, total-time, and response-size
+limits apply.
+
+The USTC key stays in server memory and is never returned or logged. Application
+logs contain request ID, provider ID, and item counts, never submitted text.
+The backend persists neither requests nor responses. School-provider retention is
+unverified. Cancellation or timeout cannot prove whether content already reached
+the platform, so clients must present delivery as unknown rather than retracted.
 
 ## Secrets
 

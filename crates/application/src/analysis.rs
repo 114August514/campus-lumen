@@ -3,6 +3,7 @@
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use crate::ai::ChatMessage;
 use chrono::{DateTime, SecondsFormat, Utc};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -21,7 +22,17 @@ pub struct AnalysisRequest {
     pub evidence: Vec<AnalysisEvidence>,
     pub selected_private_fragments: Vec<PrivateFragment>,
     #[serde(default)]
+    pub provider: Option<AnalysisProviderChoice>,
+    #[serde(default)]
     pub simulation: Option<SimulationOptions>,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum AnalysisProviderChoice {
+    #[default]
+    Simulated,
+    School,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -116,6 +127,8 @@ pub struct AnalysisProvider {
     pub label: &'static str,
     pub simulated: bool,
     pub retention: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -134,7 +147,7 @@ pub struct AnalysisSection {
     pub points: Vec<AnalysisPoint>,
 }
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum SectionKind {
     Differences,
@@ -406,6 +419,7 @@ pub fn organize(request: AnalysisRequest) -> AnalysisResponse {
             label: "模拟整理服务",
             simulated: true,
             retention: "none",
+            model: None,
         },
         received: ReceivedMaterial {
             subject_ids: request
@@ -430,6 +444,334 @@ pub fn organize(request: AnalysisRequest) -> AnalysisResponse {
             format!("本次仅收到用户明确选择的{private_count}条私人记录。"),
             "服务不存储本次提交的公开依据、问题或私人记录。".into(),
         ],
+    }
+}
+pub fn model_messages(request: &AnalysisRequest) -> Vec<ChatMessage> {
+    let system = "你是 Campus Lumen 整理助手。只依据给出的公开依据和用户选择的个人内容；区分事实、解释和未知；未知保持未知、不当作负面；不打分、不排名、不替用户决定；不编造。输出严格使用以下二级标题（无内容的节省略，“回应你选择的内容”仅在给了个人内容时输出）：## 差异要点、## 与你的问题有关、## 回应你选择的内容、## 仍需确认。每节 1–3 条，每条一行以 “- ” 开头、不超过 80 字；引用只放在句末，用方括号标注，如 [e1][e3]，回应个人内容时加 [P1]；句子中间不要写引用编号。";
+    let subjects = request
+        .subjects
+        .iter()
+        .map(|subject| format!("- {}（{}）", subject.name, subject.id))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let evidence = request
+        .evidence
+        .iter()
+        .map(|item| {
+            let source = [
+                item.source_title.as_deref(),
+                item.source_url.as_deref(),
+                item.collected_at.as_deref(),
+            ]
+            .into_iter()
+            .flatten()
+            .filter(|part| !part.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ");
+            format!(
+                "[{}] 对象：{}｜方面：{}｜{}（来源：{}）",
+                item.reference,
+                subject_name(request, &item.subject_id),
+                if item.aspect.is_empty() {
+                    "仍需确认"
+                } else {
+                    &item.aspect
+                },
+                item.text,
+                if source.is_empty() {
+                    "未提供"
+                } else {
+                    &source
+                }
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    let personal = if request.selected_private_fragments.is_empty() {
+        "（未选择个人内容）".to_owned()
+    } else {
+        request
+            .selected_private_fragments
+            .iter()
+            .enumerate()
+            .map(|(index, fragment)| {
+                let subject = fragment
+                    .subject_id
+                    .as_deref()
+                    .map(|id| subject_name(request, id))
+                    .unwrap_or("未指定对象");
+                let kind = match fragment.kind {
+                    PrivateFragmentKind::Reason => "理由",
+                    PrivateFragmentKind::Question => "待问",
+                };
+                format!("[P{}] {}的{}：{}", index + 1, subject, kind, fragment.text)
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    let user = format!(
+        "问题：{}\n\n对象列表：\n{}\n\n公开依据：\n{}\n\n个人内容：\n{}",
+        request.question,
+        subjects,
+        if evidence.is_empty() {
+            "（未提供公开依据）"
+        } else {
+            &evidence
+        },
+        personal
+    );
+    vec![
+        ChatMessage {
+            role: "system".into(),
+            content: system.into(),
+        },
+        ChatMessage {
+            role: "user".into(),
+            content: user,
+        },
+    ]
+}
+
+pub fn organize_from_model(
+    request: AnalysisRequest,
+    content: &str,
+    model: &str,
+) -> AnalysisResponse {
+    let mut parsed: Vec<(SectionKind, Vec<AnalysisPoint>)> = Vec::new();
+    let mut current = None;
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        if let Some(kind) = heading_kind(line) {
+            current = Some(kind);
+            continue;
+        }
+        let Some(text) = bullet_text(line) else {
+            continue;
+        };
+        let Some(kind) = current else {
+            continue;
+        };
+        if kind == SectionKind::YourNotes && request.selected_private_fragments.is_empty() {
+            continue;
+        }
+        let points =
+            if let Some((_, points)) = parsed.iter_mut().find(|(existing, _)| *existing == kind) {
+                points
+            } else {
+                parsed.push((kind, Vec::new()));
+                &mut parsed.last_mut().expect("just inserted section").1
+            };
+        if points.len() < 5 {
+            points.push(parse_model_point(text, &request));
+        }
+    }
+    parsed.retain(|(_, points)| !points.is_empty());
+    let fallback = parsed.is_empty();
+    if fallback {
+        let text = content.trim().chars().take(4_000).collect::<String>();
+        parsed.push((
+            SectionKind::Differences,
+            vec![AnalysisPoint {
+                text,
+                evidence_refs: Vec::new(),
+                private_fragment_ids: Vec::new(),
+            }],
+        ));
+    }
+    let private_count = request.selected_private_fragments.len();
+    AnalysisResponse {
+        analysis_id: format!(
+            "analysis-{}-{}",
+            Utc::now().timestamp_micros(),
+            ANALYSIS_COUNTER.fetch_add(1, Ordering::Relaxed)
+        ),
+        operation: request.operation,
+        question: request.question.clone(),
+        created_at: Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true),
+        provider: AnalysisProvider {
+            id: "ustc-llm",
+            label: "中国科大大模型公共服务平台（词元计划）",
+            simulated: false,
+            retention: "unverified",
+            model: Some(model.to_owned()),
+        },
+        received: ReceivedMaterial {
+            subject_ids: request
+                .subjects
+                .iter()
+                .map(|subject| subject.id.clone())
+                .collect(),
+            evidence_refs: request
+                .evidence
+                .iter()
+                .map(|item| item.reference.clone())
+                .collect(),
+            private_fragment_ids: request
+                .selected_private_fragments
+                .iter()
+                .map(|fragment| fragment.id.clone())
+                .collect(),
+        },
+        sections: parsed
+            .into_iter()
+            .map(|(kind, points)| AnalysisSection {
+                kind,
+                title: if fallback {
+                    "整理结果"
+                } else {
+                    section_title(kind)
+                },
+                points,
+            })
+            .collect(),
+        caveats: vec![
+            format!("由词元计划平台模型 {model} 生成，可能有误，请对照来源核实。"),
+            format!(
+                "本次发送了你选择的 {private_count} 条个人内容；平台的日志与保留规则尚未核实。"
+            ),
+            "本项目后端不保存本次提交的内容。".into(),
+        ],
+    }
+}
+
+fn heading_kind(line: &str) -> Option<SectionKind> {
+    let line = line.trim();
+    let markdown_heading = line.starts_with('#');
+    let emphasized_heading = line.starts_with("**") && line.ends_with("**");
+    let mut heading = line.trim_matches('*').trim();
+    if markdown_heading {
+        heading = heading.trim_start_matches('#').trim();
+    }
+    let exact_title = matches!(
+        heading,
+        "差异要点" | "与你的问题有关" | "回应你选择的内容" | "仍需确认"
+    );
+    if !(markdown_heading || emphasized_heading || exact_title) {
+        return None;
+    }
+    if heading.contains("回应") || heading.contains("你选择") {
+        Some(SectionKind::YourNotes)
+    } else if heading.contains("差异") {
+        Some(SectionKind::Differences)
+    } else if heading.contains("问题") {
+        Some(SectionKind::QuestionRelated)
+    } else if heading.contains("确认") {
+        Some(SectionKind::ToConfirm)
+    } else {
+        None
+    }
+}
+
+fn bullet_text(line: &str) -> Option<&str> {
+    if let Some(rest) = line
+        .strip_prefix("- ")
+        .or_else(|| line.strip_prefix("* "))
+        .or_else(|| line.strip_prefix("• "))
+    {
+        return Some(rest.trim());
+    }
+    let digit_count = line.chars().take_while(char::is_ascii_digit).count();
+    if digit_count == 0 {
+        return None;
+    }
+    let rest = &line[digit_count..];
+    rest.strip_prefix('.')
+        .or_else(|| rest.strip_prefix('、'))
+        .or_else(|| rest.strip_prefix(')'))
+        .map(str::trim)
+}
+
+fn parse_model_point(text: &str, request: &AnalysisRequest) -> AnalysisPoint {
+    let mut cleaned = String::new();
+    let mut evidence_refs = Vec::new();
+    let mut private_fragment_ids = Vec::new();
+    let characters = text.chars().collect::<Vec<_>>();
+    let mut index = 0;
+    while index < characters.len() {
+        let (close, bracketed) = match characters[index] {
+            '[' => (']', true),
+            '【' => ('】', true),
+            _ => ('\0', false),
+        };
+        if !bracketed {
+            cleaned.push(characters[index]);
+            index += 1;
+            continue;
+        }
+        let Some(relative_end) = characters[index + 1..].iter().position(|c| *c == close) else {
+            cleaned.push(characters[index]);
+            index += 1;
+            continue;
+        };
+        let end = index + 1 + relative_end;
+        let group = characters[index + 1..end].iter().collect::<String>();
+        let tokens = group
+            .split([',', '，', '、', ' '])
+            .filter(|token| !token.is_empty())
+            .collect::<Vec<_>>();
+        let mut all_recognized = !tokens.is_empty();
+        for token in tokens {
+            let lower = token.to_ascii_lowercase();
+            if lower.strip_prefix('e').is_some_and(|digits| {
+                !digits.is_empty() && digits.chars().all(|c| c.is_ascii_digit())
+            }) {
+                if let Some(reference) = request
+                    .evidence
+                    .iter()
+                    .find(|item| item.reference == token)
+                    .map(|item| item.reference.clone())
+                {
+                    if !evidence_refs.contains(&reference) {
+                        evidence_refs.push(reference);
+                    }
+                }
+            } else if lower.strip_prefix('p').is_some_and(|digits| {
+                !digits.is_empty() && digits.chars().all(|c| c.is_ascii_digit())
+            }) {
+                let position = lower[1..].parse::<usize>().ok();
+                if let Some(fragment) = position
+                    .and_then(|position| position.checked_sub(1))
+                    .and_then(|position| request.selected_private_fragments.get(position))
+                {
+                    if !private_fragment_ids.contains(&fragment.id) {
+                        private_fragment_ids.push(fragment.id.clone());
+                    }
+                }
+            } else {
+                all_recognized = false;
+            }
+        }
+        if !all_recognized {
+            cleaned.extend(characters[index..=end].iter());
+        }
+        index = end + 1;
+    }
+    // Removing a citation can leave a space before punctuation ("交叉 ；").
+    let mut tidy = String::with_capacity(cleaned.len());
+    for character in cleaned.trim().chars() {
+        if matches!(character, '；' | '。' | '，' | '、' | '：' | '！' | '？') {
+            while tidy.ends_with(' ') {
+                tidy.pop();
+            }
+        }
+        tidy.push(character);
+    }
+    AnalysisPoint {
+        text: tidy,
+        evidence_refs,
+        private_fragment_ids,
+    }
+}
+
+fn section_title(kind: SectionKind) -> &'static str {
+    match kind {
+        SectionKind::Differences => "差异要点",
+        SectionKind::QuestionRelated => "与你的问题有关",
+        SectionKind::YourNotes => "回应你选择的内容",
+        SectionKind::ToConfirm => "仍需确认",
     }
 }
 
@@ -769,6 +1111,7 @@ mod tests {
                 },
             ],
             selected_private_fragments: Vec::new(),
+            provider: None,
             simulation: None,
         }
     }
@@ -809,5 +1152,64 @@ mod tests {
             tokens("Machine LEARNING 机器学习 可以"),
             ["machine", "learning", "机器", "器学", "学习"]
         );
+    }
+    #[test]
+    fn model_messages_include_only_supplied_selected_fragments() {
+        let mut input = request();
+        input.selected_private_fragments.push(PrivateFragment {
+            id: "chosen".into(),
+            kind: PrivateFragmentKind::Reason,
+            subject_id: Some("a".into()),
+            text: "只发送这一条".into(),
+        });
+        let messages = model_messages(&input);
+        assert!(messages[1].content.contains("只发送这一条"));
+        assert!(messages[1].content.contains("[P1] 甲的理由"));
+        assert!(!messages[1].content.contains("未选择的私人内容"));
+    }
+
+    #[test]
+    fn parses_headings_references_and_private_mapping() {
+        let mut input = request();
+        input.selected_private_fragments.push(PrivateFragment {
+            id: "fragment-a".into(),
+            kind: PrivateFragmentKind::Question,
+            subject_id: Some("a".into()),
+            text: "实验室节奏如何".into(),
+        });
+        let output = organize_from_model(
+            input,
+            "## 差异要点\n- 甲偏系统 [e1][e999]\n**与你的问题有关**\n1. 乙的信息待确认【e2】\n## 回应你选择的内容\n• 可以继续询问 [P1]\n## 仍需确认\n* 更新时间未知 [E1, nonsense]",
+            "model-x",
+        );
+        assert_eq!(output.sections.len(), 4);
+        assert_eq!(output.sections[0].title, "差异要点");
+        assert_eq!(output.sections[0].points[0].evidence_refs, ["e1"]);
+        assert_eq!(
+            output.sections[2].points[0].private_fragment_ids,
+            ["fragment-a"]
+        );
+        assert!(output.sections[0].points[0].text.contains("甲偏系统"));
+        assert!(output.sections[3].points[0].text.contains("[E1, nonsense]"));
+    }
+
+    #[test]
+    fn model_parser_falls_back_and_omits_private_section_without_fragments() {
+        let input = request();
+        let output = organize_from_model(
+            input,
+            "没有采用要求格式\n## 回应你选择的内容\n- 不应出现 [P1]",
+            "model-x",
+        );
+        assert_eq!(output.sections.len(), 1);
+        assert_eq!(output.sections[0].kind, SectionKind::Differences);
+        assert_eq!(output.sections[0].title, "整理结果");
+        assert!(output.sections[0].points[0]
+            .text
+            .contains("没有采用要求格式"));
+        assert!(output
+            .sections
+            .iter()
+            .all(|section| section.kind != SectionKind::YourNotes));
     }
 }

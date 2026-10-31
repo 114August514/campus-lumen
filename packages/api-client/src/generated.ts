@@ -19,10 +19,17 @@ export interface AnalysisPoint {
 }
 
 export interface AnalysisProvider {
-  id: "simulated-organizer";
-  label: "模拟整理服务";
-  retention: "none";
-  simulated: true;
+  id: "simulated-organizer" | "ustc-llm";
+  label: string;
+  model?: string;
+  retention: "none" | "unverified";
+  simulated: boolean;
+}
+
+export type AnalysisProviderChoice = "simulated" | "school";
+
+export interface AnalysisProvidersResponse {
+  school: SchoolProviderStatus;
 }
 
 export interface AnalysisReceived {
@@ -34,6 +41,7 @@ export interface AnalysisReceived {
 export interface AnalysisRequest {
   evidence: Array<AnalysisEvidence>;
   operation: AnalysisOperation;
+  provider?: AnalysisProviderChoice;
   question: string;
   selectedPrivateFragments: Array<SelectedPrivateFragment>;
   simulation?: AnalysisSimulation;
@@ -148,6 +156,12 @@ export interface ReadinessChecks {
 export interface ReadinessResponse {
   checks: ReadinessChecks;
   status: "ready" | "unready";
+}
+
+export interface SchoolProviderStatus {
+  available: boolean;
+  label: string;
+  model: string;
 }
 
 export interface SelectedPrivateFragment {

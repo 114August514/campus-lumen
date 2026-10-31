@@ -1,4 +1,4 @@
-import type { AnalysisRequest, AnalysisResponse } from "./generated";
+import type { AnalysisProvidersResponse, AnalysisRequest, AnalysisResponse } from "./generated";
 import { requestJson } from "./request";
 
 export interface RequestAnalysisOptions {
@@ -26,4 +26,20 @@ export function requestAnalysis(
   );
   options.onDispatched?.();
   return response;
+}
+
+export function getAnalysisProviders(
+  options: { signal?: AbortSignal; baseUrl?: string } = {},
+): Promise<AnalysisProvidersResponse> {
+  return requestJson<AnalysisProvidersResponse>(
+    {
+      baseUrl: options.baseUrl ?? "",
+      fetchImpl: globalThis.fetch.bind(globalThis),
+    },
+    "/api/v1/analyses/providers",
+    {
+      method: "GET",
+      signal: options.signal,
+    },
+  );
 }

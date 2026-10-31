@@ -692,7 +692,10 @@ async fn safe_get(mut url: Url, search: bool) -> Result<(Url, String), &'static 
     Err("too_many_redirects")
 }
 
-async fn public_addresses(host: &str, port: u16) -> Result<Vec<SocketAddr>, &'static str> {
+pub(crate) async fn public_addresses(
+    host: &str,
+    port: u16,
+) -> Result<Vec<SocketAddr>, &'static str> {
     let addresses: Vec<SocketAddr> = lookup_host((host, port))
         .await
         .map_err(|_| "dns_failed")?

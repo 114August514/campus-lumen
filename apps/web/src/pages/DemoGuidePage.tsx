@@ -15,7 +15,7 @@ import { findItem, toSaveTarget } from "../lib/catalog";
 import { type ReplayScenario, replayScenarios } from "../lib/demo-replay";
 import { type AnalysisOutcome, useAppState } from "../state/app-state";
 
-type Mode = "实时" | "已有资料" | "本地" | "模拟" | "回放";
+type Mode = "实时" | "已有资料" | "本地" | "模拟" | "回放" | "真实 AI";
 
 const modeVariant: Record<
   Mode,
@@ -25,6 +25,7 @@ const modeVariant: Record<
   已有资料: "secondary",
   本地: "success",
   模拟: "done",
+  "真实 AI": "accent",
   回放: "attention",
 };
 
@@ -91,6 +92,17 @@ const steps: Step[] = [
     expect:
       "发送前列出公开依据和本主题的个人内容（默认不选）；返回后服务回显收到的条数，与勾选一致；结果标“模拟服务输出”。",
     modes: ["模拟"],
+    route: {
+      name: "compare",
+      ids: ["zuming-jiang", "zhuoran-song"],
+      perspective: "short-term",
+    },
+  },
+  {
+    title: "接收服务改选“词元计划”，再整理一次",
+    expect:
+      "需要服务端配置词元计划 Key。同样只发送列出的依据和勾选内容；约 15–30 秒返回，结果标“AI 生成：中国科大大模型公共服务平台 · 模型名”，引用编号可回到来源。未配置时该选项不可选。",
+    modes: ["真实 AI"],
     route: {
       name: "compare",
       ids: ["zuming-jiang", "zhuoran-song"],

@@ -2,12 +2,14 @@ import { describe, expect, test } from "bun:test";
 import { type AnalysisResponse, CampusAgoraApiError } from "@campus-agora/api-client";
 import {
   type AnalysisRunState,
+  SCHOOL_ANALYSIS_WAIT_MS,
   buildAnalysisRequest,
   createAnalysisRun,
   evidenceFromItems,
   evidenceFromRows,
   privateFragmentOptions,
   toSavedAnalysis,
+  waitFor,
 } from "../src/lib/analysis";
 import type { CatalogItem } from "../src/lib/catalog";
 import { findItem } from "../src/lib/catalog";
@@ -227,6 +229,30 @@ describe("analysis", () => {
       selected: new Set(),
     });
     expect(built.subjects).toHaveLength(8);
+  });
+
+  test("a school request never carries demo simulation and waits long enough for the model", () => {
+    const items = ["zuming-jiang", "zhuoran-song"]
+      .map((id) => findItem(id))
+      .filter((item): item is CatalogItem => Boolean(item));
+    const base = {
+      operation: "compare" as const,
+      question: "q",
+      items,
+      evidence: [],
+      fragments: [],
+      selected: new Set<string>(),
+      simulation: { outcome: "hang" as const },
+    };
+    const school = buildAnalysisRequest({ ...base, provider: "school" });
+    expect(school.provider).toBe("school");
+    expect(school.simulation).toBeUndefined();
+    expect(waitFor(school)).toBe(SCHOOL_ANALYSIS_WAIT_MS);
+    expect(SCHOOL_ANALYSIS_WAIT_MS).toBeGreaterThan(60_000);
+    const simulated = buildAnalysisRequest(base);
+    expect(simulated.provider).toBeUndefined();
+    expect(simulated.simulation).toEqual({ outcome: "hang" });
+    expect(waitFor(simulated)).toBeLessThan(SCHOOL_ANALYSIS_WAIT_MS);
   });
 
   test("evidence text is single-line, control-char free and within the limit", () => {

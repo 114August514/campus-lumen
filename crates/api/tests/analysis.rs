@@ -127,6 +127,37 @@ async fn requested_simulation_failure_returns_503() {
     assert_eq!(body["requestId"], "analysis-test");
 }
 
+#[tokio::test]
+async fn providers_report_school_unavailable_without_server_key() {
+    let response = build_router_with_state(ApiState::for_tests(ReadinessStatus::Ready))
+        .oneshot(
+            Request::get("/api/v1/analyses/providers")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body: Value =
+        serde_json::from_slice(&to_bytes(response.into_body(), 16 * 1024).await.unwrap()).unwrap();
+    assert_eq!(body["school"]["available"], false);
+    assert_eq!(body["school"]["model"], "deepseek-v4-flash-ascend");
+    assert!(body["school"].get("apiKey").is_none());
+}
+
+#[tokio::test]
+async fn school_request_without_config_fails_before_forwarding() {
+    let mut request = valid_request();
+    request["provider"] = json!("school");
+    let (status, body) = post(request).await;
+    assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(body["code"], "school_ai_not_configured");
+    assert_eq!(
+        body["message"],
+        "学校词元计划尚未在服务端配置，本次没有转发给平台。"
+    );
+}
+
 #[test]
 fn analysis_contract_is_public_strict_and_typed() {
     let contract = campus_agora_api::openapi_document();
@@ -141,6 +172,8 @@ fn analysis_contract_is_public_strict_and_typed() {
         "AnalysisEvidence",
         "SelectedPrivateFragment",
         "AnalysisSimulation",
+        "AnalysisProvidersResponse",
+        "SchoolProviderStatus",
     ] {
         assert_eq!(
             contract["components"]["schemas"][schema]["additionalProperties"], false,

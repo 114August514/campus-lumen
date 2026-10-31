@@ -1,6 +1,6 @@
 # Agent Notes
 
-Last updated: 2026-10-29
+Last updated: 2026-10-31
 
 This file is the project-level instruction sheet for AI agents and human
 collaborators. Follow it before making changes.
@@ -27,9 +27,10 @@ deliverable is a reusable discovery-to-action workflow, initially for personal
 use by USTC students.
 
 On 2026-10-29 the user assigned frontend design and implementation to the
-coordinating agent (Claude). Mid-term AI organization uses a clearly labelled
-simulated service; real-model integration is deferred. Acceptance is maintained
-in `docs/project/acceptance.md`.
+coordinating agent (Claude). As of 2026-10-31, mid-term AI organization defaults
+to the clearly labelled local simulated service and optionally uses USTC
+词元计划 through a server-held key chosen per send; simulation remains the
+fallback. Acceptance is maintained in `docs/project/acceptance.md`.
 
 The user authorized a product reset on 2026-09-22. The initialization spec at
 `docs/archive/superpowers/specs/2026-07-06-campus-agora-init-design.md` and the old M-series
@@ -219,10 +220,11 @@ Follow `docs/product/ui-system.md` before any UI or prototype work. Use only Pri
   live/simulated labels, and actual-source evidence limits regardless of which
   agent implements the frontend. Do not send private topic records or unrelated
   personal context to any model or tool.
-- Mid-term decisions (2026-10-29): every opportunity type uses one
-  探索 → 发现 → 处理 flow; advisor selection remains the deepest content;
-  other types use existing curated entries. AI organization uses the local
-  clearly labelled simulated service; real-model integration is deferred.
+- Mid-term decisions (2026-10-29, updated 2026-10-31): every opportunity type
+  uses one 探索 → 发现 → 处理 flow; advisor selection remains the deepest content;
+  other types use existing curated entries. AI organization defaults to the
+  clearly labelled local simulated service and optionally uses USTC 词元计划
+  through a server-held key chosen per send; simulation remains the fallback.
   The acceptance source of truth is `docs/project/acceptance.md`.
 - Read the relevant local context before editing: this file, the active spec,
   applicable docs, package scripts, and nearby source files. Reuse context

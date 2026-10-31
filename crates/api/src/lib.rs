@@ -1,4 +1,5 @@
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 
 use axum::body::{to_bytes, Body};
@@ -16,6 +17,7 @@ use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::{AllowOrigin, CorsLayer};
 use tower_http::trace::TraceLayer;
 
+use tokio::sync::Semaphore;
 pub const API_BOUNDARY: &str = "campus-agora-api";
 const DEFAULT_REQUEST_BODY_LIMIT_BYTES: usize = 1024 * 1024;
 const DEFAULT_CORS_ALLOWED_ORIGINS: &[&str] = &["http://127.0.0.1:5173", "http://localhost:5173"];
@@ -25,10 +27,18 @@ static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(1);
 mod analysis;
 mod discovery;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct ApiState {
     readiness: ReadinessProbe,
     capabilities: CapabilityFlags,
+    pub(crate) school_ai: Option<SchoolAiConfig>,
+    pub(crate) ai_permits: Arc<Semaphore>,
+}
+
+#[derive(Clone)]
+pub struct SchoolAiConfig {
+    pub api_key: String,
+    pub model: String,
 }
 
 impl ApiState {
@@ -40,6 +50,16 @@ impl ApiState {
             _ => ReadinessProbe::Unavailable,
         };
 
+        let school_ai = std::env::var("USTC_LLM_API_KEY")
+            .ok()
+            .filter(|key| !key.trim().is_empty())
+            .map(|api_key| SchoolAiConfig {
+                api_key,
+                model: std::env::var("USTC_LLM_MODEL")
+                    .ok()
+                    .filter(|model| !model.trim().is_empty())
+                    .unwrap_or_else(|| "deepseek-v4-flash-ascend".into()),
+            });
         Self {
             readiness,
             capabilities: CapabilityFlags {
@@ -48,6 +68,8 @@ impl ApiState {
                 ai_archive_enabled: bool_env("AI_ARCHIVE_ENABLED", false),
                 attachments_enabled: bool_env("ATTACHMENTS_ENABLED", false),
             },
+            school_ai,
+            ai_permits: Arc::new(Semaphore::new(2)),
         }
     }
 
@@ -63,6 +85,8 @@ impl ApiState {
                 ai_archive_enabled: false,
                 attachments_enabled: false,
             },
+            school_ai: None,
+            ai_permits: Arc::new(Semaphore::new(2)),
         }
     }
 }
@@ -190,6 +214,7 @@ pub fn build_router_with_state_and_config(state: ApiState, config: ApiRuntimeCon
         .route("/api/v1/meta", get(meta))
         .route("/api/v1/discoveries", post(discovery::discover))
         .route("/api/v1/analyses", post(analysis::analyze))
+        .route("/api/v1/analyses/providers", get(analysis::providers))
         .fallback(not_found)
         .with_state(state)
         .layer(cors_layer(&config))

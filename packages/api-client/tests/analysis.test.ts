@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import {
   CampusAgoraApiError,
+  getAnalysisProviders,
   requestAnalysis,
   type AnalysisRequest,
   type AnalysisResponse,
@@ -65,6 +66,33 @@ test("requestAnalysis dispatches the exact body and returns the typed response",
   });
   expect(events).toEqual(["fetch", "dispatched"]);
   expect(result).toEqual(response);
+});
+
+test("getAnalysisProviders fetches school availability", async () => {
+  globalThis.fetch = async (url, init) => {
+    expect(String(url)).toBe("http://api.test/api/v1/analyses/providers");
+    expect(init?.method).toBe("GET");
+    return new Response(
+      JSON.stringify({
+        school: {
+          available: false,
+          label: "中国科大大模型公共服务平台（词元计划）",
+          model: "deepseek-v4-flash-ascend",
+        },
+      }),
+      { headers: { "content-type": "application/json" } },
+    );
+  };
+
+  await expect(
+    getAnalysisProviders({ baseUrl: "http://api.test" }),
+  ).resolves.toEqual({
+    school: {
+      available: false,
+      label: "中国科大大模型公共服务平台（词元计划）",
+      model: "deepseek-v4-flash-ascend",
+    },
+  });
 });
 
 test("requestAnalysis exposes a 422 field validation error", async () => {

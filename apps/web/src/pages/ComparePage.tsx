@@ -409,7 +409,7 @@ export default function ComparePage({ route }: { route: CompareRoute }) {
             setAnalysisOpen(true);
           }}
         >
-          按问题整理差异（模拟）
+          按问题整理差异（AI）
         </Button>
         <Button
           disabled={!topic}

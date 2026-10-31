@@ -126,43 +126,39 @@ into another topic. Editing query text alone performs no request.
 The request remains exactly `{query}`. Topic conditions/private records are not
 added to it, and neither streaming nor progress creates server exploration storage.
 
-## Simulated Analysis
+## Analysis Providers
 
-`POST /api/v1/analyses` is a public demo endpoint (`security: []`) that organizes
-only the material in its request. It is deterministic, runs in-process, makes no
-network or model call, stores nothing, and identifies itself as
-`simulated-organizer` / “模拟整理服务”. It must not be presented as real AI
-judgment.
+`POST /api/v1/analyses` is public (`security: []`) and organizes only the
+material in its request. `provider` is optional and defaults to `simulated`.
+The simulated provider is deterministic, runs in-process, makes no network or
+model call, stores nothing, and identifies itself as `simulated-organizer`.
+The `school` provider sends the question, listed subjects and evidence, and
+only the explicitly selected private fragments to 中国科大大模型公共服务平台（词元计划）.
+The backend does not persist either provider's request or response text and logs
+only request ID, provider ID, and item counts.
 
 The camelCase `AnalysisRequest` contains:
 
 - `operation`: `compare` or `shortlist`;
-- `question`: 1–300 characters after trimming, allowing newline but no other
-  control characters;
-- 1–8 unique `subjects` (`id`, `name`, and `kind`: `advisor`, `internship`, or
-  `entry`); comparison requires at least two;
-- up to 60 public `evidence` items with a unique `ref`, a subject-bound
-  `subjectId`, `aspect`, text of at most 800 characters, and optional source
-  title, HTTPS URL, and RFC 3339 collection time;
-- up to 10 explicitly selected private fragments with unique IDs, kind
-  `reason` or `question`, optional subject binding, and text of at most 500
-  characters;
-- optional test-only `simulation` outcome (`ok`, `error`, or `hang`) and
-  `delayMs` from 0–5000.
+- optional `provider`: `simulated` or `school`;
+- `question`: 1–300 characters after trimming;
+- 1–8 unique `subjects`; comparison requires at least two;
+- up to 60 public `evidence` items with source metadata;
+- up to 10 explicitly selected private fragments;
+- optional `simulation`, which applies only to `simulated` and is ignored for
+  `school`.
 
-Every request object level rejects unknown fields. Cross-references and
-uniqueness are checked before processing. Invalid requests return HTTP 422
-`validation_failed` with `details.fields`; a requested simulated failure returns
-HTTP 503 `analysis_simulated_failure`. With no simulation the service waits 600
-ms so the waiting state is visible. `hang` waits asynchronously for 20 seconds
-and then returns normally, allowing the client to demonstrate delivery
-uncertainty without blocking other requests.
+Every request object rejects unknown fields. Invalid requests return HTTP 422
+`validation_failed`. School-provider errors distinguish not configured (503,
+before forwarding), concurrency busy (429, before forwarding), provider
+rejection, upstream failure, and invalid response (502). A semaphore permits at
+most two concurrent school-provider calls.
 
-`AnalysisResponse` echoes the accepted operation and question, and returns a
-unique `analysisId`, RFC 3339 `createdAt`, simulated provider and no-retention
-declarations, exact received subject/evidence/private-fragment IDs, cited
-sections, and caveats. The organizer tokenizes lowercase ASCII words and CJK
-bigrams, then produces evidence-bound differences, question matches, optional
-user-note comparisons, and items to confirm. Private text and evidence text may
-appear in the explicitly requested response, but request logs contain only
-request ID and subject/evidence/private-fragment counts—never their text.
+`GET /api/v1/analyses/providers` returns whether the server-side school key is
+configured plus the provider label and configured model. It never exposes the
+key. The default model is `deepseek-v4-flash-ascend`.
+
+`AnalysisResponse` echoes exact received IDs and identifies the actual provider.
+School output is parsed into cited sections; model citations are retained only
+when they refer to evidence or private fragments in the request. School
+retention is declared `unverified`; simulated retention is `none`.

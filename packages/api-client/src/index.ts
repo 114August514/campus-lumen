@@ -1,4 +1,4 @@
-export { requestAnalysis } from "./analysis";
+export { getAnalysisProviders, requestAnalysis } from "./analysis";
 export type { RequestAnalysisOptions } from "./analysis";
 export type {
   CampusAgoraApiClient,
@@ -13,6 +13,8 @@ export { createCampusAgoraMockFetch } from "./mock";
 export { CampusAgoraApiError, requestJson } from "./request";
 export type {
   AnalysisEvidence,
+  AnalysisProviderChoice,
+  AnalysisProvidersResponse,
   AnalysisOperation,
   AnalysisPoint,
   AnalysisProvider,
@@ -34,6 +36,7 @@ export type {
   DiscoveryLimits,
   DiscoverySource,
   DiscoveryWarning,
+  SchoolProviderStatus,
 } from "./generated";
 export { discoverSources, discoverSourcesProgress } from "./discovery";
 export type { DiscoveryStreamOptions } from "./discovery";
