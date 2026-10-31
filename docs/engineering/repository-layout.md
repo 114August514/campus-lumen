@@ -1,6 +1,6 @@
 # 文件树与过程文件归属
 
-Last updated: 2026-10-29
+Last updated: 2026-10-31
 
 本页说明现有仓库的目录职责与文件放置规则。代码目录依据当前工作区配置保留；目录存在不代表对应产品能力属于当前范围。产品范围与顺序仍以[产品概览](../product/overview.md)和[里程碑](../product/milestones.md)为准。
 
@@ -13,7 +13,7 @@ campus-lumen/
 │   └── desktop/              休眠的 Tauri 桌面壳，仍参与 CI
 ├── crates/
 │   ├── api/                  Axum 路由、中间件、接口与 OpenAPI 导出
-│   ├── application/          发现与模拟整理用例
+│   ├── application/          发现、模拟整理与词元计划传输用例
 │   ├── domain/               现有领域边界占位
 │   └── db/                   休眠的旧社区 migration；当前业务不使用
 ├── packages/api-client/      生成的 TypeScript API 客户端
@@ -33,6 +33,7 @@ campus-lumen/
 │   ├── skills/              仓库内可显式调用的研究 skill
 │   ├── prototypes/          历史内容样稿与说明
 │   └── kimi/                本地 Kimi 工具及第三方 vendored skills（忽略、不入库）
+├── presentations/midterm/    中期汇报 Slidev 幻灯片（独立依赖，不属于 Bun workspace）
 ├── scripts/                 可复用开发、构建与 CI 脚本
 ├── docker/                  容器配置
 ├── .github/                 CI 工作流

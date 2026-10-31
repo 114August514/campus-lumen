@@ -19,6 +19,15 @@ them to commits, files, and verification commands where possible.
 
 ## Completed
 
+### 2026-10-31 - Build the 5-minute mid-term slide deck
+
+- Source: User asked for a 5-minute mid-term report that explains requirements and feasibility and demonstrates the prototype; later asked to drop defensive wording and to present features and design rather than tests.
+- Result: `presentations/midterm/` Slidev deck (theme `slidev-theme-touying`, `simple` preset; progress bar adapted from its `university` preset). 8 main slides: problem evidence, P01–P07 → explore/discover/process flow, five-aspect feasibility, design (public data vs browser-private records, `BoundClaim`/route/condition schema, three API endpoints), live demo route, six prototype features + next steps. 8 backup slides: four demo screenshots, traceability, acceptance/test results, team split, cost parameters. Speaker notes carry timings, demo steps and Q&A answers.
+- Changed: `presentations/midterm/*` (own `package.json`/`bun.lock`, outside the Bun workspace); `docs/engineering/repository-layout.md`; corrected the P01 row in `docs/project/requirements-spec.md` (F02/F18 partial) and the stale AI line in the test-report conclusion. The Slidev skill was vendored into `~/Projects/agent-config/skills/dev/slidev`.
+- Verification: `bun run export -- --executable-path <chrome>` produced a 16-page PDF; every page inspected for overflow (per-slide export needed so screenshots render). Spoken notes estimate about 4 min 50 s including an 85 s demo.
+- Decisions: Limits appear once, as next steps, instead of hedging each claim; testing appears as one verification line plus a backup slide. Generated PDF and `dist/` are ignored.
+- Follow-up: Rehearse with a timer; replace Git author names on the cover if the course needs real names.
+
 ### 2026-10-31 - Connect AI organization to USTC 词元计划
 
 - Source: User chose to integrate the teammate's verified school transport before the mid-term demo (option A); simulated organizer stays default and fallback.

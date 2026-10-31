@@ -20,6 +20,12 @@ Keep entries short, dated, and actionable.
 
 ## Pending
 
+### 2026-10-31 - Rehearse the mid-term talk
+
+- Source: `presentations/midterm/` deck.
+- Acceptance: one timed run ≤ 5 min including the live demo; live demo prepared per slide 6 notes (API with school key, synthetic topics loaded, one saved 词元计划 result); PDF fallback exported.
+- Notes: Cover lists Git author names; confirm what the course expects.
+
 ### 2026-10-29 - Review and merge the mid-term integration PR
 
 - Source: Mid-term delivery; facts in done.md and `docs/project/test-report.md`.
