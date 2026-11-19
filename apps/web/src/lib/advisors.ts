@@ -1,6 +1,12 @@
+import associationCorrectionFile from "../data/association-corrections.json";
 import internshipBatchOctober16 from "../data/internship-batch-2026-10-16.json";
 import recruitmentBatchOctober4 from "../data/xhs-recruitment-2026-10-04.json";
 import recruitmentBatchOctober5 from "../data/xhs-recruitment-2026-10-05.json";
+import {
+  type CorrectionNote,
+  applyAssociationCorrections,
+  parseAssociationCorrections,
+} from "./association-repair";
 import { mergeCollectedAdvisors, parseCollectedBatch } from "./collected-batch";
 import type { CandidateSnapshot } from "./exploration-store";
 
@@ -10,6 +16,8 @@ export interface Advisor extends CandidateSnapshot {
   approach: string;
   participation: string;
   unknowns: string;
+  /** Present when this public object was produced by a recorded split. */
+  correctionNote?: CorrectionNote;
 }
 
 const sampleAdvisors: Advisor[] = [
@@ -110,16 +118,47 @@ export const internshipBatches = [parseCollectedBatch(internshipBatchOctober16)]
 
 export const collectedBatches = advisorBatches;
 
-export const advisors: Advisor[] = mergeCollectedAdvisors(
-  sampleAdvisors,
-  advisorBatches,
+/** Maintainer-recorded splits of mistaken merges (public data only). */
+export const associationCorrections = parseAssociationCorrections(
+  associationCorrectionFile,
 );
 
-export const internships: Advisor[] = mergeCollectedAdvisors([], internshipBatches);
+export const advisors: Advisor[] = applyAssociationCorrections(
+  mergeCollectedAdvisors(sampleAdvisors, advisorBatches),
+  associationCorrections,
+);
+
+export const internships: Advisor[] = applyAssociationCorrections(
+  mergeCollectedAdvisors([], internshipBatches),
+  associationCorrections,
+);
+
+const unmatched = associationCorrections.filter(
+  (correction) =>
+    ![...advisors, ...internships].some(
+      (item) => item.correctionNote?.correctionId === correction.correctionId,
+    ),
+);
+if (unmatched.length) {
+  throw new Error(
+    `关联更正找不到原对象：${unmatched.map((item) => item.fromCandidateId).join("、")}`,
+  );
+}
 
 export const allOpportunities: Advisor[] = [...advisors, ...internships];
 export const allBatches = [...advisorBatches, ...internshipBatches];
 
 export function sourceDate(date: string): string {
   return new Date(date).toLocaleDateString("zh-CN");
+}
+
+// Provenance summary for list rows: how many sources back this candidate and
+// when the newest one was collected (collection time, not a freshness or
+// availability claim). Candidates without sources stay honest.
+export function sourceSummary(candidate: CandidateSnapshot): string {
+  if (candidate.sources.length === 0) return "暂无收录来源";
+  const latest = candidate.sources.reduce((newest, source) =>
+    Date.parse(source.collectedAt) > Date.parse(newest.collectedAt) ? source : newest,
+  );
+  return `${candidate.sources.length} 条来源 · 最新收录于 ${sourceDate(latest.collectedAt)}`;
 }

@@ -1,0 +1,223 @@
+/* Campus Lumen colours on top of the touying "simple" preset. */
+:root.tou-preset-simple {
+  --slidev-theme-primary: #0969da;
+  --lumen-muted: #57606a;
+  --lumen-wash: #f6f8fa;
+  --lumen-line: #d0d7de;
+}
+
+.tou-preset-simple .slidev-layout {
+  padding: 40px 56px 56px;
+}
+
+.tou-preset-simple .slidev-layout h1 {
+  color: var(--slidev-theme-neutralDarkest);
+  font-size: 1.3em;
+  margin: 0 0 0.7em;
+}
+
+.slidev-layout table {
+  font-size: 0.72em;
+  width: 100%;
+}
+
+.slidev-layout th,
+.slidev-layout td {
+  padding: 0.35em 0.6em;
+  vertical-align: top;
+}
+
+/* Large figure with its label directly underneath (signalling, contiguity). */
+.stat {
+  color: var(--slidev-theme-primary);
+  font-size: 2.1em;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.note {
+  color: var(--lumen-muted);
+  font-size: 0.62em;
+  line-height: 1.45;
+}
+
+.takeaway {
+  border-top: 1px solid var(--lumen-line);
+  font-size: 0.8em;
+  margin-top: 0.9em;
+  padding-top: 0.5em;
+}
+
+.label {
+  font-size: 0.72em;
+  line-height: 1.45;
+}
+
+.stage {
+  background: var(--lumen-wash);
+  border-radius: 6px;
+  font-size: 0.7em;
+  line-height: 1.5;
+  padding: 0.7em 0.9em;
+}
+
+.stage b {
+  color: var(--slidev-theme-primary);
+}
+
+.tag {
+  color: var(--lumen-muted);
+  display: block;
+  font-size: 0.88em;
+  margin-top: 0.4em;
+}
+
+.ok {
+  color: #1a7f37;
+  font-weight: 600;
+}
+
+.fail {
+  color: #cf222e;
+  font-weight: 600;
+}
+
+.shot img {
+  border: 1px solid var(--lumen-line);
+  border-radius: 4px;
+  display: block;
+  width: 100%;
+}
+
+.shot figcaption {
+  font-size: 0.6em;
+  line-height: 1.35;
+  margin-top: 0.3em;
+}
+
+.shot figcaption b {
+  color: var(--slidev-theme-primary);
+}
+
+.slidev-layout td:first-child {
+  white-space: nowrap;
+}
+
+.cols {
+  font-size: 0.8em;
+}
+
+.cols ul {
+  margin-top: 0.3em;
+}
+
+.steps {
+  font-size: 0.72em;
+  line-height: 1.5;
+  margin: 0;
+  padding-left: 1.3em;
+}
+
+.steps li + li {
+  margin-top: 0.6em;
+}
+
+.steps b {
+  color: var(--slidev-theme-primary);
+}
+
+.full-shot {
+  border: 1px solid var(--lumen-line);
+  border-radius: 4px;
+  display: block;
+  height: 400px;
+  margin: 0 auto;
+}
+
+.arch {
+  align-items: center;
+  display: flex;
+  font-size: 0.68em;
+  gap: 0.8em;
+  margin-top: 1.2em;
+}
+
+.arch .box {
+  background: var(--lumen-wash);
+  border: 1px solid var(--lumen-line);
+  border-radius: 6px;
+  line-height: 1.45;
+  padding: 0.6em 0.9em;
+}
+
+.arch .box span {
+  color: var(--lumen-muted);
+  display: block;
+  font-size: 0.85em;
+}
+
+.arch .arrow {
+  color: var(--lumen-muted);
+  font-size: 0.85em;
+  text-align: center;
+}
+
+.arch .targets {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.schema {
+  display: grid;
+  font-size: 0.6em;
+  gap: 0.9em;
+  grid-template-columns: 1fr 1fr 1fr;
+  line-height: 1.45;
+}
+
+.schema .part {
+  background: var(--lumen-wash);
+  border-radius: 6px;
+  padding: 0.7em 0.9em;
+}
+
+.schema .part > p:first-child {
+  margin: 0;
+}
+
+.schema b {
+  color: var(--slidev-theme-primary);
+  font-size: 1.15em;
+}
+
+.schema .where {
+  color: var(--lumen-muted);
+  display: block;
+}
+
+.schema ul {
+  margin: 0.5em 0 0;
+  padding-left: 1.1em;
+}
+
+.schema li + li {
+  margin-top: 0.35em;
+}
+
+.schema code {
+  font-size: 0.92em;
+}
+
+.features {
+  font-size: 0.8em;
+  line-height: 1.5;
+}
+
+.features li + li {
+  margin-top: 0.3em;
+}
+
+.feas td:nth-child(2) {
+  width: 50%;
+}

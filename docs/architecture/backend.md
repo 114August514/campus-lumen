@@ -1,6 +1,6 @@
 # Backend Architecture
 
-Last updated: 2026-10-12
+Last updated: 2026-10-27
 
 The backend is a Rust API server. Handlers should stay thin; domain and
 application crates carry business rules.
@@ -24,7 +24,10 @@ database or API key. `bun run dev:api` starts the API binary; the contract
 exporter remains a separate binary.
 
 The service sends the user's public query to DuckDuckGo's HTML search index,
-then reads eligible academic pages. On search transport or verification-page
+then reads eligible academic pages and explicitly supported recruitment/project paths.
+The corporate/project allowlist is exact-host and slash-delimited path-based; it
+does not permit arbitrary corporate pages or all GitHub repositories. See
+[Security](../operations/security.md#public-discovery-boundary) for the maintained list. On search transport or verification-page
 failure, it instead reads and matches two fixed public directories: Stanford
 AI Laboratory faculty and CMU Machine Learning core faculty. The response
 identifies the actual provider and scope; this fallback searches those
@@ -38,7 +41,7 @@ as research keywords for relevance passages.
 
 Collection allows at most five search-result pages, 1,000,000 bytes per page,
 and 14 seconds per search/page operation, with two concurrent discovery
-requests per API process. Directory fallback reads two pages; a direct URL
+requests per API process. A complete run now has a 30-second deadline, with at most six logical reads including the index; cumulative snapshots preserve completed sources. See [bounded progress](api-contracts.md#bounded-progress-and-cancellation-2026-10-22) for response lifecycle and the 48-request HTTP upper bound. The streamed response owns its worker; dropping it aborts pending tasks and releases admission. Directory fallback reads two pages; a direct URL
 attempt reads one page. Each request and
 redirect validates the source range and resolved public addresses, then pins
 the connection to those addresses. The special local `198.18.0.0/15` fake-IP

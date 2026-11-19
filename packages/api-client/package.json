@@ -9,7 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "generate": "bun scripts/generate-types.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "bun test tests && bun run typecheck"
+    "test": "bun test ./tests/*.test.ts && bun run typecheck"
   },
   "devDependencies": {
     "typescript": "^5.4.5"

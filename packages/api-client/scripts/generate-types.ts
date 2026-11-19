@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 
 type JsonSchema = {
   type?: string;
-  const?: string;
+  const?: string | boolean | number;
   enum?: string[];
   required?: string[];
   properties?: Record<string, JsonSchema>;
@@ -32,6 +32,11 @@ mkdirSync(dirname(outputPath), { recursive: true });
 writeFileSync(outputPath, output);
 
 function renderSchema(name: string, schema: JsonSchema): string {
+  if (schema.enum) {
+    return `export type ${name} = ${schema.enum
+      .map((item) => JSON.stringify(item))
+      .join(" | ")};`;
+  }
   if (schema.type !== "object" || !schema.properties) {
     throw new Error(`Unsupported schema for ${name}`);
   }
@@ -52,7 +57,7 @@ function renderType(schema: JsonSchema): string {
     return schema.$ref.split("/").at(-1) ?? "unknown";
   }
 
-  if (schema.const) {
+  if (schema.const !== undefined) {
     return JSON.stringify(schema.const);
   }
 
@@ -63,6 +68,8 @@ function renderType(schema: JsonSchema): string {
   if (schema.type === "string") {
     return "string";
   }
+
+  if (schema.type === "integer" || schema.type === "number") return "number";
 
   if (schema.type === "boolean") {
     return "boolean";

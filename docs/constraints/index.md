@@ -1,10 +1,10 @@
 # 约束参考
 
-Last updated: 2026-10-05
+Last updated: 2026-10-29
 
 ## 2026-09-22 产品重置
 
-现行产品范围以[产品概览](../product/overview.md)和[新里程碑](../product/milestones.md)为准。下表中的产品定位、内容边界、资料社区参考已转为历史资料，不能据此恢复旧社区任务。其他参考中的业务角色、论坛、归档、认证、桌面端和旧 M 系列要求，需要结合新范围重新评估；工程规范仅在相应能力被采用时适用，不构成必须建设该能力的理由。
+现行产品范围以[需求分析](../product/requirements-handoff.md)、[产品概览](../product/overview.md)和[新里程碑](../product/milestones.md)为准。旧产品定位、内容边界、资料社区和产品治理参考已移入[历史归档](../archive/legacy-m-series.md)，不能据此恢复旧社区任务。
 
 本目录保存从本地参考笔记沉淀出来的项目约束。它们现在属于协作资料：修改某个领域前，应先阅读对应约束，再同步检查正式文档。
 
@@ -32,12 +32,12 @@ Last updated: 2026-10-05
 
 | 修改领域 | 先读 | 再检查 |
 | --- | --- | --- |
-| 产品定位、内容边界、资料沉淀和讨论模型 | [产品定位参考](product-positioning-reference.md), [内容边界参考](content-boundary-reference.md), [资料社区参考](archive-community-reference.md) | [产品概览](../product/overview.md), [里程碑](../product/milestones.md) |
+| 产品定位、内容边界、资料沉淀和讨论模型 | [需求分析](../product/requirements-handoff.md)；历史背景见[旧产品定位](../archive/constraints/product-positioning-reference.md)、[旧内容边界](../archive/constraints/content-boundary-reference.md)、[旧资料社区](../archive/constraints/archive-community-reference.md) | [产品概览](../product/overview.md), [里程碑](../product/milestones.md) |
 | 前端 UI、设计系统、组件结构 | [前端参考](frontend-reference.md) | [质量门禁](../engineering/quality.md), Web 源码 |
 | 后端架构、配置、持久化、认证边界 | [后端参考](backend-reference.md) | [后端架构](../architecture/backend.md), [安全](../operations/security.md) |
 | API 契约和前后端对接 | [API 契约参考](api-contract-reference.md) | [API 契约](../architecture/api-contracts.md), `contracts/openapi.json` |
 | Monorepo 布局、包边界、CI 质量门禁 | [Monorepo 参考](monorepo-reference.md) | 根目录 `package.json`, `Cargo.toml`, `scripts/`, `tools/`, `docker/`, `.github/workflows/ci.yml` |
-| 运维、安全、部署、备份、滥用防护 | [运维风险参考](operations-risk-reference.md), [产品治理参考](product-governance-reference.md) | `docs/operations/*`, [隐私](../product/privacy.md) |
+| 运维、安全、部署、备份、滥用防护 | [运维风险参考](operations-risk-reference.md)；历史治理见[产品治理参考](../archive/constraints/product-governance-reference.md) | `docs/operations/*`, [隐私](../product/privacy.md) |
 | 高级工程风险和未来扩展细节 | [高级工程参考](advanced-engineering-reference.md) | 当前里程碑文档和相关架构文档 |
 
 ## 提升规则

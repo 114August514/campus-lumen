@@ -1,5 +1,9 @@
 # Operations Overview
 
+Last updated: 2026-10-29
+
+> **历史 / 未来运行参考：**本文来自 M0.2 生产设想，不描述中期 demo 的已实现运维能力。中期只在本地运行 Web 与 API，不使用生产数据库、账号、备份、监控或告警。当前运行方式见[用户手册](../project/user-guide.md)，安全边界见[安全文档](security.md)。
+
 M0.2 defines operational boundaries. It does not claim the project is production
 ready.
 
