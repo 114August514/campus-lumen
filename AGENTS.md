@@ -130,7 +130,7 @@ state stays in the collecting tool's local store and never enters the repository
 batches, logs or screenshots. Collected items keep source, time and reading scope
 and pass the existing batch review before students see them. The student-facing
 service itself still reads only public pages and never signs in for students.
-Tool choice (Agent Reach) and which account to use are settled in issue #40.
+Tool choice (Agent Reach is being trialled) and which account to use are open in issue #40.
 
 On 2026-10-05 a bounded choice-support experiment was implemented in the Web
 demo using the two actually collected Jiang/Song candidates. Research/graduate/

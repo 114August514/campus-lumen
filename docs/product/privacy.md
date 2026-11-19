@@ -123,7 +123,7 @@ notes. The faculty directory corroborates name/institution/direction, not accoun
 ownership or advising quality.
 
 Since 2026-11-19 team-side collection may also sign in to Xiaohongshu, BOSS 直聘,
-LinkedIn, Bilibili and similar platforms (tool and account settled in issue #40).
+LinkedIn, Bilibili and similar platforms (#39; tool and account still open in #40).
 Those platforms see the collecting account's searches and reads. The same batch
 exclusions apply, and the login state stays in the collecting tool's local store.
 

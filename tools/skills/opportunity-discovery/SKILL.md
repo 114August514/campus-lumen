@@ -22,7 +22,7 @@ Turn the current question into usable candidate information, with sources and un
 
 ## Logged-in platforms
 
-Since 2026-11-19 the user allows signing in to Xiaohongshu, BOSS 直聘, LinkedIn, Bilibili and similar platforms for collection; the tool and account are settled in issue #40. The October 4 pilot demonstrated Xiaohongshu search and text reading without verifying sign-in. Keep the post title and visible author name/claimed relationship when relevant. Exclude the reader's account sidebar, messages, notifications, cookies and session tokens from output. Do not send inquiries, comment, follow, publish or collect private channels as part of discovery.
+Since 2026-11-19 the user allows signing in to Xiaohongshu, BOSS 直聘, LinkedIn, Bilibili and similar platforms for collection (#39); the tool and account are still open in issue #40. The October 4 pilot demonstrated Xiaohongshu search and text reading without verifying sign-in. Keep the post title and visible author name/claimed relationship when relevant. Exclude the reader's account sidebar, messages, notifications, cookies and session tokens from output. Do not send inquiries, comment, follow, publish or collect private channels as part of discovery.
 
 Use the current browser tool before adding a browser framework. If a reusable connector is later selected, expose the search and detail-reading operations needed by this workflow. A skill supplies research instructions; browser tools execute actions; the batch validator handles fixed output checks. The student-facing application can display collected batches without exposing the collector's login.
 
