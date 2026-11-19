@@ -245,8 +245,9 @@ Follow `docs/product/ui-system.md` before any UI or prototype work. Use only Pri
 - Ticket workflow (user decision 2026-11-19): pending work lives in GitHub
   Issues; follow `CONTRIBUTING.md`. Agents may take `agent-ok` issues, work on
   `<type>/<number>-<slug>` branches (one worktree each when parallel), and merge
-  their own PR once all six CI jobs pass and a reviewer that did not implement
-  the change reports no blocking problem. Changes to stored data shape, the
+  their own PR once all six CI jobs pass, a reviewer that did not implement the
+  change reports no blocking problem, and every human step in the issue's
+  acceptance criteria is recorded as done.
   OpenAPI contract, privacy boundaries, costs, or code deletion need the user's
   confirmation of a plan in the issue first. When the same mistake recurs, add a
   short rule here in the same PR.
