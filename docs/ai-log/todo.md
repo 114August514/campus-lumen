@@ -23,9 +23,9 @@ Keep entries short, dated, and actionable.
 ### 2026-11-19 - Choose the next phase after the mid-term
 
 - Source: Mid-term talk delivered and PR #21 merged into main; state in `docs/project/progress.md` §6–§7.
-- Status: Next delivery not chosen. Open: #19 (Kimi design discussion), #20 (jasonxu-cell, targets `codex/demo-high-priority`, content already in main; closing is his call). Local branches `wip/kimi-frontend-2026-10-25`, `backup/*`, `docs/requirements-handoff`, `prototype/advisor-guide`, `feat/explore-focus` still kept.
+- Status: Next delivery not chosen. GitHub has only `main` and no open PRs (2026-11-19 cleanup); old branches live as `archive/*` tags.
 - Remaining: F13 browser walkthrough (synthetic split); complete keyboard and screen-reader pass; independent (non-builder) walkthrough; human review of the 7 AI-written advisor profiles; after login, check 词元计划 logging/retention/deletion terms, quota attribution and whether one team key may serve several students; replace keyword discovery (search API or official directories).
-- Later: structured participation routes for route-level association repair (`14b0ba6` has a route-split implementation on an older base, not merged); measure real-model output quality; student trial; more sourced content for non-advisor types; decide what to do with the dormant community code.
+- Later: structured participation routes for route-level association repair (tag `archive/codex/demo-high-priority`, commit `14b0ba6`, has a route-split implementation on an older base, not merged); measure real-model output quality; student trial; more sourced content for non-advisor types; decide what to do with the dormant community code.
 
 ### 2026-10-27 - Follow up after high-priority demo integration
 

@@ -19,12 +19,19 @@ them to commits, files, and verification commands where possible.
 
 ## Completed
 
+### 2026-11-19 - Clean up GitHub branches and PRs after the mid-term
+
+- Source: User asked to clear the branches and PRs left on GitHub.
+- Result: Closed #18 (content in main via #21), #19 (superseded by frontend design v1.1) and #20 (jasonxu-cell; content in main via #21), each with a comment naming the archive tag and restore command. Annotated `archive/<branch>` tags created for the 8 remaining untagged branches and pushed together with the 4 existing local tags; then all 12 remote branches except `main` deleted. Local branches deleted; every one is contained in an archive tag (local-only WIP stays in local tags `archive/feat/explore-focus-wip`, `archive/prototype/advisor-guide-wip`).
+- Verification: `git ls-remote --heads origin` lists only `main`; each pushed tag peels to the deleted branch head; 17 `archive/*` tags on origin.
+- Decisions: Archive before delete, as on 2026-10-29. Restore with `git push origin archive/<branch>^{commit}:refs/heads/<branch>`.
+
 ### 2026-11-19 - Close the mid-term and merge PR #21 into main
 
 - Source: User reported the mid-term talk was finished and asked to summarize progress and push to main.
 - Result: PR #21 (`feat/midterm-demo`, 28 commits over main `7fae667`) squash-merged into main; the integration contains #18, jasonxu-cell's `968f691`/`8f618ff`, the unified frontend, simulated/词元计划 analyses, software-engineering docs and the slide deck. Progress records updated: `AGENTS.md`, `docs/project/progress.md` §7, AI log todo replaced by a post-mid-term entry.
 - Verification: six GitHub CI jobs on the final PR head before merging; strict docs build and `git diff --check` locally.
-- Decisions: Squash, because the main ruleset allows only squash or rebase (a merge-commit attempt was rejected); jasonxu-cell is credited as co-author. Individual commits and SHAs cited in `docs/project/` stay on the kept `feat/midterm-demo` branch. #19 and #20 left open (#20 is the teammate's). Talk feedback was not recorded in the repository.
+- Decisions: Squash, because the main ruleset allows only squash or rebase (a merge-commit attempt was rejected); jasonxu-cell is credited as co-author. Individual commits and SHAs cited in `docs/project/` stay reachable through tag `archive/feat/midterm-demo`. Talk feedback was not recorded in the repository.
 - Follow-up: See todo "Choose the next phase after the mid-term".
 
 ### 2026-10-31 - Build the 5-minute mid-term slide deck
