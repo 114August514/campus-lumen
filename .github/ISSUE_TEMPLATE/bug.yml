@@ -1,0 +1,36 @@
+name: 缺陷
+description: 运行结果与预期不符，或验收项没有通过
+labels: [fix]
+body:
+  - type: textarea
+    id: symptom
+    attributes:
+      label: 现象
+      description: 实际看到了什么；有报错就原样贴出。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      value: |
+        1.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 环境
+      description: 提交号、浏览器、是否启用词元计划等。
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      value: |
+        - [ ] 按复现步骤操作，不再出现上述现象

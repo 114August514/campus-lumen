@@ -1,0 +1,33 @@
+name: 功能
+description: 新功能，或对现有功能的改进
+labels: [feat]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: 目标
+      description: 谁在什么情况下遇到什么问题；做完之后有什么不同。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      description: 每一条都要能运行或观察到，例如某个命令、某项测试、浏览器里的一组操作和结果。
+      value: |
+        - [ ] 待补充
+    validations:
+      required: true
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: 不做
+  - type: textarea
+    id: decisions
+    attributes:
+      label: 需要先决定的事
+      description: 费用、存储结构、公开接口、隐私边界、删除代码等需要负责人确认的点；没有就留空。
+  - type: textarea
+    id: related
+    attributes:
+      label: 相关文件与文档

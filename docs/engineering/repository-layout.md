@@ -1,6 +1,6 @@
 # 文件树与过程文件归属
 
-Last updated: 2026-10-31
+Last updated: 2026-11-19
 
 本页说明现有仓库的目录职责与文件放置规则。代码目录依据当前工作区配置保留；目录存在不代表对应产品能力属于当前范围。产品范围与顺序仍以[产品概览](../product/overview.md)和[里程碑](../product/milestones.md)为准。
 
@@ -36,7 +36,7 @@ campus-lumen/
 ├── presentations/midterm/    中期汇报 Slidev 幻灯片（独立依赖，不属于 Bun workspace）
 ├── scripts/                 可复用开发、构建与 CI 脚本
 ├── docker/                  容器配置
-├── .github/                 CI 工作流
+├── .github/                 CI 工作流、Issue 与 PR 模板
 ├── .worktrees/              本地附加 Git 工作区，保留各分支未提交改动
 ├── work/                    本地中间过程区，仅 README 参与版本管理
 ├── README.md                项目入口
@@ -53,7 +53,8 @@ campus-lumen/
 | 文件内容 | 归属与处理 |
 | --- | --- |
 | 尚未确定的想法、检索摘录、调试输出、临时验证脚本 | `work/` 中对应任务目录，默认不提交、不发布 |
-| 需要跨会话保留的待办、结果、验证结论 | `docs/ai-log/todo.md` / `done.md`，只写简短摘要与必要定位 |
+| 待办 | GitHub Issues，流程见 `CONTRIBUTING.md` |
+| 跨会话交接、完成事实与验证结论 | `docs/ai-log/todo.md`（进行中工单的交接笔记）/ `done.md`，只写简短摘要与必要定位 |
 | 已接受的需求、接口、规则与架构决定 | 对应正式文档，不能只留在本地过程区 |
 | 可复用且需要审查的研究证据与约束 | `docs/constraints/`，按现有索引组织 |
 | 稳定的工具、skill 和自动化 | `tools/` 或 `scripts/`，保留用途与调用说明 |

@@ -1,0 +1,35 @@
+name: 调研
+description: 调研或评估；只在结果会改变某个具体决定时开
+labels: [research]
+body:
+  - type: textarea
+    id: decision
+    attributes:
+      label: 会改变的决定
+      description: 调研结果会影响哪个取舍；说不出来就先不开这张单。
+    validations:
+      required: true
+  - type: textarea
+    id: questions
+    attributes:
+      label: 要回答的问题
+    validations:
+      required: true
+  - type: textarea
+    id: stop
+    attributes:
+      label: 停止条件
+      description: 投入上限，或得到什么证据就足够下结论。
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: 产出
+      description: 结论写到哪里；后续实现另开 Issue。
+    validations:
+      required: true
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: 不做
