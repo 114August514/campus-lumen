@@ -19,6 +19,13 @@ them to commits, files, and verification commands where possible.
 
 ## Completed
 
+### 2026-11-19 - Set up the GitHub issue workflow and migrate the backlog
+
+- Source: User chose GitHub Issues as the only backlog, agent merges for `agent-ok` tickets, and asked to draw on how the Claude Code team works.
+- Result: Issue forms (feature/bug/docs/research, blank issues off) and a PR template under `.github/`; labels renamed to `feat`/`fix`/`docs` and `research`, `agent-ok` added; repository `delete_branch_on_merge` enabled. `CONTRIBUTING.md` rewritten around the ticket flow (branch `<type>/<number>-<slug>`, worktree per parallel ticket, plan first for data shape/contract/privacy/cost/deletion, evidence in PR, independent review, squash after six CI jobs, recurring mistake → `AGENTS.md` rule). `AGENTS.md`, `docs/engineering/development.md` and `repository-layout.md` updated. Backlog migrated to issues #24–#37 (#23 tracks this change); `todo.md` now holds only handoff notes plus the migration map.
+- Sources: https://code.claude.com/docs/en/best-practices ; Boris Cherny threads https://x.com/bcherny/status/2007179832300581177 and https://x.com/bcherny/status/2017742741636321619 (read via twitter-thread.com mirrors).
+- Decisions: Agent merges deviate from the best-practices advice that a person approves merges; the main ruleset requires a PR but no status checks, so "CI green before merge" is a convention, not enforced. foredawn32 (write access) is not mentioned in project records; no issues assigned to them.
+
 ### 2026-11-19 - Clean up GitHub branches and PRs after the mid-term
 
 - Source: User asked to clear the branches and PRs left on GitHub.

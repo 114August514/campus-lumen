@@ -1,6 +1,6 @@
 # Development
 
-Last updated: 2026-10-29
+Last updated: 2026-11-19
 
 ## Requirements
 
@@ -284,11 +284,11 @@ build check.
 
 读取范围随改动确定；同一会话已读且未变化的资料复用，界面、数据或部署边界变化时再查对应约束。运行过程中先用聚焦检查保持反馈快，逻辑完成时执行受影响的必要检查；通过后无新改动、失败或未解问题就停止重复测试。独立工作可以并行，集中复查关键行为和数据边界，避免逐个微小改动多轮交接。
 
-范围、接口、命令或交接事实变化才更新正式文档。非琐碎工作沿用[AI日志](../ai-log/todo.md)简短记录，不新增一套重复账本。试用中记录误读、人工补位和未完成项；作者操作与学生试用分开。实际外部正文、固定材料和模拟行为各自标明，运行结果才是验收依据。
+范围、接口、命令或交接事实变化才更新正式文档。待办记在 GitHub Issues，领取、验证、审查和合并按 [CONTRIBUTING](https://github.com/114August514/campus-lumen/blob/main/CONTRIBUTING.md) 的工单流程；跨会话交接写在[AI日志](../ai-log/todo.md)。试用中记录误读、人工补位和未完成项；作者操作与学生试用分开。实际外部正文、固定材料和模拟行为各自标明，运行结果才是验收依据。
 
 ### 需要交接时的短任务记录
 
-复杂切片或跨会话工作可写“用户结果／范围、最小验收、关键未知、实际结果／下一步”；在现有任务文档或日志中记录即可。预计修改文件可帮助定位，但不是开工前必须锁定的清单。第一个切片的[任务卡](../product/advisor-task-design.md#81)用于起步交接，后续每个小改动不必照表填写。
+复杂切片或跨会话工作可写“用户结果／范围、最小验收、关键未知、实际结果／下一步”，记在对应 Issue 里即可。预计修改文件可帮助定位，但不是开工前必须锁定的清单。第一个切片的[任务卡](../product/advisor-task-design.md#81)用于起步交接，后续每个小改动不必照表填写。
 
 测试投入跟随行为风险。主题持久化、数据隔离和旧查询覆盖新查询等关键逻辑需要有意义的回归检查；简单文案或可逆布局不为了形式另写测试。`apps/web`的`test`执行存储行为测试与类型检查，实际页面操作仍须浏览器走查。根`typecheck`先构建共享API client，避免Web读取旧`dist`类型。前端改动按`scripts/ci/frontend.sh`执行相关检查，API契约变化同步生成并按`scripts/ci/contract.sh`核对；文档改动按`scripts/ci/docs.sh`检查。
 
@@ -308,6 +308,8 @@ build check.
 | [Anthropic内部开发案例](https://www-cdn.anthropic.com/58284b19e702b49db9302d5b6f135ad8871e7658.pdf)第5–6页 | Claude Code团队使用编写、测试、修改的自主循环；Vim模式案例自述约70%最终实现来自自主执行 | 让agent能自己运行并修改结果，反馈集中在可操作版本；70%是内部访谈自述，不是速度或质量实验 |
 | [OpenAI Build Skills](https://learn.chatgpt.com/docs/build-skills)、[技能评估方法](https://developers.openai.com/blog/eval-skills) | 小而专门的skill，按真实任务和成功标准检查其行为 | 长期执行偏好放在AGENTS；特殊重复任务才考虑skill，避免每个功能都触发一整套开发流程 |
 | [OpenAI开发工作流案例](https://developers.openai.com/cookbook/examples/codex/iterating-development-workflows-with-codex) | 有序步骤、可观察验收、执行证据与计划分开 | 借鉴短计划和结果记录；完整harness、逐步审批和多份账本不是本项目要求 |
+| [Claude Code best practices](https://code.claude.com/docs/en/best-practices)（2026-11-19 查阅） | 先写清“做完是什么样”，给代理能自己运行的检查；无人值守时限定可改范围，结果进 PR；由没看过实现过程的会话审查，只报影响正确性的问题；必须每次发生的规则交给钩子或分支规则，不靠说明文件 | 工单写可观察的验收标准；PR 贴命令和结果；`agent-ok` 工单由另一模型审查。本项目选择由代理合并 `agent-ok` 工单，而该文建议由人批准合并；目前 main 规则集只要求 PR，不强制 CI 通过，“CI 全绿再合并”仍是流程约定 |
+| Boris Cherny 的[个人用法](https://x.com/bcherny/status/2007179832300581177)与[团队用法](https://x.com/bcherny/status/2017742741636321619)（2026-01 发布） | 3–5 个 worktree 并行；复杂任务先计划，可让另一个会话审计划；团队共用的说明文件随错误持续补充；给代理验证手段是提升结果最有效的一步 | 并行工单各用 `.worktrees/` 下的 worktree；改存储、契约、隐私、费用或删除代码时先在 Issue 贴计划；同类错误第二次出现就给 `AGENTS.md` 加短规则。这些是作者经验，不是本项目的实测结论 |
 
 修正本轮早先“优先借鉴writing-plans”的建议：计划技能按任务需要选，不作为每次编辑的入口。[Superpowers executing-plans](https://github.com/obra/superpowers/blob/main/skills/executing-plans/SKILL.md)当前正文强调同一会话连续执行、减少逐任务交接、最后集中复查；但还附带worktree、账本、逐任务测试先行与提交，适合只借鉴执行方式。[writing-plans](https://github.com/obra/superpowers/blob/main/skills/writing-plans/SKILL.md)、[verification-before-completion](https://github.com/obra/superpowers/blob/main/skills/verification-before-completion/SKILL.md)、[systematic-debugging](https://github.com/obra/superpowers/blob/main/skills/systematic-debugging/SKILL.md)分别用于需要计划、核对完成证据和故障定位的情况，不能据此增加普遍审批门槛。
 

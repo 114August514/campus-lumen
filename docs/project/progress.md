@@ -182,4 +182,4 @@ flowchart TD
 - **中期汇报已完成**：5 分钟汇报使用 `presentations/midterm/` 的幻灯片，演示走统一流程和词元计划整理结果。汇报反馈没有记入仓库。
 - **PR #21 已合入 main**：按 main 的规则集（只允许 squash 或 rebase）squash 为一个提交，保留共同作者署名。#18、jasonxu-cell 的 `968f691`／`8f618ff` 及本目录文档引用的各提交号，可从归档标签 `archive/feat/midterm-demo` 追溯。
 - **GitHub 清理（2026-11-19）**：#18、#19、#20 已关闭并留言说明去向；除 `main` 外的 12 个远端分支均先打 `archive/<分支名>` 标签再删除。`archive/codex/demo-high-priority` 保留 `14b0ba6` 中未合入的 AI 助手界面、`/ai/completions` 接口和参与途径拆分。
-- **下一阶段尚未确定**：第 6 节的剩余工作仍然成立；[过程回顾](retrospective.md)中标为“中期前”的独立走查、档案人审和读屏专项在仓库里没有完成记录。
+- **待办改用工单（2026-11-19）**：第 6 节的剩余工作和其他未完成事项已转成 GitHub Issues #24–#37，按 `CONTRIBUTING.md` 的流程领取和合并；标 `agent-ok` 的可交给 AI 代理。[过程回顾](retrospective.md)中标为“中期前”的独立走查（#26）、档案人审（#25）和读屏专项（#27）在仓库里没有完成记录。下一阶段先做哪几张由负责人决定。

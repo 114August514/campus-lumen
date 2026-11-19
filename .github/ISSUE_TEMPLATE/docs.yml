@@ -1,0 +1,30 @@
+name: 文档
+description: 文档、记录或走查报告需要新增或修正
+labels: [docs]
+body:
+  - type: textarea
+    id: target
+    attributes:
+      label: 要改的文档
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: 为什么
+      description: 哪个事实变了、缺了或写错了；附上依据。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      value: |
+        - [ ] 待补充
+        - [ ] `bun run ci:docs` 通过
+    validations:
+      required: true
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: 不做

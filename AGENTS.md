@@ -242,6 +242,15 @@ Follow `docs/product/ui-system.md` before any UI or prototype work. Use only Pri
 - Verify changes with the narrowest meaningful command set, and report commands
   that were run or could not be run.
 - Do not claim work is complete without fresh verification evidence.
+- Ticket workflow (user decision 2026-11-19): pending work lives in GitHub
+  Issues; follow `CONTRIBUTING.md`. Agents may take `agent-ok` issues, work on
+  `<type>/<number>-<slug>` branches (one worktree each when parallel), and merge
+  their own PR once all six CI jobs pass, a reviewer that did not implement the
+  change reports no blocking problem, and every human step in the issue's
+  acceptance criteria is recorded as done. Changes to stored data shape, the
+  OpenAPI contract, privacy boundaries, costs, or code deletion need the user's
+  confirmation of a plan in the issue first. When the same mistake recurs, add a
+  short rule here in the same PR.
 
 ## Rapid Iteration Default (2026-10-03)
 
@@ -261,8 +270,8 @@ iteration guidance in `docs/engineering/development.md` proportionally:
 
 ## AI Log Workflow
 
-Use `docs/ai-log/` for low-friction task memory. It complements issues,
-milestones, commit history, and PRs; it does not replace them.
+Use `docs/ai-log/` for low-friction task memory. Pending work belongs in GitHub
+Issues, not in these files; the log complements issues, commit history and PRs.
 
 Put intermediate drafts, investigation notes, temporary scripts, screenshots and
 raw non-sensitive experiment output in `work/YYYY-MM-DD-task/`, not in source or
@@ -276,19 +285,17 @@ to retain secrets, credentials, authentication screens or private student data.
 
 For non-trivial agent work:
 
-1. Add or update an entry in `docs/ai-log/todo.md` when a task starts, when a
-   blocker is found, or when a follow-up becomes clear.
+1. When agent work on an issue spans sessions or hits a blocker, add or update a
+   short handoff note in `docs/ai-log/todo.md` and remove it once the issue closes.
 2. Move completed task facts into `docs/ai-log/done.md` before final handoff.
 3. Keep entries short, dated, and tied to concrete files, commits, commands, or
    follow-up decisions.
 
-`todo.md` should record what needs to happen:
+A `todo.md` handoff note records:
 
-- task title and source
-- priority or milestone
-- acceptance criteria
-- dependencies or blockers
-- owner/status when useful
+- the issue link and branch
+- current state and next step
+- blockers or open decisions
 
 `done.md` should record what actually happened:
 
