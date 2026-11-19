@@ -19,6 +19,11 @@ them to commits, files, and verification commands where possible.
 
 ## Completed
 
+### 2026-11-19 - Allow logged-in collection and open the Agent Reach trial
+
+- Source: User decided that signing in to Xiaohongshu, BOSS, LinkedIn, Bilibili and similar platforms must be allowed for collection because the information there matters.
+- Result: Decision recorded in `AGENTS.md`, `tools/skills/opportunity-discovery/SKILL.md`, `docs/project/feasibility.md` §6 and `docs/product/privacy.md` (#39). Kept boundaries: read-only, no posting/messaging/outreach, login state only in the tool's local store, batch review before students see items, student-facing service stays public-only. Trial of Agent Reach v1.6.1 opened as #40 (account choice and skill registration open; `agent-reach setup` writes `~/.agents/skills/agent-reach` and symlinks it into `~/.claude/skills`, which agent-config's `link.sh` would remove).
+
 ### 2026-11-19 - Set up the GitHub issue workflow and migrate the backlog
 
 - Source: User chose GitHub Issues as the only backlog, agent merges for `agent-ok` tickets, and asked to draw on how the Claude Code team works.

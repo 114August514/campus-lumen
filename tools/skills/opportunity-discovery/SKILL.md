@@ -20,9 +20,9 @@ Turn the current question into usable candidate information, with sources and un
 7. Write a batch using [the output contract](references/batch-format.md). Save paraphrased facts and brief evidence, not bulk copies of posts. Preserve the original time label and actual collection time. Retain a canonical source link without authentication/access tokens; if it cannot open directly, record a usable original-site search route.
 8. Validate the batch. When the task includes updating the demo, integrate it with the existing display and check that the reader can see the collected facts, source/time, and remaining unknowns. Otherwise deliver the batch and findings directly. Report the actual scope and any failed reads. A stored batch is previous collection at display time, not a new live search.
 
-## Xiaohongshu pilot
+## Logged-in platforms
 
-Use an available session to search recruitment posts, then read a selected post. The October 4 pilot demonstrated search and text reading, without performing or verifying sign-in. Keep the post title and visible author name/claimed relationship when relevant. Exclude the reader's account sidebar, messages, notifications, cookies and session tokens from output. Do not send inquiries, comment, follow, publish or collect private channels as part of discovery.
+Since 2026-11-19 the user allows signing in to Xiaohongshu, BOSS 直聘, LinkedIn, Bilibili and similar platforms for collection; the tool and account are settled in issue #40. The October 4 pilot demonstrated Xiaohongshu search and text reading without verifying sign-in. Keep the post title and visible author name/claimed relationship when relevant. Exclude the reader's account sidebar, messages, notifications, cookies and session tokens from output. Do not send inquiries, comment, follow, publish or collect private channels as part of discovery.
 
 Use the current browser tool before adding a browser framework. If a reusable connector is later selected, expose the search and detail-reading operations needed by this workflow. A skill supplies research instructions; browser tools execute actions; the batch validator handles fixed output checks. The student-facing application can display collected batches without exposing the collector's login.
 

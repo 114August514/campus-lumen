@@ -122,6 +122,16 @@ requires login, future authentication will persist, Xiaohongshu sign-in was test
 or the application includes a Bilibili collector. The article was technical reading
 verification only, not a new advisor batch or requirements evidence.
 
+On 2026-11-19 the user allowed logged-in collection: team-side discovery may sign
+in to platforms such as Xiaohongshu, BOSS 直聘, LinkedIn and Bilibili, because the
+information there matters. This replaces the pilot-only scope above. Collection
+stays read-only (no posting, commenting, following, messaging or outreach). Login
+state stays in the collecting tool's local store and never enters the repository,
+batches, logs or screenshots. Collected items keep source, time and reading scope
+and pass the existing batch review before students see them. The student-facing
+service itself still reads only public pages and never signs in for students.
+Tool choice (Agent Reach) and which account to use are settled in issue #40.
+
 On 2026-10-05 a bounded choice-support experiment was implemented in the Web
 demo using the two actually collected Jiang/Song candidates. Research/graduate/
 short-term perspectives, optional research focus, specific source summaries and
