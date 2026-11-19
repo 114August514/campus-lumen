@@ -20,7 +20,7 @@ Last updated: 2026-11-19
 | 分支 / PR | 作者 | 内容 | 10-29 开工前状态 | 10-29 结果 |
 | --- | --- | --- | --- | --- |
 | main `7fae667` | — | 截至 PR #17 的多类型入口、实习比较、导师发现与比较、官网直读、多主题保存 | 主线 | 作为集成基线之一 |
-| #18 `feat/topic-edit-and-bounded-discovery` | 114August514 | 更名、主题条件编辑、流式返回、中止与上限 | 开着 | 已包含在 PR #21，提交随 #21 合入 main |
+| #18 `feat/topic-edit-and-bounded-discovery` | 114August514 | 更名、主题条件编辑、流式返回、中止与上限 | 开着 | 已包含在 PR #21，内容随 #21 合入 main |
 | `codex/demo-high-priority` | jasonxu-cell | 新候选进入比较、实习数据纠错、招聘站白名单 | 已推送，无 PR | 经 `968f691` 并入集成历史 |
 | #20 `feat/association-repair` | jasonxu-cell | 误合并修正与私人记录重新关联 / 待确认 | 开着，目标为上一分支 | 经 `8f618ff` 并入 PR #21，随之合入 main；#20 本身指向 `codex/demo-high-priority`，仍开着 |
 | #19 `docs/kimi-frontend-design-review` | 114August514 | Kimi 前端预设计文档 | 开着 | 未合并；仅作设计讨论材料 |
@@ -180,6 +180,6 @@ flowchart TD
 ## 7. 中期之后（2026-11-19）
 
 - **中期汇报已完成**：5 分钟汇报使用 `presentations/midterm/` 的幻灯片，演示走统一流程和词元计划整理结果。汇报反馈没有记入仓库。
-- **PR #21 已合入 main**：采用合并提交而非 squash，保留 #18、jasonxu-cell 的 `968f691`／`8f618ff` 及各切片提交；本目录文档引用的提交号可以从 main 追溯。
+- **PR #21 已合入 main**：按 main 的规则集（只允许 squash 或 rebase）squash 为一个提交，保留共同作者署名。#18、jasonxu-cell 的 `968f691`／`8f618ff` 及本目录文档引用的各提交号，仍在保留的 `feat/midterm-demo` 分支上可追溯。
 - **仍开着的分支与 PR**：#19（Kimi 前端设计讨论，仅作参考材料）；#20（jasonxu-cell，指向 `codex/demo-high-priority`，内容已随 #21 合入，是否关闭由他决定）；`codex/demo-high-priority` 上的 `14b0ba6` 只移植了词元计划传输层，AI 助手界面、`/ai/completions` 接口和参与途径拆分未合入。
 - **下一阶段尚未确定**：第 6 节的剩余工作仍然成立；[过程回顾](retrospective.md)中标为“中期前”的独立走查、档案人审和读屏专项在仓库里没有完成记录。
