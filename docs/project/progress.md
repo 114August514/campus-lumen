@@ -1,8 +1,8 @@
 # 项目计划与进度（中期）
 
-Last updated: 2026-10-31
+Last updated: 2026-11-19
 
-本文记录中期检查前的计划、实际进度、分工和风险。需求依据见[需求分析 v1.0](../product/requirements-handoff.md)，验收口径见[中期验收标准](acceptance.md)，执行结果见[测试报告](test-report.md)。
+本文记录中期检查前的计划、实际进度、分工和风险，第 7 节记录中期汇报之后的状态。需求依据见[需求分析 v1.0](../product/requirements-handoff.md)，验收口径见[中期验收标准](acceptance.md)，执行结果见[测试报告](test-report.md)。
 
 ## 1. 10-29 开工前的进度盘点
 
@@ -20,12 +20,12 @@ Last updated: 2026-10-31
 | 分支 / PR | 作者 | 内容 | 10-29 开工前状态 | 10-29 结果 |
 | --- | --- | --- | --- | --- |
 | main `7fae667` | — | 截至 PR #17 的多类型入口、实习比较、导师发现与比较、官网直读、多主题保存 | 主线 | 作为集成基线之一 |
-| #18 `feat/topic-edit-and-bounded-discovery` | 114August514 | 更名、主题条件编辑、流式返回、中止与上限 | 开着 | 已包含在 PR #21；#18 本身仍开着 |
+| #18 `feat/topic-edit-and-bounded-discovery` | 114August514 | 更名、主题条件编辑、流式返回、中止与上限 | 开着 | 已包含在 PR #21，提交随 #21 合入 main |
 | `codex/demo-high-priority` | jasonxu-cell | 新候选进入比较、实习数据纠错、招聘站白名单 | 已推送，无 PR | 经 `968f691` 并入集成历史 |
-| #20 `feat/association-repair` | jasonxu-cell | 误合并修正与私人记录重新关联 / 待确认 | 开着，目标为上一分支 | 经 `8f618ff` 并入 PR #21；#20 本身仍开着 |
+| #20 `feat/association-repair` | jasonxu-cell | 误合并修正与私人记录重新关联 / 待确认 | 开着，目标为上一分支 | 经 `8f618ff` 并入 PR #21，随之合入 main；#20 本身指向 `codex/demo-high-priority`，仍开着 |
 | #19 `docs/kimi-frontend-design-review` | 114August514 | Kimi 前端预设计文档 | 开着 | 未合并；仅作设计讨论材料 |
 | `wip/kimi-frontend-2026-10-25` | August / Kimi | 10-23 至 10-25 的品牌、主题、导航、比较、会话与工作台 | 本地未提交内容待保存 | 以 `6fffbd0` 保存并合入；工作台随后在 10-29 重构中移除 |
-| #21 `feat/midterm-demo` | 114August514 | 集成上述功能、统一前端、默认模拟／可选词元计划整理接口、测试与软件工程文档 | 尚未创建 | 10-29 创建，当前 OPEN；10-31 增加第二 provider |
+| #21 `feat/midterm-demo` | 114August514 | 集成上述功能、统一前端、默认模拟／可选词元计划整理接口、测试与软件工程文档 | 尚未创建 | 10-29 创建；10-31 增加第二 provider 和中期幻灯片；中期汇报后合入 main |
 
 ### 1.3 能力对照
 
@@ -85,7 +85,7 @@ gantt
 4. 按[前端设计 v1.1](../product/frontend-design.md)重构并增加整理接口；10-31 在同一接口接入词元计划第二 provider。
 5. 以 PR #21 交付，不直接替用户合并 main。
 
-上述五步已在 10-29 完成；PR #21 是否合并仍由仓库维护者决定。
+上述五步已在 10-29 完成；PR #21 在中期汇报后合入 main（见第 7 节）。
 
 ### 2.1 中期交付 WBS
 
@@ -112,9 +112,9 @@ flowchart TD
     A --> DOC[文档：中期集已完成]
     DOC --> DOC1[项目/产品/工程文档同步]
     DOC --> DOC2[过程回顾与评审记录]
-    A --> DEL[交付：进行中]
-    DEL --> DEL1[PR #21：OPEN]
-    DEL --> DEL2[合并与课堂演示：待完成]
+    A --> DEL[交付：已完成]
+    DEL --> DEL1[PR #21：已合入 main]
+    DEL --> DEL2[中期汇报：已完成]
 ```
 
 ## 3. 三天计划（2026-10-29 至 10-31）
@@ -157,7 +157,7 @@ flowchart TD
 
 ## 6. 执行后的状态（2026-10-31）
 
-集成 PR 为 [#21](https://github.com/114August514/campus-lumen/pull/21)，当前状态为 OPEN。10-29 完成主要实现和第一轮文档走查，10-31 又接入词元计划 provider 并专项走查；不能据此把尚未发生的独立验收、用户研究或模型质量评估写成完成。
+集成 PR 为 [#21](https://github.com/114August514/campus-lumen/pull/21)，10-31 时仍为 OPEN，中期汇报后合入 main（见第 7 节）。10-29 完成主要实现和第一轮文档走查，10-31 又接入词元计划 provider 并专项走查；不能据此把尚未发生的独立验收、用户研究或模型质量评估写成完成。
 
 | 能力 | 状态 |
 | --- | --- |
@@ -172,8 +172,14 @@ flowchart TD
 
 剩余工作：
 
-- 由维护者决定 PR #21 的合并；
 - 完整键盘 / 读屏检查和非构建者独立验收；
 - 人类复核 7 份 AI 撰写导师档案；
 - 真实学生试用、USTC 一手研究和模型输出质量评估；
 - 核对词元计划的平台保留／删除条款、额度归属和团队 Key 政策；处置旧社区代码。
+
+## 7. 中期之后（2026-11-19）
+
+- **中期汇报已完成**：5 分钟汇报使用 `presentations/midterm/` 的幻灯片，演示走统一流程和词元计划整理结果。汇报反馈没有记入仓库。
+- **PR #21 已合入 main**：采用合并提交而非 squash，保留 #18、jasonxu-cell 的 `968f691`／`8f618ff` 及各切片提交；本目录文档引用的提交号可以从 main 追溯。
+- **仍开着的分支与 PR**：#19（Kimi 前端设计讨论，仅作参考材料）；#20（jasonxu-cell，指向 `codex/demo-high-priority`，内容已随 #21 合入，是否关闭由他决定）；`codex/demo-high-priority` 上的 `14b0ba6` 只移植了词元计划传输层，AI 助手界面、`/ai/completions` 接口和参与途径拆分未合入。
+- **下一阶段尚未确定**：第 6 节的剩余工作仍然成立；[过程回顾](retrospective.md)中标为“中期前”的独立走查、档案人审和读屏专项在仓库里没有完成记录。

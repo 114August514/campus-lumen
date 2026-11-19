@@ -1,6 +1,6 @@
 # AI Log Todo
 
-Last updated: 2026-10-31
+Last updated: 2026-11-19
 
 This file records meaningful pending work for AI agents and collaborators.
 Keep entries short, dated, and actionable.
@@ -20,26 +20,21 @@ Keep entries short, dated, and actionable.
 
 ## Pending
 
-### 2026-10-31 - Rehearse the mid-term talk
+### 2026-11-19 - Choose the next phase after the mid-term
 
-- Source: `presentations/midterm/` deck.
-- Acceptance: one timed run ≤ 5 min including the live demo; live demo prepared per slide 6 notes (API with school key, synthetic topics loaded, one saved 词元计划 result); PDF fallback exported.
-- Notes: Cover lists Git author names; confirm what the course expects.
-
-### 2026-10-29 - Review and merge the mid-term integration PR
-
-- Source: Mid-term delivery; facts in done.md and `docs/project/test-report.md`.
-- Status: [PR #21](https://github.com/114August514/campus-lumen/pull/21) open from `feat/midterm-demo`; merging to main awaits user approval. It supersedes #18 and #20 (teammate's) — closing them is the user's decision.
-- Remaining: F13 browser walkthrough (synthetic split); complete keyboard and screen-reader pass; after login, check 词元计划 logging/retention/deletion terms, quota attribution and whether one team key may serve several students; decide whether to keep `wip/kimi-frontend-2026-10-25`, `backup/*`, `docs/requirements-handoff` and `prototype/advisor-guide` branches, and what to do with teammate commit `14b0ba6` beyond the ported transport.
-- Later (not mid-term): structured participation routes for route-level association repair (`14b0ba6` has a route-split implementation on an older base); measure real-model output quality; more sourced content for non-advisor types.
+- Source: Mid-term talk delivered and PR #21 merged into main; state in `docs/project/progress.md` §6–§7.
+- Status: Next delivery not chosen. Open: #19 (Kimi design discussion), #20 (jasonxu-cell, targets `codex/demo-high-priority`, content already in main; closing is his call). Local branches `wip/kimi-frontend-2026-10-25`, `backup/*`, `docs/requirements-handoff`, `prototype/advisor-guide`, `feat/explore-focus` still kept.
+- Remaining: F13 browser walkthrough (synthetic split); complete keyboard and screen-reader pass; independent (non-builder) walkthrough; human review of the 7 AI-written advisor profiles; after login, check 词元计划 logging/retention/deletion terms, quota attribution and whether one team key may serve several students; replace keyword discovery (search API or official directories).
+- Later: structured participation routes for route-level association repair (`14b0ba6` has a route-split implementation on an older base, not merged); measure real-model output quality; student trial; more sourced content for non-advisor types; decide what to do with the dormant community code.
 
 ### 2026-10-27 - Follow up after high-priority demo integration
 
 - Source: User-authorized implementation of the October 26 audit priorities; completed facts are in done.md.
-- Status: `codex/demo-high-priority` includes remote `a374ab0` plus the verified discovery-to-comparison and data corrections. Implementation published to GitHub as `968f691` on 2026-10-27; remote main integration remains separate.
+- Status: `codex/demo-high-priority` includes remote `a374ab0` plus the verified discovery-to-comparison and data corrections. Implementation published to GitHub as `968f691` on 2026-10-27; merged into main through PR #21 (2026-11-19).
 - Remaining: Optional preparation/knowledgeable-participant/resource connections; then complete task-design §7/G5 walkthrough. Mistaken-association repair was implemented on `feat/association-repair` (task design §8.9, renumbered from §8.8 when merged with the 10-24 §8.7); route-level splits wait for structured routes. No new broad research, maintenance or account gate. External model integration remains optional and must obey selected-input/send-state boundaries if adopted.
 - Content: Old internship leads keep original timestamps/summaries but their unsupported conditions are explicitly unresolved. Obtain exact job-specific sources before restoring duration/location/mentoring/conversion claims; a different historical MSRA Shanghai job must remain a separate object.
-- Integration: Review this branch before main integration; older pending entries below are historical task sequencing, not evidence these high-priority features remain unimplemented. Publication verification compares the remote branch ref with local HEAD.
+- Integration: Done through PR #21; older pending entries below are historical task sequencing, not evidence these high-priority features remain unimplemented.
+
 ### 2026-10-25 - Review backend capability/domain design before implementation
 
 - Source: User requested backend design addressing single-task coupling and extensibility.

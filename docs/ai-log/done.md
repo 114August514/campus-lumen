@@ -1,6 +1,6 @@
 # AI Log Done
 
-Last updated: 2026-10-31
+Last updated: 2026-11-19
 
 This file records completed agent-visible work. Keep entries factual and link
 them to commits, files, and verification commands where possible.
@@ -18,6 +18,14 @@ them to commits, files, and verification commands where possible.
 ```
 
 ## Completed
+
+### 2026-11-19 - Close the mid-term and merge PR #21 into main
+
+- Source: User reported the mid-term talk was finished and asked to summarize progress and push to main.
+- Result: PR #21 (`feat/midterm-demo`, 27 commits over main `7fae667`) merged with a merge commit; the integration contains #18, jasonxu-cell's `968f691`/`8f618ff`, the unified frontend, simulated/词元计划 analyses, software-engineering docs and the slide deck. Progress records updated: `AGENTS.md`, `docs/project/progress.md` §7, AI log todo replaced by a post-mid-term entry.
+- Verification: six GitHub CI jobs on the final PR head before merging; strict docs build and `git diff --check` locally.
+- Decisions: Merge commit instead of the usual squash, so teammate commits and SHAs cited in `docs/project/` stay reachable from main. #19 and #20 left open (#20 is the teammate's). Talk feedback was not recorded in the repository.
+- Follow-up: See todo "Choose the next phase after the mid-term".
 
 ### 2026-10-31 - Build the 5-minute mid-term slide deck
 

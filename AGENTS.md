@@ -1,6 +1,6 @@
 # Agent Notes
 
-Last updated: 2026-10-31
+Last updated: 2026-11-19
 
 This file is the project-level instruction sheet for AI agents and human
 collaborators. Follow it before making changes.
@@ -19,7 +19,8 @@ analysis v1.0. `docs/product/overview.md` summarizes decisions and
 and actionable guidance across institutions and disciplines, initially serving
 USTC students. The initial product is exclusively a personal-use tool; community
 features are a possible future extension, not current scope or a scheduled phase.
-Current delivery is the mid-term demo on `feat/midterm-demo`. All opportunity
+The mid-term demo (PR #21) has been presented and merged into `main`; the next
+delivery has not been chosen. All opportunity
 types share one frontend workflow: 探索 → 发现 → 处理. Advisor selection remains
 the deepest content example; other types use existing curated entries, without
 claiming equal evidence depth or authorizing new research. The product
