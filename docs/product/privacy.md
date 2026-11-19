@@ -1,6 +1,6 @@
 # Privacy And Data Boundaries
 
-Last updated: 2026-10-29
+Last updated: 2026-11-19
 
 The mid-term demo serves personal opportunity exploration across all types,
 with public external discovery, browser-local sessions, and a choice between a
@@ -121,6 +121,11 @@ canonical source links, reading scope and dates. It excludes cookies, site acces
 tokens, private messages, reader account identifiers and private exploration
 notes. The faculty directory corroborates name/institution/direction, not account
 ownership or advising quality.
+
+Since 2026-11-19 team-side collection may also sign in to Xiaohongshu, BOSS 直聘,
+LinkedIn, Bilibili and similar platforms (#39; tool and account still open in #40).
+Those platforms see the collecting account's searches and reads. The same batch
+exclusions apply, and the login state stays in the collecting tool's local store.
 
 Students can read the included batch without logging into the source site or
 transmitting their saved records. Opening an original source may require that
