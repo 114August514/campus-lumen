@@ -1,350 +1,149 @@
 # Agent Notes
 
-Last updated: 2026-11-19
+Last updated: 2026-11-20
 
-This file is the project-level instruction sheet for AI agents and human
-collaborators. Follow it before making changes.
+Instructions for AI agents and collaborators on this repository. It holds the
+current rules only; how they came about is in `docs/ai-log/done.md` and Git history.
 
-## Project Context
+## Project
 
-The project is named **Campus Lumen** (renamed from Campus Agora on 2026-10-22),
-with repository `114August514/campus-lumen`. Its description is:
-帮大学生跨机构发现科研、实习、竞赛、交流等机会，看懂实际任务与条件，自主决定下一步。
-Historical records and compatibility identifiers may retain the previous name;
-this rename does not change product scope or authorize a data migration.
+**Campus Lumen** (renamed from Campus Agora on 2026-10-22) helps university
+students discover research, internship, competition, exchange and other
+opportunities across institutions, understand the actual tasks and conditions,
+and decide their own next step. It is a personal-use web tool, first for USTC
+students; community features are not in scope.
 
-Read `docs/product/requirements-handoff.md` for the consolidated requirements
-analysis v1.0. `docs/product/overview.md` summarizes decisions and
-`docs/product/milestones.md` controls work order. The active direction is opportunity discovery
-and actionable guidance across institutions and disciplines, initially serving
-USTC students. The initial product is exclusively a personal-use tool; community
-features are a possible future extension, not current scope or a scheduled phase.
-The mid-term demo (PR #21) has been presented and merged into `main`; the next
-delivery has not been chosen. All opportunity
-types share one frontend workflow: 探索 → 发现 → 处理. Advisor selection remains
-the deepest content example; other types use existing curated entries, without
-claiming equal evidence depth or authorizing new research. The product
-deliverable is a reusable discovery-to-action workflow, initially for personal
-use by USTC students.
+- Requirements baseline: `docs/product/requirements-handoff.md`; product decisions:
+  `docs/product/overview.md`; software-engineering docs: `docs/project/index.md`.
+- Pending work: [GitHub Issues](https://github.com/114August514/campus-lumen/issues).
+- Status: the mid-term demo (PR #21) is merged; the next phase is chosen from the
+  issues. No student trial has run yet (#32), so student benefit is unmeasured.
 
-On 2026-10-29 the user assigned frontend design and implementation to the
-coordinating agent (Claude). As of 2026-10-31, mid-term AI organization defaults
-to the clearly labelled local simulated service and optionally uses USTC
-词元计划 through a server-held key chosen per send; simulation remains the
-fallback. Acceptance is maintained in `docs/project/acceptance.md`.
+## Product Decisions
 
-The user authorized a product reset on 2026-09-22. The initialization spec at
-`docs/archive/superpowers/specs/2026-07-06-campus-agora-init-design.md` and the old M-series
-community roadmap are historical, not active feature requirements. Do not revive
-discussion, archival, campus-auth or desktop tasks merely because code or docs
-already exist. Evaluate reuse against the new requirements. Existing engineering
-checks still apply when relevant code is changed; this reset does not establish
-that runtime behavior or CI has been freshly verified.
+Confirmed by the user; follow them unless the user changes them.
 
-## Confirmed Requirements Decisions (2026-09-30)
-
-Discovery and judgment jointly support autonomous choice; emphasis follows the
-current task, with no mandatory complete journey. Experience-informed selection
-also includes connecting users to knowledgeable current/former participants via
-contacts published for relevant communication or shared with consent; preserve
-relationship and time context, without automatic outreach or quality endorsement.
-Supply direction is automation-led collection/organization with team review of
-critical claims, exceptions and corrections. Community contributions may later
-extend maintenance, but are optional and unscheduled, not a prerequisite for
-individual value. This does not approve specific crawlers, private channels or
-key-handling designs. Maintenance capacity and ownership remain unresolved.
-
-## Competition Demo Priority (2026-10-01)
-
-The immediate deliverable is a competition demo showing the value of finding and
-organizing relevant information. Initial maintenance capacity is limited. Do not
-make long-term staffing, recurring update schedules or sustainable operation a
-prerequisite for requirements convergence or the demo. Dated material can still
-support discovery and comparison when its time and intended use are clear; do not
-present historical recruitment as currently open. Seek broad relevant coverage
-without claiming exhaustive discovery. Distinguish fixed demonstration data from
-actually executed automated collection. Decide ongoing maintenance investment
-after assessing demonstrated value; do not revive a maintenance gate by default.
-
-## Exploration and Discovery Approach (2026-10-01)
-
-User accepted multiple persistent exploration topics with candidates, sources,
-private reasons and open questions; reuse public data but retain separate topic
-preferences. Browsing need not start with topic creation. The demo must actually
-run external discovery alongside existing-data reuse. Use reusable research
-instructions (skills or equivalent), executable tools/workflow and AI judgment as
-complementary parts; choose providers, storage and frameworks through bounded
-implementation experiments rather than treating product decisions as unresolved.
-Do not re-ask these product decisions or claim implementation is complete.
-
-On 2026-10-03 the user added result organization, existing-data merging,
-failure continuation and isolation of private reasons across topics. Reuse
-identified public objects, retain source/time and unresolved conflicts, and keep
-private reasons attached to their topic records. The user explicitly confirmed
-that external AI may receive only personal content the user explicitly selects;
-do not automatically attach other notes, topics or prior private context. Follow
-`docs/product/privacy.md` and the updated task design; this is a requirement,
-not evidence of implemented isolation or AI integration.
-
-The same day the user accepted cancellable discovery with declared per-run
-limits, correction of mistaken merges without losing private topic records,
-and truthful external-AI send states. Timeout or cancellation is not proof that
-personal content was never sent; show delivery uncertainty when needed.
-Thresholds and mechanisms remain technical-design choices, not fixed budgets
-or evidence of implementation. These accepted requirements remain active in
-`docs/product/advisor-task-design.md` v0.4; the later experiments below do not
-establish that cancellation, mistaken-merge repair or external AI are implemented.
-
-On 2026-10-04 the user selected Xiaohongshu recruitment posts as the first
-browser-collection pilot, intending to reuse an available logged-in session.
-Search and text reading were executed, but sign-in was not performed or verified.
-Normal search/read using the available connected session is within this task. The repository draft
-`tools/skills/opportunity-discovery/SKILL.md` organizes this work; invoke it
-explicitly, since it is not installed in an automatic skill directory. An executed
-small batch can be displayed as precollected summaries, distinct from live API
-discovery. This does not imply a standalone unattended collector, access to a
-different Chrome session, private-message harvesting or automatic outreach.
-
-On 2026-10-05 the user authorized a user-assisted sign-in trial from a signed-out
-session. Follow the skill's handoff: the agent opens the site's login entry; the
-user completes QR scanning, credentials or CAPTCHA; then verify visible sign-in
-state and actual search/body reading separately. A new tab does not isolate login.
-Use a tool-supported isolated session or obtain explicit agreement before signing
-out an existing session. Do not save credentials, QR codes or authentication screens.
-The observed Xiaohongshu session is signed in. The IAB exposes only one normal
-profile, without an isolated-session capability. Bilibili visibly showed a signed-out
-entry; its original-site login window was shown to the user. After the user reported
-completion, fresh UI inspection confirmed the login prompt disappeared and account
-navigation appeared. The agent then searched for advisor-selection information and
-read a relevant article's text body. Existing sessions were not signed out. This
-verifies an assisted Bilibili sign-in and resumed-reading trial, not that reading
-requires login, future authentication will persist, Xiaohongshu sign-in was tested,
-or the application includes a Bilibili collector. The article was technical reading
-verification only, not a new advisor batch or requirements evidence.
-
-On 2026-11-19 the user allowed logged-in collection: team-side discovery may sign
-in to platforms such as Xiaohongshu, BOSS 直聘, LinkedIn and Bilibili, because the
-information there matters. This replaces the pilot-only scope above. Collection
-stays read-only (no posting, commenting, following, messaging or outreach). Login
-state stays in the collecting tool's local store and never enters the repository,
-batches, logs or screenshots. Collected items keep source, time and reading scope
-and pass the existing batch review before students see them. The student-facing
-service itself still reads only public pages and never signs in for students.
-Tool choice (Agent Reach is being trialled) and which account to use are open in issue #40.
-
-On 2026-10-05 a bounded choice-support experiment was implemented in the Web
-demo using the two actually collected Jiang/Song candidates. Research/graduate/
-short-term perspectives, optional research focus, specific source summaries and
-topic-scoped private records are usable. The source-bound interpretations are
-curated from the existing batch, not integrated model output or live collection.
-Compare selection and perspective are temporary; explicitly saved records use
-the existing topic store, and comparison removal does not delete them. This is
-developer verification, not a student benefit result or complete demo acceptance;
-preparation/resource/contact entries and general choice-help automation remain
-subsequent work. See advisor-task-design.md v0.4 §8.4.
-
-## Requirements Analysis Work Order
-
-On 2026-10-22 the topic-condition and bounded-discovery slice was implemented:
-explicit topic name/question/preference editing preserves saved/private records;
-the discovery endpoint can stream cumulative body snapshots, supports abort and
-declares server/run/read limits. Browser and controlled checks are recorded in
-`docs/product/advisor-task-design.md` §8.6. Query text remains the only discovery
-input; editing conditions does not send them. Cancellation does not retract
-already sent public requests. This does not complete mistaken-merge repair,
-external-AI delivery, optional preparation/resource entries or full demo acceptance.
-
-Before prioritizing prototype or implementation work, follow the eight-part
-analysis contract in `docs/product/requirements.md`: problem background, target
-users/tasks, existing solutions, unmet needs/causes, value/positioning,
-scope/priorities, functional/use requirements, and feasibility/acceptance.
-The eight-part argument is now organized into a reviewable baseline; current
-priority is to apply its conclusions to task and information-structure design,
-filling only decision-relevant gaps. Feature lists, preparation cards and a working
-prototype do not substitute for it. Keep user needs separate from solution
-ideas and product-wide research separate from the AIDS pilot. Prototypes can
-test hypotheses without waiting for every unknown to disappear; do not claim
-unvalidated benefit or let UI migration displace the analysis by default.
-
-## Evidence Reuse and Analysis Handoff
-
-User confirmed on 2026-09-27: adopt existing evidence within its stated scope;
-do not repeat research merely because it does not prove population prevalence
-or product efficacy. `docs/product/requirements-handoff.md` is the consolidated v1.0 baseline;
-`docs/product/needs-analysis.md` retains detailed reasoning, H/V definitions and
-historical records, not a second active backlog. Continue task/information-structure
-design from the v1.0 baseline.
-H1–H6/V1–V5 are targeted validation tools, not universal sequential gates.
-Only add research that could change a concrete decision; otherwise limit the
-claim, defer the optional capability, or observe during trial. Missing task
-recall or voluntary participants does not block independent planning. Do not
-claim measured benefit, full P1 validation or sustainable supply has passed.
-
-## Product Focus and Depth
-
-Follow the focus hierarchy in `docs/product/overview.md`: discovery, understanding
-and comparison are core; preparation guidance supports decisions; resources
-connect users to suitable courses, tools and services and may be searched directly.
-Keep guidance at preparation priorities, reasons and optional paths. Chapter links
-are optional details, not a per-resource requirement. Do not expand into teaching
-individual concepts, exercise grading or learning-outcome tests. The Python lesson
-walkthrough is supporting research, not an active task or P1 exit requirement.
-Before adding research or work, name the discovery/comparison/next-step decision
-it improves and the minimum depth needed. Keep cross-user research broad; this
-correction does not narrow the product to the mentor pilot.
-
-Experience-informed selection is a common problem across opportunities and
-resources, not only advisors, jobs or long-term relationships. Apply source/context,
-conflict, unknown and private-judgment handling across scenarios; vary the actual
-questions by task. Deeper examination is optional, and a simple entry-point lookup
-may end immediately. Broader scope is a user decision, not evidence that all
-scenarios have equal demand or equally available experience data.
-
-## Optional Support Principle
-
-Follow the optional-help principle in `docs/product/overview.md`. Offer resources
-without implying every opportunity matters or every student must keep advancing.
-Browsing or saving is not a commitment. Pausing or declining is valid even when
-eligible; no explanation is required. Separate official obligations from optional
-suggestions. Avoid grade-based pressure, deficit checklists, social comparison and
-unsolicited reminders. Evaluate clarity and task resolution, not activity volume;
-do not claim anxiety reduction without evidence.
-
-Participation motives (enjoyment, shared activity, formal recognition, learning
-or career goals) may overlap and change. Do not rank them or infer them from
-contest type/year; no mandatory motive questionnaire. Physics competition is one
-sample, not the contest scope. Distinguish contest prizes, comprehensive evaluation,
-credits/GPA and other recognition; only applicable rules support eligibility.
+- Every opportunity type uses one flow: 探索 → 发现 → 处理. Advisor selection has
+  the deepest content; other types use curated entry data (whether to deepen them: #37).
+- Users keep several exploration topics; browsing does not require creating one.
+  Public information is shared across topics; private reasons, questions and
+  decisions stay in their own topic (browser `localStorage`, same origin only).
+- Every fact shows its source and when it was collected, and labels say whether
+  it was read just now, prepared earlier or simulated. Unknown stays unknown and
+  is never read as negative; conflicting sources stay side by side; historical
+  recruitment is shown as historical, not as currently open.
+- Private topic records stay in the browser. Discovery sends only the query text;
+  no model or tool receives private content except fragments the user ticks for
+  AI organization.
+- Discovery runs can be stopped and have declared limits; results that arrived
+  are kept and late ones are dropped. A mistaken merge can be split; each private
+  record follows its own saved sources or waits for the user's choice.
+- No scores, rankings or verdicts on people. Knowledgeable-participant contacts
+  appear only when published for that purpose or shared with consent, with
+  relationship and period. The product never contacts anyone on the user's behalf.
+- Help is optional: browsing or saving is not a commitment, pausing or declining
+  needs no reason, and there is no grade pressure, deficit checklist, social
+  comparison or unsolicited reminder. Official obligations are kept apart from
+  suggestions. Success means clearer decisions and resolved tasks, not activity
+  volume. Motives (fun, recognition, learning, career) can coexist and are not
+  ranked or inferred, and there is no mandatory motive questionnaire; prizes, 综测
+  and credits/GPA follow their own rules.
+- Depth: discovery, understanding and comparison are the core; preparation
+  guidance and resource entry points appear on demand, and a simple lookup can
+  end at the entry link. Teaching concepts, grading exercises or testing learning
+  are out of scope.
+- AI organization: the labelled simulated service is the default and the
+  fallback; USTC 词元计划 is chosen per send through a server-held key. Only
+  content the user ticked in the confirm dialog is sent, and delivery state is
+  shown truthfully (after a timeout: "may have been sent").
+- Collection (2026-11-19): the team may sign in to 小红书, BOSS 直聘, LinkedIn,
+  B站 and similar platforms to collect material. Collection is read-only: no
+  posting, commenting, following, messaging or outreach. Login state stays in the
+  collecting tool and never enters the repository, batches, logs or screenshots.
+  Items keep source, collection time and reading scope and pass batch review
+  (`bun run discovery:validate`) before entering app data. The student-facing
+  service reads only public pages and never uses students' platform accounts.
+  Supply is automated collection with team review of key claims, exceptions and
+  corrections. Tool and account: #40; workflow: `tools/skills/opportunity-discovery/SKILL.md`.
+- Research: reuse existing evidence; open a research issue only when its result
+  would change a concrete decision.
 
 ## UI Rules
 
-Follow `docs/product/ui-system.md` before any UI or prototype work. Use only Primer React Product UI + Primer Primitives + Octicons. No Tailwind, handwritten component CSS/CSS Modules, inline style, sx or CSS-in-JS. Use library layouts and one declarative theme configuration; the sole document mapping is `apps/web/src/app/theme.css`. Following the user's 2026-10-23 choice, PR #15 is the visual starting point, with its open-compass brand mark and a toggle between locked Primer light/dark schemes (light by default). Keep Primer blue interaction, system sans-serif and normal letter spacing. Ban emoji icons, eyebrows, subtitles/taglines, gradients, bordered content cards, display monospace and tracking. Keep necessary field borders and keyboard focus. The brand SVG is distinct from Octicons functional icons. The historical standalone HTML prototype remains superseded and is not a compliant template. Reference sites inform interaction only; they cannot override these rules or the user's latest design direction.
+Details in `docs/product/ui-system.md`.
 
-## Collaboration Rules
+- Only Primer React, Primer Primitives and Octicons. No Tailwind, handwritten
+  component CSS or CSS Modules, inline `style`, `sx` or CSS-in-JS. The only CSS
+  file is the theme mapping `apps/web/src/app/theme.css`; `bun run lint:styles`
+  enforces this.
+- PR #15 is the visual baseline: open-compass brand mark, Primer light/dark
+  toggle (light by default), Primer blue interaction, system sans-serif, normal
+  letter spacing.
+- No emoji icons, eyebrows, subtitles or taglines, gradients, bordered content
+  cards, display monospace or tracking. Keep field borders and visible keyboard focus.
+- Other products can inform interaction patterns; they don't override these rules.
 
-- User direction (2026-10-29): the coordinating agent (Claude) owns frontend
-  design and implementation. The 2026-10-23/24 Kimi-only provider rule and the
-  instruction that the coordinator must not preselect layout are superseded.
-  Historical note: Kimi drafts, PR #15 and the Qwen/OpenHarness analogies remain
-  optional design references, not active ownership or provider requirements.
-- Preserve the Primer UI rules above, the public/private data boundary, truthful
-  live/simulated labels, and actual-source evidence limits regardless of which
-  agent implements the frontend. Do not send private topic records or unrelated
-  personal context to any model or tool.
-- Mid-term decisions (2026-10-29, updated 2026-10-31): every opportunity type
-  uses one 探索 → 发现 → 处理 flow; advisor selection remains the deepest content;
-  other types use existing curated entries. AI organization defaults to the
-  clearly labelled local simulated service and optionally uses USTC 词元计划
-  through a server-held key chosen per send; simulation remains the fallback.
-  The acceptance source of truth is `docs/project/acceptance.md`.
-- Read the relevant local context before editing: this file, the active spec,
-  applicable docs, package scripts, and nearby source files. Reuse context
-  already read in the session; reread when it changes or is no longer reliable.
-- Before changing a product, frontend, backend, API, operations, desktop, or
-  monorepo boundary, read `docs/constraints/index.md` and the area-specific
-  constraint reference listed there.
-- If a constraint reference becomes an accepted project rule, promote it into
-  the matching formal doc or milestone in the same change.
-- Keep changes scoped to the active task and milestone. Do not expand runtime
-  behavior, dependencies, or documentation structure unless the task requires it.
-- Prefer existing workspace conventions over new abstractions.
-- Before editing files, state what will change and why.
-- Verify changes with the narrowest meaningful command set, and report commands
-  that were run or could not be run.
-- Do not claim work is complete without fresh verification evidence.
-- Ticket workflow (user decision 2026-11-19): pending work lives in GitHub
-  Issues; follow `CONTRIBUTING.md`. Agents may take `agent-ok` issues, work on
+## Commands
+
+```bash
+bun install
+bun run dev:api                    # Rust API on 127.0.0.1:8080
+bun run dev:web                    # http://127.0.0.1:5173 (always this origin: topics live in its localStorage)
+cd apps/web && bun test ./tests/compare.test.ts   # one test file
+bun run ci:frontend                # typecheck, lint, lint:styles, tests, build
+bun run api:types                  # after API changes; `bun run api:check` must show no drift
+UV_PROJECT_ENVIRONMENT=/tmp/campus-lumen-docs-venv UV_CACHE_DIR=/tmp/campus-lumen-uv-cache bun run ci:docs   # strict MkDocs
+bun run ci:backend                 # fmt, check, clippy, test, then sqlx migrations (needs DATABASE_URL and Postgres);
+                                   # without a database run `cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace`
+```
+
+词元计划 is enabled when `USTC_LLM_API_KEY` is set in the shell that starts the API
+(optional `USTC_LLM_MODEL`, default `deepseek-v4-flash-ascend`; student keys get
+403 for `deepseek-v4-pro`).
+
+## Gotchas
+
+- The old name survives on purpose: crates are `campus_agora_*`, the topic store
+  key is `campus-agora:explorations:v1`. Renaming them breaks builds or saved data.
+- The community-era code (`crates/db` migrations, `crates/domain`, the
+  `apps/desktop` Tauri shell) is dormant but still built in CI. Don't extend it; #34
+  decides what to delete.
+- Keyword discovery through DuckDuckGo often hits a verification page; direct
+  reads of known official pages work (#24).
+- `main` requires a PR and allows only squash or rebase; merged branches are
+  deleted automatically. `gh pr merge --match-head-commit` needs the full SHA.
+  `gh` calls sometimes fail with a GraphQL EOF: retry, then re-read the state.
+- CI runs six jobs on every PR: frontend, backend, desktop, contract, docs, container.
+
+## Workflow
+
+- Tickets (user decision 2026-11-19): pending work lives in GitHub Issues; follow
+  `CONTRIBUTING.md`. Agents may take `agent-ok` issues, work on
   `<type>/<number>-<slug>` branches (one worktree each when parallel), and merge
   their own PR once all six CI jobs pass, a reviewer that did not implement the
   change reports no blocking problem, and every human step in the issue's
   acceptance criteria is recorded as done. Changes to stored data shape, the
   OpenAPI contract, privacy boundaries, costs, or code deletion need the user's
-  confirmation of a plan in the issue first. When the same mistake recurs, add a
-  short rule here in the same PR.
-
-## Rapid Iteration Default (2026-10-03)
-
-The user prefers short feedback loops and autonomous execution. Apply the
-iteration guidance in `docs/engineering/development.md` proportionally:
-
-- Clear small changes go directly to implementation and meaningful checks.
-  Normal features need only a short plan in the turn or existing task record;
-  research/design first only when an unknown blocks the current result.
-- Authorized implementation includes running, observing and fixing the result.
-  Continue until the requested outcome is verified; decide routine reversible
-  details without repeated confirmation, using existing project conventions.
-- Reuse current context and existing logs. Update durable docs for changed
-  decisions, contracts or handoff facts; use focused checks during edits and
-  affected required checks at completion. Review and extra testing respond to
-  substantive risk or new failures, not every microtask.
-
-## AI Log Workflow
-
-Use `docs/ai-log/` for low-friction task memory. Pending work belongs in GitHub
-Issues, not in these files; the log complements issues, commit history and PRs.
-
-Put intermediate drafts, investigation notes, temporary scripts, screenshots and
-raw non-sensitive experiment output in `work/YYYY-MM-DD-task/`, not in source or
-formal documentation folders. See `docs/engineering/repository-layout.md` and
-`work/README.md`. Only `work/README.md` is intended for version control; other
-contents are ignored by default and are not a durable handoff. Do not force-add
-them or make production code depend on them. Keep AI Log entries to short pending
-items and completed facts; promote accepted decisions, reusable tools and reviewed
-data into their proper maintained locations. Local-only storage is not permission
-to retain secrets, credentials, authentication screens or private student data.
-
-For non-trivial agent work:
-
-1. When agent work on an issue spans sessions or hits a blocker, add or update a
-   short handoff note in `docs/ai-log/todo.md` and remove it once the issue closes.
-2. Move completed task facts into `docs/ai-log/done.md` before final handoff.
-3. Keep entries short, dated, and tied to concrete files, commits, commands, or
-   follow-up decisions.
-
-A `todo.md` handoff note records:
-
-- the issue link and branch
-- current state and next step
-- blockers or open decisions
-
-`done.md` should record what actually happened:
-
-- completed work
-- changed files or commits
-- verification commands
-- important decisions and tradeoffs
-- follow-up tasks that remain
-
-Do not log every terminal command. Do not write secrets, tokens, credentials,
-real student identity data, private callback URLs, database dumps, or raw
-unredacted logs into AI LOG files.
-
-## Documentation Freshness
-
-Docs can become stale and affect implementation judgment. Treat code, scripts,
-contracts, lockfiles, and current CI as the freshest source for executable
-behavior.
-
-For durable docs that guide decisions, add or update a `Last updated:
-YYYY-MM-DD` line near the top when creating the file or making a material
-change. This applies to formal docs under `docs/`, reference docs under
-`docs/constraints/`, tool docs such as `tools/README.md`, and this file.
-
-Do not change the date for typo-only edits. If an existing doc has no freshness
-line and the task depends on it, verify the claim against local source files
-before relying on it, then add the freshness line if the doc is updated.
-
-When a documented command, path, config location, API contract, milestone, or
-security boundary changes, update the relevant doc in the same PR and record the
-verification command in AI LOG when the work is non-trivial.
-
-## Local Reference Files
-
-Durable reference notes belong under `docs/constraints/`, not in the repository
-root. Do not create new root-level scratch files such as `ref*.md`, `temp*.md`,
-`api.md`, `backend.md`, `frontend.md`, or `monorepo.md` unless the user
-explicitly requests a short-lived local note.
-
-When a root-level reference note is useful for collaboration, rename it into
-`docs/constraints/`, add it to `docs/constraints/index.md`, and update MkDocs
-navigation if it should be published.
+  confirmation of a plan in the issue first.
+- Pace (user preference 2026-10-03): small, clear changes go straight to
+  implementation and checks; research or design comes first only when an unknown
+  blocks the result. Stay within the issue: no dependencies, runtime behavior or
+  doc structure it doesn't need. Decide routine reversible details yourself; run,
+  observe and fix until the result is verified. Review and extra tests follow the
+  risk, not every change. Report the checks you actually ran.
+- Before changing a product, frontend, backend, API, operations, desktop or
+  monorepo boundary, read the matching reference in `docs/constraints/index.md`.
+- When docs and code disagree, code, scripts, contracts and CI win; fix the doc.
+  Update the docs that describe changed behavior, commands or decisions in the
+  same PR, and bump their `Last updated:` line (not for typo fixes).
+- Scratch notes, drafts and screenshots go to `work/YYYY-MM-DD-task/`
+  (git-ignored except `work/README.md`; source never depends on it). Durable
+  reference notes go to `docs/constraints/` and its `index.md`, not the
+  repository root; a note that becomes a rule moves into the formal doc.
+- AI log: completed facts go to `docs/ai-log/done.md` (what changed, files or
+  commits, checks run, decisions). `docs/ai-log/todo.md` only holds handoff notes
+  for issues in progress (issue, branch, state, next step, blockers).
+- Never put secrets, keys, cookies, login state, private callback URLs, student
+  identity data, database dumps or raw unredacted logs in the repository, `work/`
+  or the AI log.
+- When the same mistake happens twice, add a short rule here in the same PR.
