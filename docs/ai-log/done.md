@@ -1,6 +1,6 @@
 # AI Log Done
 
-Last updated: 2026-11-20
+Last updated: 2026-11-21
 
 This file records completed agent-visible work. Keep entries factual and link
 them to commits, files, and verification commands where possible.
@@ -18,6 +18,12 @@ them to commits, files, and verification commands where possible.
 ```
 
 ## Completed
+
+### 2026-11-21 - Replace repeated disclaimers with plain facts (#43)
+
+- Source: Issue #43, from the user's 2026-11-19 request to drop over-defensive wording.
+- Result: In the task design, privacy notes, feasibility analysis, requirements spec and requirements baseline, each open limit now appears once in its own section with its issue (#24, #25, #29, #31, #32, #37); summaries point there instead of repeating it, and the "这不代表……／不能证明……" tails are gone. Stale statements ("the app has no AI calls", "these checks are still to run") point to the test report; the privacy checklist names the checks that ran (F11, F14–F16) and those that did not. Product rules phrased as negations, such as "长期欢迎不等于当前有名额", were kept. Part one merged as #44 (`6a416d6`).
+- Verification: strict MkDocs build and `git diff --check` for both parts. Independent reviews: #44's found an overstated checklist and a dropped keyword-discovery failure; #48's found limits still repeated in the feasibility analysis and baseline. All were fixed before merging; #44 passed six CI jobs.
 
 ### 2026-11-20 - Trim AGENTS.md to current rules (#33)
 
