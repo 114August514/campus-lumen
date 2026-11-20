@@ -1,6 +1,6 @@
 # Development
 
-Last updated: 2026-11-19
+Last updated: 2026-11-20
 
 ## Requirements
 
@@ -168,36 +168,14 @@ These deterministic tests are separate from actual external-source walkthroughs.
 
 ## Browser Collection and Precollected Batches
 
-For a short collection task, explicitly ask the agent to read
-`tools/skills/opportunity-discovery/SKILL.md` and use the available browser.
-An existing session can support normal search and reading without exporting
-cookies. The selected Xiaohongshu pilot was executed with Codex browser tools;
-sign-in was not performed or verified in that October 4 trial. No additional
-browser framework was installed. The skill is a repository draft,
-not an automatically discovered installed skill or a scheduled job.
-
-For the user-authorized sign-in trial, distinguish unknown, signed-out and
-signed-in states using visible page indicators. Reading a post does not prove
-authentication, and a new tab shares its browser profile. Use a tool-supported
-isolated session, or obtain explicit agreement before signing out an existing
-session. Open the original site's login entry and show the tab; the user completes
-QR scanning, credentials and CAPTCHA directly there. Do not retain those inputs,
-QR codes or authentication screens in files or screenshots. Afterward verify
-visible account/sign-out controls, then actually search and read a relevant body;
-report authentication and collection results separately.
-
-On October 5, Xiaohongshu visibly offered sign-out; the available IAB exposes only
-one normal profile and no isolated context. Bilibili instead showed a signed-out
-login entry. Its original-site login window was opened and shown to the user,
-without signing out other sites. After the user reported completion, fresh UI
-inspection found the login prompt/window gone and account navigation present.
-The agent searched `如何选择研究生导师`, switched to articles, opened a relevant
-result and read its text body. Sign-in verification and resumed reading both
-passed in this trial. This does not establish that the article required login or
-authentication will persist, test Xiaohongshu sign-in, or add a Bilibili collector
-to the application. The article was reading verification only, not a new advisor
-batch or requirements evidence; QR codes, credentials and account identity were
-not saved in the handoff files.
+For a collection task, ask the agent to follow
+`tools/skills/opportunity-discovery/SKILL.md`. Since 2026-11-19 the team may sign
+in to 小红书, BOSS 直聘, LinkedIn, B站 and similar platforms; collection is
+read-only, and the user completes any QR code, password or CAPTCHA step. Login
+state stays in the browser or collecting tool, never in files or screenshots.
+The collecting tool and account are being settled in issue #40 (Agent Reach
+trial). The October 4–5 小红书 and B站 trials are recorded in
+`docs/ai-log/done.md`.
 
 The agent writes source-backed summaries to the documented batch format. Check a
 batch using:
