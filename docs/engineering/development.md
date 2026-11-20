@@ -172,7 +172,8 @@ For a collection task, ask the agent to follow
 `tools/skills/opportunity-discovery/SKILL.md`. Since 2026-11-19 the team may sign
 in to 小红书, BOSS 直聘, LinkedIn, B站 and similar platforms; collection is
 read-only, and the user completes any QR code, password or CAPTCHA step. Login
-state stays in the browser or collecting tool, never in files or screenshots.
+state stays in the browser or the collecting tool's own storage and is never
+copied into the repository, batches, logs or screenshots.
 The collecting tool and account are being settled in issue #40 (Agent Reach
 trial). The October 4–5 小红书 and B站 trials are recorded in
 `docs/ai-log/done.md`.

@@ -46,15 +46,16 @@ Confirmed by the user; follow them unless the user changes them.
   comparison or unsolicited reminder. Official obligations are kept apart from
   suggestions. Success means clearer decisions and resolved tasks, not activity
   volume. Motives (fun, recognition, learning, career) can coexist and are not
-  ranked, inferred or asked for; prizes, 综测 and credits/GPA follow their own rules.
+  ranked or inferred, and there is no mandatory motive questionnaire; prizes, 综测
+  and credits/GPA follow their own rules.
 - Depth: discovery, understanding and comparison are the core; preparation
   guidance and resource entry points appear on demand, and a simple lookup can
   end at the entry link. Teaching concepts, grading exercises or testing learning
   are out of scope.
-- AI organization: the labelled simulated service is the default; USTC 词元计划 is
-  chosen per send through a server-held key. Only content the user ticked in the
-  confirm dialog is sent, and delivery state is shown truthfully (after a
-  timeout: "may have been sent").
+- AI organization: the labelled simulated service is the default and the
+  fallback; USTC 词元计划 is chosen per send through a server-held key. Only
+  content the user ticked in the confirm dialog is sent, and delivery state is
+  shown truthfully (after a timeout: "may have been sent").
 - Collection (2026-11-19): the team may sign in to 小红书, BOSS 直聘, LinkedIn,
   B站 and similar platforms to collect material. Collection is read-only: no
   posting, commenting, following, messaging or outreach. Login state stays in the
