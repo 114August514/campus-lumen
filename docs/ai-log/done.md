@@ -19,6 +19,12 @@ them to commits, files, and verification commands where possible.
 
 ## Completed
 
+### 2026-11-20 - Replace repeated disclaimers with plain facts (#43)
+
+- Source: Issue #43, from the user's 2026-11-19 request to drop over-defensive wording.
+- Result: Repeated "这不代表……／不能证明……" sentences in the task design, privacy notes, feasibility analysis, requirements spec and requirements baseline now state each limit once, with its issue (#24, #25, #29, #31, #32, #37). Stale statements ("the app has no AI calls", "these checks are still to run") point to the test report; the privacy checklist names the checks that ran (F11, F14–F16) and those that did not. Product rules phrased as negations, such as "长期欢迎不等于当前有名额", were kept. Part one merged as #44 (`6a416d6`).
+- Verification: strict MkDocs build and `git diff --check` for both parts; #44 passed an independent review (two blocking problems fixed: an overstated checklist and a dropped keyword-discovery failure) and six CI jobs.
+
 ### 2026-11-20 - Trim AGENTS.md to current rules (#33)
 
 - Source: Issue #33, plus the user's 2026-11-19 request to drop over-defensive wording such as the sign-in-pilot rules.
