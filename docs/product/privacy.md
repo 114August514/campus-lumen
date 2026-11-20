@@ -1,6 +1,6 @@
 # Privacy And Data Boundaries
 
-Last updated: 2026-11-19
+Last updated: 2026-11-20
 
 The mid-term demo serves personal opportunity exploration across all types,
 with public external discovery, browser-local sessions, and a choice between a
@@ -163,8 +163,8 @@ browser connector, a user-key input, or an unattended collection service. See
 
 ### 验证要求
 
-以下是相应能力的待执行要求，合成检查和开发者走查不等于学生效果验证。
+中期已检查其中的主题隔离、只发送勾选片段、发送状态与结果保存（[测试报告](../project/test-report.md) F11、F14–F16）；取消选择之后的后续请求和重试还没有单独检查，误合并修正见 F13（部分通过）。
 
-使用合成的私人理由与笔记，检查实际发出的请求及后续请求：只选择A的一条理由时，不含A的其他笔记、B的内容或整份探索记录；取消后不再发送或续用该内容。检查AI输出保持在对应私人主题，主题A修改／删除及公共资料更新不改变B的私人记录。服务失败不丢失已有资料或已存私人记录。合成数据验证不能冒充真实学生使用或收益测量。
+使用合成的私人理由与笔记，检查实际发出的请求及后续请求：只选择A的一条理由时，不含A的其他笔记、B的内容或整份探索记录；取消后不再发送或续用该内容。检查AI输出保持在对应私人主题，主题A修改／删除及公共资料更新不改变B的私人记录。服务失败不丢失已有资料或已存私人记录。
 
 同时模拟未发送、等待、返回、超时／断连和中止，检查发送状态与可观察证据一致；送达不明时保留“可能已发送”，重试仍只发送当前明确选择内容。修正误合并的公共对象时，私人理由、待问项和原引用保留；原关联不明时交由用户确认，不复制到所有拆出的对象。
